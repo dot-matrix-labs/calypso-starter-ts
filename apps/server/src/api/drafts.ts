@@ -1,12 +1,8 @@
 import { sqlite } from "db";
-import { getAuthenticatedUser } from "./auth";
+import { getAuthenticatedUser, getCorsHeaders } from "./auth";
 
 export async function handleDraftsRequest(req: Request, url: URL): Promise<Response | null> {
-    const corsHeaders = {
-        "Access-Control-Allow-Origin": "http://localhost:5174",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Headers": "Content-Type",
-    };
+    const corsHeaders = getCorsHeaders(req);
 
     // Preflight CORS
     if (req.method === "OPTIONS" && url.pathname.startsWith("/api/drafts")) {

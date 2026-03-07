@@ -30,13 +30,18 @@ export async function getAuthenticatedUser(req: Request): Promise<{ id: string; 
     }
 }
 
-export async function handleAuthRequest(req: Request, url: URL): Promise<Response | null> {
-    // Common CORS headers for local dev
-    const corsHeaders = {
-        "Access-Control-Allow-Origin": "http://localhost:5174",
+// Helper to get CORS headers dynamically
+export function getCorsHeaders(req: Request): Record<string, string> {
+    const origin = req.headers.get("Origin") || "http://localhost:5174";
+    return {
+        "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Headers": "Content-Type",
     };
+}
+
+export async function handleAuthRequest(req: Request, url: URL): Promise<Response | null> {
+    const corsHeaders = getCorsHeaders(req);
 
     // Preflight CORS
     if (req.method === "OPTIONS" && url.pathname.startsWith("/api/auth")) {

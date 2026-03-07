@@ -24,13 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             method: "GET",
             credentials: "include"
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.user) {
-                    setUser(data.user);
+            .then(async res => {
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user) setUser(data.user);
+                } else if (res.status !== 401) {
+                    console.warn(`Auth check failed with status: ${res.status}`);
                 }
             })
-            .catch(console.error)
+            .catch(err => {
+                // Network error or fetch failure
+                console.error("Auth check failed:", err);
+            })
             .finally(() => setLoading(false));
     }, []);
 
