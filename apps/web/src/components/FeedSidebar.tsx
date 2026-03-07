@@ -7,7 +7,7 @@ interface Props {
 }
 
 export const FeedSidebar: React.FC<Props> = ({ onAddArticle }) => {
-    const [source, setSource] = useState<'yahoo' | 'bloomberg'>('yahoo');
+    const [source, setSource] = useState<'yahoo' | 'bloomberg'>('bloomberg');
     const [query, setQuery] = useState('');
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(false);
