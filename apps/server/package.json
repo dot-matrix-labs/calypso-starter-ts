@@ -1,0 +1,13 @@
+{
+    "name": "server",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "bun run --hot src/index.ts",
+        "build": "bun build src/index.ts --target=bun --outdir=dist"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.0.0"
+    }
+}
