@@ -18,7 +18,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'bun run build && cd apps/server && bun run dev',
+        command: 'bun run dev',
         port: 31415,
         reuseExistingServer: !process.env.CI,
     },

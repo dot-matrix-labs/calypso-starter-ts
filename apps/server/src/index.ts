@@ -7,6 +7,12 @@
  */
 
 import { fetchFeeds } from './api/feeds';
+import { migrate } from 'db';
+import { handleAuthRequest } from './api/auth';
+import { handleDraftsRequest } from './api/drafts';
+
+// Ensure SQLite tables exist before answering traffic
+migrate();
 
 export default {
     port: 31415,
@@ -30,6 +36,16 @@ export default {
                 },
             });
             return res;
+        }
+
+        if (url.pathname.startsWith('/api/auth')) {
+            const authRes = await handleAuthRequest(req, url);
+            if (authRes) return authRes;
+        }
+
+        if (url.pathname.startsWith('/api/drafts')) {
+            const draftsRes = await handleDraftsRequest(req, url);
+            if (draftsRes) return draftsRes;
         }
 
         if (url.pathname === '/api/feeds') {

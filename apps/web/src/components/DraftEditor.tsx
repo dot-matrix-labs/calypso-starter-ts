@@ -6,14 +6,25 @@ interface Props {
     setSynopsis: (s: string) => void;
     articles: Article[];
     onRemoveArticle: (id: string) => void;
+    onSaveDraft: () => void;
+    isSaving: boolean;
 }
 
-export const DraftEditor: React.FC<Props> = ({ synopsis, setSynopsis, articles, onRemoveArticle }) => {
+export const DraftEditor: React.FC<Props> = ({ synopsis, setSynopsis, articles, onRemoveArticle, onSaveDraft, isSaving }) => {
     return (
-        <div className="flex-1 flex flex-col h-full bg-white overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Weekly Recap Draft</h2>
-                <p className="text-sm text-gray-500">Select up to 5 standard top articles for your email newsletter.</p>
+        <div className="flex-1 flex flex-col h-full bg-white overflow-hidden relative">
+            <div className="p-6 border-b border-gray-200 bg-white sticky top-0 z-10 flex justify-between items-center">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Weekly Recap Draft</h2>
+                    <p className="text-sm text-gray-500">Select up to 5 standard top articles for your email newsletter.</p>
+                </div>
+                <button
+                    onClick={onSaveDraft}
+                    disabled={isSaving}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                >
+                    {isSaving ? "Saving..." : "Save Draft"}
+                </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-gray-50">

@@ -32,3 +32,6 @@ coverage/
 # Environment files
 .env
 .env.test
+
+# SQLite
+*.sqlite

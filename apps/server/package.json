@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "core": "workspace:*",
+        "db": "workspace:*",
         "rss-parser": "^3.13.0"
     }
 }

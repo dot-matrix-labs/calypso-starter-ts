@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "test": "bunx vitest run && bunx playwright test",
+    "test": "bun run packages/db/migrate.ts && bunx vitest run && bunx playwright test",
     "lint": "bunx eslint .",
     "format": "bunx prettier --write .",
     "dev": "bun run --filter '*' dev"
