@@ -72,8 +72,8 @@ export const ExportModal: React.FC<Props> = ({ synopsis, articles }) => {
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-12 bg-slate-50/50 flex justify-center">
-                    <div className="bg-white shadow-xl border border-slate-200 p-12 w-full max-w-[680px] min-h-full" dangerouslySetInnerHTML={{ __html: generateHTML() }} />
+                <div className="flex-1 overflow-y-auto p-4 md:p-12 bg-slate-50/50 flex justify-center">
+                    <div className="bg-white shadow-xl border border-slate-200 p-4 md:p-10 w-full max-w-[720px] min-h-full overflow-x-hidden break-words" dangerouslySetInnerHTML={{ __html: generateHTML() }} />
                 </div>
 
                 <div className="p-6 border-t border-slate-100 flex justify-between items-center bg-white rounded-b-2xl">
