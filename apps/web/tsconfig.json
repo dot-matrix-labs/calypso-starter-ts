@@ -9,8 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "noEmit": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["@vitest/browser/matchers"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
   },
   "include": ["src", "tests"]
 }
