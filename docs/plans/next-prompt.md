@@ -2,6 +2,9 @@
 
 ## Context
 
+`apps/web/tsconfig.json` now includes `"types": ["@vitest/browser/matchers"]` so
+`expect.element()` resolves without TypeScript errors.
+
 Component tests now use Vitest Browser Mode (`@vitest/browser` + playwright provider +
 `vitest-browser-react`). All 4 component tests pass in headless Chromium. No server or Postgres
 needed for component tests.
