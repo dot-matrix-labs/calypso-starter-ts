@@ -1,4 +1,4 @@
-import { sqlite } from "db";
+import { sql } from "db";
 import { signJwt, verifyJwt } from "../auth/jwt";
 
 // Helper to parse cookies from headers
@@ -56,16 +56,29 @@ export async function handleAuthRequest(req: Request, url: URL): Promise<Respons
                 return new Response(JSON.stringify({ error: "Invalid username or password" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
 
-            // Check if user exists
-            const existingUser = sqlite.query("SELECT id FROM users WHERE username = ?").get(username);
-            if (existingUser) {
+            // Check if user exists (checking JSONB property 'username' where type is 'user')
+            const existingUser = await sql`
+                SELECT id FROM entities 
+                WHERE type = 'user' AND properties->>'username' = ${username}
+            `;
+
+            if (existingUser.length > 0) {
                 return new Response(JSON.stringify({ error: "Username already taken" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
 
             const id = crypto.randomUUID();
             const hash = await Bun.password.hash(password);
 
-            sqlite.query("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)").run(id, username, hash);
+            const properties = {
+                username,
+                password_hash: hash
+            };
+
+            // Insert new user entity
+            await sql`
+                INSERT INTO entities (id, type, properties, tenant_id) 
+                VALUES (${id}, 'user', ${sql.json(properties)}, null)
+            `;
 
             const token = await signJwt({ id, username });
 
@@ -87,11 +100,19 @@ export async function handleAuthRequest(req: Request, url: URL): Promise<Respons
     if (req.method === "POST" && url.pathname === "/api/auth/login") {
         try {
             const { username, password } = await req.json();
-            const user = sqlite.query("SELECT id, username, password_hash FROM users WHERE username = ?").get(username) as { id: string, username: string, password_hash: string } | undefined;
 
-            if (!user) {
+            // Retrieve User Entity
+            const users = await sql`
+                SELECT id, properties->>'username' as username, properties->>'password_hash' as password_hash 
+                FROM entities 
+                WHERE type = 'user' AND properties->>'username' = ${username}
+            `;
+
+            if (users.length === 0) {
                 return new Response(JSON.stringify({ error: "Invalid credentials" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
+
+            const user = users[0];
 
             const isMatch = await Bun.password.verify(password, user.password_hash);
             if (!isMatch) {
@@ -108,7 +129,8 @@ export async function handleAuthRequest(req: Request, url: URL): Promise<Respons
                     "Set-Cookie": `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800`
                 }
             });
-        } catch {
+        } catch (err) {
+            console.error("LOGIN ERROR:", err);
             return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: corsHeaders });
         }
     }
