@@ -13,23 +13,28 @@
 **Primary "Happy Path" Workflow:**
 1. User logs in and connects their GitHub account.
 2. User sees the main dashboard elegantly split into the Project Board (left 3/4) and Chat (right 1/4).
-3. User creates a new task on the board in List or Kanban view, linking a GitHub issue.
-4. User sees team members online in the chat window and uses a slash command (e.g., `/assign @colleague`) or sends a direct message to coordinate work.
-5. As GitHub PRs are updated, the linked tasks on the board automatically reflect the new READ status in real-time.
+3. User creates a new task on the board in List or Kanban view. The task includes standard semantic fields: **Priority, Estimate Start, Estimated Deliver, Depends On, Name, Description, and Owner**.
+4. A 2-way sync occurs: Creating or updating the task on the dashboard automatically creates/updates the corresponding GitHub issue, and vice-versa.
+5. In the chat window, a user clicks on an online colleague's avatar to instantly navigate to exactly what that person is currently looking at on the project board (Group or DM context).
+6. As users manipulate tasks (e.g. associating predefined organization tags or arbitrary filter tags), the UI updates instantly for everyone.
 
 **Edge Cases & Alternative Workflows:**
-* A user wants to view the Gantt chart to adjust dependent task timelines when a GitHub PR is delayed.
-* A user is offline or disconnected from chat but still needs to update board tasks.
+* A user wants to view the Gantt chart to adjust dependent task timelines (`Depends On`, `Estimate Start`, `Estimated Deliver`) when a GitHub PR is delayed. The system syncs these date updates back.
 * A slash command fails (e.g., trying to assign an invalid user or repository), and the system responds with a graceful, helpful error message.
+* Merge conflicts: If a GitHub issue is updated simultaneously to a dashboard task edit, the system gracefully resolves or surfaces the discrepancy.
 
-**Entity State Machines:**
-* **Tasks:** Fully customizable columns/states per project, allowing flexibility while maintaining sync with GitHub status where applicable.
-* **GitHub Sync:** When a GitHub issue is closed, the linked task automatically moves to "Done" (or equivalent terminal state) via real-time webhooks.
+**Task Entity Model:**
+Tasks possess standard app defaults with specific semantics that drive the three views (List, Kanban, Gantt).
+* **Required Fields:** Name, Description, Owner, Priority.
+* **Scheduling Fields:** Estimate Start, Estimated Deliver, Depends On (powers Gantt).
+* **Taxonomy:** Key-value pairs with pre-fixed organization options (dropdowns) plus the ability to attach arbitrary tags for custom filtering.
+* **GitHub Sync:** Full READ/WRITE sync at the prototype phase. Any state change on the board pushes to GitHub; any GitHub webhook triggers a board update.
 
 ## 3. UI/UX & Design Philosophy
 
 **Design Goal:** A "graceful feeling product."
 * **Fluid Layout:** The 3/4 (board) to 1/4 (chat) split should feel natural, with smooth, performant resizing or collapsing if needed.
+* **Contextual Presence Navigation:** Clicking a user's avatar in the chat instantly jumps your 3/4 board view to exactly match what that user is currently seeing/working on.
 * **Micro-Interactions:** Subtle animations for task movements, chat bubble appearances, and status updates to make the application feel alive and responsive.
 * **Clutter-Free Interface:** Emphasize whitespace, clear typography, and a modern color palette to avoid the overwhelming density of traditional project management tools.
 
