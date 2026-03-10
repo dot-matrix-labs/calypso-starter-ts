@@ -23,6 +23,7 @@ Three problems:
 ### 1. Fix `playwright.config.ts`
 
 Change `webServer` to:
+
 ```ts
 webServer: {
   command: 'bun run --filter web build && bun apps/server/src/index.ts',
@@ -35,6 +36,7 @@ webServer: {
 ### 2. Fix `.github/workflows/test-e2e.yml`
 
 Add Postgres service and DATABASE_URL:
+
 ```yaml
 services:
   postgres:
@@ -57,6 +59,7 @@ env:
 ### 3. Rewrite `tests/e2e/app.spec.ts`
 
 Replace with a minimal smoke test that:
+
 - Navigates to `http://localhost:31415`
 - Verifies the page loads (no crash, HTTP 200)
 - Verifies the Calypso layout shell is visible (the resizable panel container rendered by `apps/web/src/App.tsx`)
@@ -74,9 +77,25 @@ Update any stale tests to match the current codebase.
 ## Success Criteria
 
 All four CI workflows green on the next PR:
+
 - `test-unit.yml` ✅
 - `test-component.yml` ✅
 - `test-api.yml` ✅
 - `test-e2e.yml` ✅
 
 Only then proceed to Phase 3 (Project Board).
+
+---
+
+## FAILING TESTS — Must be addressed before next push
+
+The following tests were failing at the time of the last push.
+They must be **checked, fixed, or rewritten. Never ignore or skip them.**
+
+```
+
+```
+
+For each failure: determine whether the test is wrong (fix the test to match
+correct behaviour) or the implementation is wrong (fix the code). Do not
+disable, comment out, or add skip/todo markers to avoid addressing failures.

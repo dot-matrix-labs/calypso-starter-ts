@@ -31,6 +31,7 @@ Establish a green CI baseline before adding features. All four CI workflows must
 ### Root Cause Analysis
 
 The E2E workflow fails because:
+
 1. `webServer.command` in `playwright.config.ts` is `bun run dev`, which starts a Vite dev server on port 5173 — but the config waits on port 31415 (the Bun server port), so Playwright times out.
 2. The Bun server calls `await migrate()` on startup, which requires a live Postgres connection — not provided in the E2E CI workflow.
 3. The E2E test (`tests/e2e/app.spec.ts`) tests the old journalism scaffold app (registration, drafts, SQLite) — incompatible with the current Calypso UI.
