@@ -1,12 +1,11 @@
 import { test, expect, beforeAll } from 'vitest';
-import { migrate } from 'db';
 
+// The server (localhost:31415) is started by the CI workflow before this suite runs.
+// It calls migrate() on startup — no need to call it here.
 const BASE = 'http://localhost:31415';
 let authCookie = '';
 
 beforeAll(async () => {
-  await migrate();
-
   // Register a test user and grab the session cookie
   const username = `test_${Date.now()}`;
   const res = await fetch(`${BASE}/api/auth/register`, {
