@@ -11,24 +11,27 @@
 ## 2. Core Workflows & User Stories
 
 **Primary "Happy Path" Workflow:**
-1. User logs in and connects their GitHub account.
+## 2. Core Workflows & User Stories
+
+**Primary "Happy Path" Workflow:**
+1. User logs in to Calypso.
 2. User sees the main dashboard elegantly split into the Project Board (left 3/4) and Chat (right 1/4).
 3. User creates a new task on the board in List or Kanban view. The task includes standard semantic fields: **Priority, Estimate Start, Estimated Deliver, Depends On, Name, Description, and Owner**.
-4. A 2-way sync occurs: Creating or updating the task on the dashboard automatically creates/updates the corresponding GitHub issue, and vice-versa.
+4. The user associates the project board with a public GitHub repository. When new issues are posted on GitHub, they are automatically added as new read-only incoming tasks in Calypso.
 5. In the chat window, a user clicks on an online colleague's avatar to instantly navigate to exactly what that person is currently looking at on the project board (Group or DM context).
-6. As users manipulate tasks (e.g. associating predefined organization tags or arbitrary filter tags), the UI updates instantly for everyone.
+6. As users manipulate tasks (e.g. associating predefined organization tags or arbitrary filter tags), the UI updates instantly for everyone. The Calypso app is the strict source of truth for project status.
 
 **Edge Cases & Alternative Workflows:**
-* A user wants to view the Gantt chart to adjust dependent task timelines (`Depends On`, `Estimate Start`, `Estimated Deliver`) when a GitHub PR is delayed. The system syncs these date updates back.
+* A user wants to view the Gantt chart to adjust dependent task timelines (`Depends On`, `Estimate Start`, `Estimated Deliver`).
 * A slash command fails (e.g., trying to assign an invalid user or repository), and the system responds with a graceful, helpful error message.
-* Merge conflicts: If a GitHub issue is updated simultaneously to a dashboard task edit, the system gracefully resolves or surfaces the discrepancy.
+* A GitHub issue is closed externally on github.com. Calypso receives the webhook and updates the corresponding local task status to closed.
 
 **Task Entity Model:**
 Tasks possess standard app defaults with specific semantics that drive the three views (List, Kanban, Gantt).
 * **Required Fields:** Name, Description, Owner, Priority.
 * **Scheduling Fields:** Estimate Start, Estimated Deliver, Depends On (powers Gantt).
 * **Taxonomy:** Key-value pairs with pre-fixed organization options (dropdowns) plus the ability to attach arbitrary tags for custom filtering.
-* **GitHub Sync:** Full READ/WRITE sync at the prototype phase. Any state change on the board pushes to GitHub; any GitHub webhook triggers a board update.
+* **GitHub Sync:** Strictly READ-ONLY from PUBLIC repositories for the demo. No Write-back, and Pull Requests are out-of-scope (assume users tag PR links inside the issue body).
 
 ## 3. UI/UX & Design Philosophy
 
@@ -46,7 +49,7 @@ Tasks possess standard app defaults with specific semantics that drive the three
 
 ## 5. External Integrations (Business Context)
 
-* **GitHub API (GraphQL preferred for efficiency):** For READ access to issues, pull requests, and real-time status updates (webhooks). Future iterations will support WRITE access.
+* **GitHub API (Public Repos Only):** For READ access to issues and webhooks for issue-state changes. Calypso acts as the source-of-truth for project tracking, mirroring new public issues in dynamically without bidirectional sync.
 * **WebSocket / Real-time Service (e.g., Supabase Realtime, Socket.io):** Powers the live chat, online presence indicators, and instant board syncing to ensure the UI always reflects the current state without manual refreshes.
 
 ## 6. Constraints & Technical Assumptions
