@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/auth-implementation.md
-  this ──requires────────▶ blueprints/data-blueprint.md (complementary — data layer controls)
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/auth-implementation.md
+this ──requires────────▶ blueprints/data-blueprint.md (complementary — data layer controls)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines Calypso's authentication and authorization posture: how users and agents prove identity, how sessions are managed, and how access is scoped and governed. Read this before the [Data Blueprint](./data-blueprint.md) which covers persistence, encryption, and privacy.
@@ -28,18 +28,18 @@ The cost of ignoring this blueprint is familiar and predictable: a single compro
 
 Every design choice in this blueprint addresses at least one of these scenarios. A control that cannot be traced back to a row in this table is decoration.
 
-| Scenario | What must be protected |
-|---|---|
-| Phished or stolen user credentials | User sessions, personal data, account integrity |
-| Algorithm confusion in token verification (e.g., `alg: none` or HS256 substitution) | Token integrity; forged tokens must never be accepted |
-| Compromised admin account | All user data, system configuration, encryption keys |
-| Rogue AI agent exceeding its authorized scope | Customer records, write access to production entity types, other agents' credentials |
-| Replay of intercepted authentication tokens | Session integrity; replayed tokens must not grant access |
-| Credential stuffing or brute-force attacks against login endpoints | Account availability and integrity |
-| Single insider unilaterally approving a privileged operation | Root key material, bulk data exports, key rotation |
-| External authentication provider outage | Login availability; users must not be locked out of an operational system |
-| Session token exposed via client-side script (XSS exfiltration) | Session material; tokens must not be readable by JavaScript |
-| Agent credential leaked in logs or error output | Scoped access the agent held; blast radius must be bounded by scope and TTL |
+| Scenario                                                                            | What must be protected                                                               |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Phished or stolen user credentials                                                  | User sessions, personal data, account integrity                                      |
+| Algorithm confusion in token verification (e.g., `alg: none` or HS256 substitution) | Token integrity; forged tokens must never be accepted                                |
+| Compromised admin account                                                           | All user data, system configuration, encryption keys                                 |
+| Rogue AI agent exceeding its authorized scope                                       | Customer records, write access to production entity types, other agents' credentials |
+| Replay of intercepted authentication tokens                                         | Session integrity; replayed tokens must not grant access                             |
+| Credential stuffing or brute-force attacks against login endpoints                  | Account availability and integrity                                                   |
+| Single insider unilaterally approving a privileged operation                        | Root key material, bulk data exports, key rotation                                   |
+| External authentication provider outage                                             | Login availability; users must not be locked out of an operational system            |
+| Session token exposed via client-side script (XSS exfiltration)                     | Session material; tokens must not be readable by JavaScript                          |
+| Agent credential leaked in logs or error output                                     | Scoped access the agent held; blast radius must be bounded by scope and TTL          |
 
 ---
 

@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/data-implementation.md
-  this ──requires────────▶ blueprints/auth-blueprint.md (complementary — access control layer)
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/data-implementation.md
+this ──requires────────▶ blueprints/auth-blueprint.md (complementary — access control layer)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines Calypso's data management posture: how data is persisted, encrypted, partitioned, and analyzed while preserving customer privacy. It is the companion to the [Auth Blueprint](./auth-blueprint.md) which covers identity and access control.
@@ -30,19 +30,19 @@ The persistence layer is PostgreSQL from the first commit. Starting with an embe
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Database backup exfiltrated from storage | Customer PII — names, emails, addresses, payment tokens. Backups must contain ciphertext, not plaintext. |
-| Compromised database user account | Sensitive fields (PII, financial data). Application-layer encryption ensures DB credentials alone do not yield readable data. |
-| Server root access obtained by attacker | Encryption keys. Keys must not reside in environment variables or on the same host as the encrypted data. |
-| Rogue administrator queries raw customer records | Individual customer privacy. Access to the transactional store must be audit-logged, and agents must be restricted to aggregated views. |
-| Analytics query re-identifies individuals from pseudonymized data | Pseudonymization integrity. Session-based pseudonyms must rotate, and aggregation must apply differential privacy before export. |
-| Agent process accesses raw transactional data | Customer records. Agents operate on the analytics tier only; no code path connects an agent to the transactional store. |
-| Single encryption key compromised | Blast radius. Per-table or per-domain key separation limits exposure to one data category, not the entire database. |
-| Key compromise with no rotation capability | Long-term exposure. Key rotation must be a tested, automated procedure — not a theoretical plan. |
-| Ransomware encrypts production database | Data availability and integrity. Encrypted, immutable backups stored off-host enable recovery without paying ransom. |
-| Application logs contain decrypted PII | Secondary data leak. Log pipelines must strip or redact sensitive fields before persistence. |
-| Schema migration drops or corrupts existing data | Data integrity. Migrations must be tested for rollback, and destructive operations must require explicit confirmation. |
+| Scenario                                                          | What must be protected                                                                                                                  |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Database backup exfiltrated from storage                          | Customer PII — names, emails, addresses, payment tokens. Backups must contain ciphertext, not plaintext.                                |
+| Compromised database user account                                 | Sensitive fields (PII, financial data). Application-layer encryption ensures DB credentials alone do not yield readable data.           |
+| Server root access obtained by attacker                           | Encryption keys. Keys must not reside in environment variables or on the same host as the encrypted data.                               |
+| Rogue administrator queries raw customer records                  | Individual customer privacy. Access to the transactional store must be audit-logged, and agents must be restricted to aggregated views. |
+| Analytics query re-identifies individuals from pseudonymized data | Pseudonymization integrity. Session-based pseudonyms must rotate, and aggregation must apply differential privacy before export.        |
+| Agent process accesses raw transactional data                     | Customer records. Agents operate on the analytics tier only; no code path connects an agent to the transactional store.                 |
+| Single encryption key compromised                                 | Blast radius. Per-table or per-domain key separation limits exposure to one data category, not the entire database.                     |
+| Key compromise with no rotation capability                        | Long-term exposure. Key rotation must be a tested, automated procedure — not a theoretical plan.                                        |
+| Ransomware encrypts production database                           | Data availability and integrity. Encrypted, immutable backups stored off-host enable recovery without paying ransom.                    |
+| Application logs contain decrypted PII                            | Secondary data leak. Log pipelines must strip or redact sensitive fields before persistence.                                            |
+| Schema migration drops or corrupts existing data                  | Data integrity. Migrations must be tested for rollback, and destructive operations must require explicit confirmation.                  |
 
 ---
 
@@ -99,6 +99,7 @@ Every read of sensitive data is logged before the read is executed — not after
 **Problem:** Static schemas (DDL) are rigid and make business velocity dependent on database migrations.
 
 **Solution:** Store all domain data in three tables: `entities` (nodes), `relations` (edges), and `entity_types` (the registry).
+
 - **`entities`**: Stores all objects with a `type` and a `properties` JSONB column.
 - **`relations`**: Stores typed edges between entities (`source_id`, `target_id`, `type`, `properties`).
 - **`entity_types`**: Stores the schema (JSON Schema), sensitivity metadata, and KMS key IDs for each type.
@@ -217,11 +218,12 @@ The baseline architecture from the first commit. A single PostgreSQL instance ho
 ```
 
 **Database roles:**
+
 - `app_rw` — read/write on `calypso_app`; no access to `calypso_analytics` or `calypso_audit`
 - `analytics_w` — insert-only on `calypso_analytics`; no read, no access to other databases
 - `audit_w` — insert-only on `calypso_audit`; no `UPDATE`, no `DELETE`, no `TRUNCATE`, no access to other databases
 
-**Development setup:** Local development uses Kubernetes (e.g., `kind`) or full-stack Docker Compose to deploy the application container *alongside* PostgreSQL and Vault. We do *not* run the application directly on the host. `bun build` creates the container, and it is deployed into the local environment. A single `init.sql` script creates the three databases and three roles on database initialization.
+**Development setup:** Local development uses Kubernetes (e.g., `kind`) or full-stack Docker Compose to deploy the application container _alongside_ PostgreSQL and Vault. We do _not_ run the application directly on the host. `bun build` creates the container, and it is deployed into the local environment. A single `init.sql` script creates the three databases and three roles on database initialization.
 
 **Trade-offs:** All three databases share one PostgreSQL instance — an instance-level failure takes down all three simultaneously. This is acceptable for pre-production and early production; the single instance is replaced by independent managed databases when availability SLAs require it. The event pipeline is in-process, so analytics event delivery is synchronous with request handling — lag is zero but pipeline failures surface as request errors. An async pipeline (separate worker, queue) is a production upgrade, not a day-one requirement.
 

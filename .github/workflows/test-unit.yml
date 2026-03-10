@@ -18,4 +18,4 @@ jobs:
       - name: Lint and Format Check
         run: bun run lint
       - name: Run Unit Tests
-        run: bunx vitest run tests/unit apps/*/tests/unit
+        run: bun --bun vitest run tests/unit apps/*/tests/unit

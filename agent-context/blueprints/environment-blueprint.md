@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/environment-implementation.md
-  this ◀──requires────────── blueprints/deployment-blueprint.md (deploy pipeline)
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/environment-implementation.md
+this ◀──requires────────── blueprints/deployment-blueprint.md (deploy pipeline)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines the environment model for AI-agent-driven software projects: what containers run, what they are allowed to do, how the cluster is provisioned, and why the three-container app topology is the same in development and production.
@@ -24,18 +24,18 @@ The development environment is the cloud host itself. The agent and developer wo
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Frontend container is used to build or compile code at runtime | Release integrity — every artifact served in production must have been vetted, tested, and released before the server sees it |
-| Database container is modified or queried by the agent directly | Data integrity and audit trail — agents must not have direct access to the database process or its host |
-| Agent installs packages or modifies global state on the frontend or database container | Container immutability — non-developer containers must be immutable; unexpected mutations indicate a compromised or misconfigured system |
-| Cluster is provisioned with environment-specific configuration differences between demo and production | Topology parity — a cluster that behaves differently in demo mode versus production mode is two different systems pretending to be one |
-| Agent runs on the developer's local laptop instead of the cloud host | Headless integrity and environment parity — local environments reintroduce all the divergence that a shared cloud host eliminates; agents belong on the cloud host |
-| Cluster is destroyed and must be reprovisioned | State durability — all non-ephemeral state must live in version control or the database volume, never on the host filesystem |
-| A release is deployed to the frontend without passing CI and the release pipeline | Release gate integrity — the frontend must not be configurable to pull untagged, untested, or unreleased artifacts |
-| Agent session drops mid-task due to SSH timeout or network interruption | Session continuity — in-flight agent context and partially applied changes must survive disconnection (tmux on the host) |
-| Integration or end-to-end test connects to the live database instead of an ephemeral test instance | Data integrity — test runs must never read from or write to the production or demo database |
-| Ephemeral test container is left running after a test suite completes | Host resource integrity — leaked containers exhaust disk, memory, and port space on the host |
+| Scenario                                                                                               | What must be protected                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend container is used to build or compile code at runtime                                         | Release integrity — every artifact served in production must have been vetted, tested, and released before the server sees it                                      |
+| Database container is modified or queried by the agent directly                                        | Data integrity and audit trail — agents must not have direct access to the database process or its host                                                            |
+| Agent installs packages or modifies global state on the frontend or database container                 | Container immutability — non-developer containers must be immutable; unexpected mutations indicate a compromised or misconfigured system                           |
+| Cluster is provisioned with environment-specific configuration differences between demo and production | Topology parity — a cluster that behaves differently in demo mode versus production mode is two different systems pretending to be one                             |
+| Agent runs on the developer's local laptop instead of the cloud host                                   | Headless integrity and environment parity — local environments reintroduce all the divergence that a shared cloud host eliminates; agents belong on the cloud host |
+| Cluster is destroyed and must be reprovisioned                                                         | State durability — all non-ephemeral state must live in version control or the database volume, never on the host filesystem                                       |
+| A release is deployed to the frontend without passing CI and the release pipeline                      | Release gate integrity — the frontend must not be configurable to pull untagged, untested, or unreleased artifacts                                                 |
+| Agent session drops mid-task due to SSH timeout or network interruption                                | Session continuity — in-flight agent context and partially applied changes must survive disconnection (tmux on the host)                                           |
+| Integration or end-to-end test connects to the live database instead of an ephemeral test instance     | Data integrity — test runs must never read from or write to the production or demo database                                                                        |
+| Ephemeral test container is left running after a test suite completes                                  | Host resource integrity — leaked containers exhaust disk, memory, and port space on the host                                                                       |
 
 ---
 
@@ -231,11 +231,11 @@ The ephemeral test container uses the same image as the cluster database contain
 
 Calypso provides three base images for the app cluster, published to the project's container registry. Projects derive from these images without modifying them unless a blueprint-documented reason exists.
 
-| Image | Base | Installed | Not Installed |
-|---|---|---|---|
-| `calypso/frontend` | Alpine minimal | `bun` (runtime only) | `apt`, `npm`, `git`, `gh`, build tools, shells |
-| `calypso/worker` | Minimal + Node | `bun`, `node`, vendor CLI binaries (`claude`, `gemini`, `codex`) | Shell, `apt`, `git`, `gh`, build tools |
-| `calypso/postgres` | Distroless | PostgreSQL binary and libs | Everything else |
+| Image              | Base           | Installed                                                        | Not Installed                                  |
+| ------------------ | -------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
+| `calypso/frontend` | Alpine minimal | `bun` (runtime only)                                             | `apt`, `npm`, `git`, `gh`, build tools, shells |
+| `calypso/worker`   | Minimal + Node | `bun`, `node`, vendor CLI binaries (`claude`, `gemini`, `codex`) | Shell, `apt`, `git`, `gh`, build tools         |
+| `calypso/postgres` | Distroless     | PostgreSQL binary and libs                                       | Everything else                                |
 
 The host itself provides the development toolchain: `claude`, `gemini`, `codex`, `bun`, `node`, `npm`, `git`, `gh`, `bash`, `tmux`, `docker`, `kubectl`.
 
@@ -296,7 +296,7 @@ kubectl rollout status deployment/frontend --timeout=5m
 ```typescript
 // scripts/provision-cluster.ts
 interface ProvisionConfig {
-  provider: "local" | "digitalocean" | "hetzner" | "vultr";
+  provider: 'local' | 'digitalocean' | 'hetzner' | 'vultr';
   region?: string;
   nodeSize?: string;
   projectName: string;
@@ -306,12 +306,12 @@ interface ProvisionConfig {
 
 ### Dependency Justification
 
-| Package / Tool | Reason to Buy | Justified |
-|---|---|---|
-| `kubectl` / `helm` | Kubernetes is complex; the CLI is the canonical control plane interface | Yes — Buy |
-| `doctl` (DigitalOcean CLI) | Cloud provider API surface is large; official CLI is the supported interface | Yes — Buy |
-| Bun (frontend runtime) | Consistent with project standard; fast cold starts for minimal containers | Yes — Buy |
-| GitHub Actions (CI) | Release pipeline must run outside the host; hosted CI is the standard | Yes — Buy |
+| Package / Tool                | Reason to Buy                                                                        | Justified |
+| ----------------------------- | ------------------------------------------------------------------------------------ | --------- |
+| `kubectl` / `helm`            | Kubernetes is complex; the CLI is the canonical control plane interface              | Yes — Buy |
+| `doctl` (DigitalOcean CLI)    | Cloud provider API surface is large; official CLI is the supported interface         | Yes — Buy |
+| Bun (frontend runtime)        | Consistent with project standard; fast cold starts for minimal containers            | Yes — Buy |
+| GitHub Actions (CI)           | Release pipeline must run outside the host; hosted CI is the standard                | Yes — Buy |
 | PostgreSQL (distroless image) | Standard relational database; distroless image eliminates shell-based attack surface | Yes — Buy |
 
 ---

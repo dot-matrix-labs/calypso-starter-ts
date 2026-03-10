@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──implements──▶ blueprints/deployment-blueprint.md
-  this ◀──referenced by── index.md
+this ──implements──▶ blueprints/deployment-blueprint.md
+this ◀──referenced by── index.md
 
 > Implements: Deployment Blueprint (`agent-context/blueprints/deployment-blueprint.md`)
 
@@ -42,10 +42,10 @@ No systemd services, no PM2, no custom restart scripts natively on the host.
 
 ## Environment Variables
 
-| File | Contents | In version control? |
-|---|---|---|
-| `.env` | Production secrets (API keys, DB passwords, signing keys) | No — `.gitignore`d |
-| `.env.test` | Test-only credentials, fixture paths | Yes — committed |
+| File        | Contents                                                  | In version control? |
+| ----------- | --------------------------------------------------------- | ------------------- |
+| `.env`      | Production secrets (API keys, DB passwords, signing keys) | No — `.gitignore`d  |
+| `.env.test` | Test-only credentials, fixture paths                      | Yes — committed     |
 
 ## Logging
 
@@ -56,6 +56,7 @@ No systemd services, no PM2, no custom restart scripts natively on the host.
 ## Browser Error Forwarding
 
 Browser errors are caught via:
+
 - `window.onerror` for synchronous errors
 - `window.onunhandledrejection` for promise rejections
 - React error boundaries for component tree crashes
@@ -77,11 +78,11 @@ All errors POST to `/api/logs` with `{ traceId, error, stack, url, timestamp }`.
 
 ## Dependency Justification
 
-| Package | Reason | Buy or DIY |
-|---|---|---|
-| `kubernetes` | Universal container orchestration; required for enterprise deployments | Buy (managed service) |
-| UUID generation | Single function; agent generates internal implementation | DIY |
-| Error forwarding client | Thin wrapper around fetch; no library needed | DIY |
+| Package                 | Reason                                                                 | Buy or DIY            |
+| ----------------------- | ---------------------------------------------------------------------- | --------------------- |
+| `kubernetes`            | Universal container orchestration; required for enterprise deployments | Buy (managed service) |
+| UUID generation         | Single function; agent generates internal implementation               | DIY                   |
+| Error forwarding client | Thin wrapper around fetch; no library needed                           | DIY                   |
 
 ---
 

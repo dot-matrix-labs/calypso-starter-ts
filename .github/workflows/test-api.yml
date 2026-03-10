@@ -9,6 +9,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: calypso
+          POSTGRES_PASSWORD: calypso
+          POSTGRES_DB: calypso_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://calypso:calypso@localhost:5432/calypso_test
+
     steps:
       - uses: actions/checkout@v4
       - name: Setup Bun
@@ -17,7 +36,11 @@ jobs:
         run: bun install
       - name: Lint and Format Check
         run: bun run lint
+      - name: Build Web App
+        run: bun run --filter web build
+      - name: Start Server
+        run: bun run apps/server/src/index.ts &
+      - name: Wait for Server
+        run: bunx wait-on http://localhost:31415 --timeout 30000
       - name: Run API Integration Tests
-        run: bunx vitest run apps/server/tests/integration
-        env:
-          FIXTURES: 'true'
+        run: bun --bun vitest run apps/server/tests/integration

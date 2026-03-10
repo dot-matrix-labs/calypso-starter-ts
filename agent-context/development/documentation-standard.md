@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──governs─────────▶ docs/ and README.md files within the PROJECT BEING BUILT
-  this ──does NOT govern─▶ agent-context/ (governed by agent-communication.md)
+this ──governs─────────▶ docs/ and README.md files within the PROJECT BEING BUILT
+this ──does NOT govern─▶ agent-context/ (governed by agent-communication.md)
 
 > **Scope:** This document governs documentation structure within the **business application project** that Calypso agents build — the `docs/` directory, per-directory `README.md` files, and source code inline documentation. It does NOT govern `agent-context/` documents (those are governed by `agent-communication.md`).
 
@@ -27,7 +27,7 @@ The project root must contain a `README.md` that serves as the "High Orbit" view
 There should be **no documentation files** (other than `README.md`) outside of the canonical `./docs/` directory.
 
 - **Why?** Scatter-gun documentation gets lost. By centralizing "substantive" documentation in `./docs/`, agents know exactly where to look for knowledge.
-- **Exception**: `README.md` files are allowed (and required) in every sub-directory to explain *what that directory contains*.
+- **Exception**: `README.md` files are allowed (and required) in every sub-directory to explain _what that directory contains_.
 
 ### 3. The Fractal Structure
 
@@ -54,6 +54,7 @@ All documentation files inside `./docs/` must use **kebab-case** (`my-doc.md`) t
 ### 5. README.md in Every Directory
 
 Every directory in the project should contain a `README.md` that explains:
+
 - What the directory contains
 - Key files and their purposes
 - How it relates to other parts of the project
@@ -101,4 +102,3 @@ exit 0
 ```
 
 Make it executable: `chmod +x .git/hooks/pre-push`
-

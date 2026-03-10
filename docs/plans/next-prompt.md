@@ -2,72 +2,100 @@
 
 ## Context
 
-Phase 2.5 (Test Baseline) is complete. The E2E CI failure has been fixed:
+E2E tests now filter out expected 401/Unauthorized network errors (Playwright captures
+browser-level network failures as console errors; /api/auth/me correctly returns 401 for
+unauthenticated users).
 
-- `playwright.config.ts` now builds the web app then starts the Bun server (port 31415)
-- `.github/workflows/test-e2e.yml` has a `postgres:16` service with `DATABASE_URL`
-- `tests/e2e/app.spec.ts` tests the actual Calypso UI (login screen + layout shell)
-- All workflow files updated from `master` → `main`
+Both root `tsconfig.json` and `apps/web/tsconfig.json` now exclude `tests/component` so
+`expect.element()` (Vitest Browser Mode API) is never seen by standalone `tsc --noEmit`.
 
-All four CI workflows should now be green on the next PR merge to `main`.
+E2E workflow now uses `bunx playwright install --with-deps chromium` (single command, chromium only)
+instead of `install-deps && install chromium` which downloaded all browser dependencies and hung.
 
-## Next Task — Phase 3: The Project Board (List View)
+Root `tsconfig.json` excludes `apps/web/tests/component` — no custom `.d.ts` needed. The browser
+component tests are type-checked only by the vitest browser config at runtime.
 
-Implement the core task management interface in the 3/4 left pane.
+Component tests now use Vitest Browser Mode (`@vitest/browser` + playwright provider +
+`vitest-browser-react`). All 4 component tests pass in headless Chromium. No server or Postgres
+needed for component tests.
 
-### Step 1 — Data Layer
+- Config: `apps/web/vitest.browser.config.ts`
+- Tests: `apps/web/tests/component/task-list.test.tsx`
+- CI: `test-component.yml` runs `bun --bun vitest run --config apps/web/vitest.browser.config.ts`
+- Old `playwright-component.config.ts` deleted
 
-In `packages/core/types.ts`, add a `Task` type:
+## Next Task — Phase 3: Kanban View
 
-```ts
-export type TaskStatus = "todo" | "in_progress" | "done";
-export type TaskPriority = "low" | "medium" | "high";
+Add a second view mode to the project board: a Kanban board with status columns.
 
-export interface Task {
-  id: string;
-  name: string;
-  description: string;
-  owner: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  estimateStart: string | null; // ISO date
-  estimatedDeliver: string | null; // ISO date
-  dependsOn: string[]; // Task IDs
-  tags: string[];
-  createdAt: string;
-}
-```
+### 1. Add view toggle to App.tsx
 
-In `packages/db/index.ts`, add a `tasks` table to the schema and `migrate()`.
+In the board header, add a segmented control (List / Kanban) that switches between
+`<TaskListView />` and `<KanbanView />`. Store as `boardView: 'list' | 'kanban'` state.
 
-### Step 2 — API
+### 2. Build `apps/web/src/components/KanbanView.tsx`
 
-In `apps/server/src/api/tasks.ts`, implement:
+Three columns: **Todo**, **In Progress**, **Done** — each showing tasks filtered by status.
 
-- `GET /api/tasks` — return all tasks as JSON
-- `POST /api/tasks` — create a task, return the created row
+Each task card shows: name, owner, priority badge, due date.
 
-Wire both into `apps/server/src/index.ts`.
+Clicking a card's status badge cycles it (same `PATCH /api/tasks/:id` call as the list view).
 
-### Step 3 — UI
+No drag-and-drop yet — clicking the status badge moves the card to the next column.
 
-Build `apps/web/src/components/TaskListView.tsx` — an Asana-style data table:
+### 3. Component tests
 
-- Columns: checkbox, Name, Owner, Priority, Status, Estimated Deliver
-- Inline status toggle (click status cell to cycle: todo → in_progress → done)
-- "New Task" button opens a minimal modal/form with required fields
+Add `apps/web/tests/component/kanban.test.tsx` using `vitest-browser-react` + mocked fetch:
 
-Replace the empty state in `apps/web/src/App.tsx` (Board Content section) with
-`<TaskListView />`.
-
-### Step 4 — Tests
-
-- `apps/server/tests/integration/api.test.ts`: test `GET /api/tasks` returns 200
-  with an array, `POST /api/tasks` creates a task and returns 201.
-- `apps/web/tests/component/App.test.tsx`: test that `<TaskListView />` renders a
-  table with expected column headers.
+- Kanban renders three column headers (Todo, In Progress, Done)
+- Task with status "todo" appears in the Todo column
+- Cycling status moves the card to In Progress column
 
 ### Constraints
 
-TypeScript only. Bun for all scripts. No mocks. No forbidden packages (redux,
-zustand, prisma, etc.).
+TypeScript only. Bun for all scripts. No mocks in implementation code. No forbidden packages.
+
+---
+
+## FAILING TESTS — Must be addressed before next push
+
+The following tests were failing at the time of the last push.
+They must be **checked, fixed, or rewritten. Never ignore or skip them.**
+
+```
+
+```
+
+For each failure: determine whether the test is wrong (fix the test to match
+correct behaviour) or the implementation is wrong (fix the code). Do not
+disable, comment out, or add skip/todo markers to avoid addressing failures.
+
+---
+
+## FAILING TESTS — Must be addressed before next push
+
+The following tests were failing at the time of the last push.
+They must be **checked, fixed, or rewritten. Never ignore or skip them.**
+
+```
+
+```
+
+For each failure: determine whether the test is wrong (fix the test to match
+correct behaviour) or the implementation is wrong (fix the code). Do not
+disable, comment out, or add skip/todo markers to avoid addressing failures.
+
+---
+
+## FAILING TESTS — Must be addressed before next push
+
+The following tests were failing at the time of the last push.
+They must be **checked, fixed, or rewritten. Never ignore or skip them.**
+
+```
+
+```
+
+For each failure: determine whether the test is wrong (fix the test to match
+correct behaviour) or the implementation is wrong (fix the code). Do not
+disable, comment out, or add skip/todo markers to avoid addressing failures.

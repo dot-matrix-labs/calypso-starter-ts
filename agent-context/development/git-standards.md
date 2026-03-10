@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──extends──────────▶ agent-communication.md §Workflow: Git Commit (adds Git-Brain metadata layer)
-  this ◀──referenced by──── index.md
+this ──extends──────────▶ agent-communication.md §Workflow: Git Commit (adds Git-Brain metadata layer)
+this ◀──referenced by──── index.md
 
 > **Scope:** This document defines the **Git-Brain metadata schema** and **git hook enforcement** for Calypso projects — the reasoning ledger layer on top of standard git commits. The basic git commit workflow (staging, message format, test gate) is defined in `agent-communication.md §Workflow: Git Commit`. This document does NOT duplicate that workflow; it extends it with structured commit metadata and hook automation specific to agent-driven development.
 
@@ -132,20 +132,20 @@ GIT_BRAIN_METADATA:
 
 ## What blocks vs. what warns
 
-| Stage | Check | Behaviour |
-|---|---|---|
-| prepare-commit-msg | — | Injects conformance checklist into every new commit message |
-| pre-commit | Planning docs not staged | **BLOCKS** |
-| pre-commit | Commit touches > 10 files (excl. planning docs) | **Warns** — appended to next-prompt.md |
-| pre-commit | Lint / format | Auto-fixes applied; unfixable remainder **appended to next-prompt.md** |
-| commit-msg | Conformance checklist has unchecked boxes | **BLOCKS** |
-| commit-msg | GIT_BRAIN_METADATA missing or invalid | **BLOCKS** |
-| post-commit | Branch has ≥ 10 files changed vs. main | **Warns** — PR due; appended to next-prompt.md |
-| post-checkout | Branch switch | No-op (standards live in `agent-context/` in the repo) |
-| pre-push | Blueprint violations (.js files, forbidden packages) | **BLOCKS** |
-| pre-push | PR changes > 20 files vs. main | **BLOCKS** — split the PR |
-| pre-push | Lint / format / type failures | **BLOCKS** |
-| pre-push | Test suite failures | **Allows push** — appends failing tests to next-prompt.md |
+| Stage              | Check                                                | Behaviour                                                              |
+| ------------------ | ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| prepare-commit-msg | —                                                    | Injects conformance checklist into every new commit message            |
+| pre-commit         | Planning docs not staged                             | **BLOCKS**                                                             |
+| pre-commit         | Commit touches > 10 files (excl. planning docs)      | **Warns** — appended to next-prompt.md                                 |
+| pre-commit         | Lint / format                                        | Auto-fixes applied; unfixable remainder **appended to next-prompt.md** |
+| commit-msg         | Conformance checklist has unchecked boxes            | **BLOCKS**                                                             |
+| commit-msg         | GIT_BRAIN_METADATA missing or invalid                | **BLOCKS**                                                             |
+| post-commit        | Branch has ≥ 10 files changed vs. main               | **Warns** — PR due; appended to next-prompt.md                         |
+| post-checkout      | Branch switch                                        | No-op (standards live in `agent-context/` in the repo)                 |
+| pre-push           | Blueprint violations (.js files, forbidden packages) | **BLOCKS**                                                             |
+| pre-push           | PR changes > 20 files vs. main                       | **BLOCKS** — split the PR                                              |
+| pre-push           | Lint / format / type failures                        | **BLOCKS**                                                             |
+| pre-push           | Test suite failures                                  | **Allows push** — appends failing tests to next-prompt.md              |
 
 ---
 
@@ -201,10 +201,10 @@ The pre-commit hook has one hard block and one advisory check.
 
 Every commit must stage both planning files. This is the only reason a commit is rejected.
 
-| File | What to update |
-|---|---|
-| `docs/plans/implementation-plan.md` | Check off completed tasks; add or reorder discovered tasks |
-| `docs/plans/next-prompt.md` | Overwrite with the self-contained prompt for the next commit |
+| File                                | What to update                                               |
+| ----------------------------------- | ------------------------------------------------------------ |
+| `docs/plans/implementation-plan.md` | Check off completed tasks; add or reorder discovered tasks   |
+| `docs/plans/next-prompt.md`         | Overwrite with the self-contained prompt for the next commit |
 
 **WARNS — Lint and format (auto-fix first, then flag remainder):**
 
@@ -364,14 +364,14 @@ fi
 // Reads JSON from stdin and validates the GIT_BRAIN_METADATA schema.
 // Exits 1 with a descriptive error if validation fails.
 
-const REQUIRED = ["retroactive_prompt", "outcome", "context", "agent", "session"];
+const REQUIRED = ['retroactive_prompt', 'outcome', 'context', 'agent', 'session'];
 
 const chunks = [];
 for await (const chunk of process.stdin) chunks.push(chunk);
-const raw = chunks.join("").trim();
+const raw = chunks.join('').trim();
 
 if (!raw) {
-  process.stderr.write("GIT_BRAIN_METADATA: JSON block is empty.\n");
+  process.stderr.write('GIT_BRAIN_METADATA: JSON block is empty.\n');
   process.exit(1);
 }
 
@@ -380,22 +380,26 @@ try {
   metadata = JSON.parse(raw);
 } catch (e) {
   process.stderr.write(`GIT_BRAIN_METADATA: JSON parse error — ${e.message}\n`);
-  process.stderr.write("Ensure the block is valid JSON with no trailing commas.\n");
+  process.stderr.write('Ensure the block is valid JSON with no trailing commas.\n');
   process.exit(1);
 }
 
-const missing = REQUIRED.filter(f => !metadata[f] || String(metadata[f]).trim() === "");
+const missing = REQUIRED.filter((f) => !metadata[f] || String(metadata[f]).trim() === '');
 if (missing.length > 0) {
-  process.stderr.write(`GIT_BRAIN_METADATA: Missing or empty required fields: ${missing.join(", ")}\n`);
-  process.stderr.write("All of the following must be present and non-empty:\n");
-  REQUIRED.forEach(f => process.stderr.write(`  - ${f}\n`));
+  process.stderr.write(
+    `GIT_BRAIN_METADATA: Missing or empty required fields: ${missing.join(', ')}\n`,
+  );
+  process.stderr.write('All of the following must be present and non-empty:\n');
+  REQUIRED.forEach((f) => process.stderr.write(`  - ${f}\n`));
   process.exit(1);
 }
 
 const rp = metadata.retroactive_prompt.trim();
 if (rp.length < 50) {
-  process.stderr.write("GIT_BRAIN_METADATA: retroactive_prompt is too short (minimum 50 characters).\n");
-  process.stderr.write("It must be specific enough for another agent to reproduce this change.\n");
+  process.stderr.write(
+    'GIT_BRAIN_METADATA: retroactive_prompt is too short (minimum 50 characters).\n',
+  );
+  process.stderr.write('It must be specific enough for another agent to reproduce this change.\n');
   process.exit(1);
 }
 ```

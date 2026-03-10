@@ -34,3 +34,13 @@ CREATE TABLE IF NOT EXISTS relations (
 CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
 CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
 CREATE INDEX IF NOT EXISTS idx_relations_type ON relations(type);
+
+-- Seed required entity types
+INSERT INTO entity_types (type, schema) VALUES
+  ('user',        '{}'),
+  ('task',        '{}'),
+  ('tag',         '{}'),
+  ('github_link', '{}'),
+  ('channel',     '{}'),
+  ('message',     '{}')
+ON CONFLICT (type) DO NOTHING;

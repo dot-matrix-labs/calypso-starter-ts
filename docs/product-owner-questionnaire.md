@@ -43,7 +43,7 @@ Please review the inferred answers below. You can edit them, confirm them, or se
 > - [ ] A user wants to view the Gantt chart to adjust dependent task timelines when a GitHub PR is delayed.
 > - [ ] A user is offline or disconnected from chat but still needs to update board tasks.
 > - [ ] A slash command fails (e.g., trying to assign an invalid user or repository).
-> - [ ] Other — please specify: ****\*\*****\_\_****\*\*****
+> - [ ] Other — please specify: \***\*\*\*\*\***\_\_\***\*\*\*\*\***
 
 **Are there complex state machines for entities?**
 _(Specific questions on entities)_
@@ -67,7 +67,7 @@ _(Specific questions on entities)_
 > - [ ] **Member:** Can chat, create/edit tasks, and change views.
 > - [ ] **Guest/Viewer:** Can only read tasks and chat in specific assigned channels.
 > - [ ] Everyone has identical permissions (flat structure).
-> - [ ] Other — please specify: ****\*\*****\_\_****\*\*****
+> - [ ] Other — please specify: \***\*\*\*\*\***\_\_\***\*\*\*\*\***
 
 **What specific features and data can each role access?**
 

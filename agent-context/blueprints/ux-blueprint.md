@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/ux-implementation.md
-  this ──requires────────▶ blueprints/auth-blueprint.md (agent scopes govern agent UX)
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/ux-implementation.md
+this ──requires────────▶ blueprints/auth-blueprint.md (agent scopes govern agent UX)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines the UX posture for all Calypso applications. UX is not a visual design concern alone — it is the contract between a service and every type of user that interacts with it, including administrators and AI agents.
@@ -28,17 +28,17 @@ Applications that neglect UX as a design discipline — that defer it, treat it 
 
 ## Problem Space
 
-| Failure Mode | What is degraded or lost |
-|---|---|
-| Interface ships before service is designed | UX is forced to compensate for service design gaps; users encounter dead ends, confusing flows, and tasks that cannot be completed without workarounds |
-| Multiple paths to the same action exist | Users cannot build reliable mental models; onboarding takes longer; support costs increase; automation fails when path selection is non-deterministic |
-| Admin UI is an afterthought | Operational tasks require developer intervention or direct database access; configuration errors are not caught before execution; operations are irreversible without a safety net |
-| AI agent has no specified UX | Agents resort to browser automation or screen scraping, which breaks on any visual change and is undetectable when it fails silently |
-| AI agent's presence on the account is invisible | End-users do not know what the agent can see or do; trust is violated when the agent acts on data the user did not understand was shared |
+| Failure Mode                                                | What is degraded or lost                                                                                                                                                                 |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Interface ships before service is designed                  | UX is forced to compensate for service design gaps; users encounter dead ends, confusing flows, and tasks that cannot be completed without workarounds                                   |
+| Multiple paths to the same action exist                     | Users cannot build reliable mental models; onboarding takes longer; support costs increase; automation fails when path selection is non-deterministic                                    |
+| Admin UI is an afterthought                                 | Operational tasks require developer intervention or direct database access; configuration errors are not caught before execution; operations are irreversible without a safety net       |
+| AI agent has no specified UX                                | Agents resort to browser automation or screen scraping, which breaks on any visual change and is undetectable when it fails silently                                                     |
+| AI agent's presence on the account is invisible             | End-users do not know what the agent can see or do; trust is violated when the agent acts on data the user did not understand was shared                                                 |
 | Beautiful prototype replaced by utilitarian production code | Management anchor on the prototype quality is broken; stakeholders lose confidence; remediation requires a design retrofit that is more expensive than building correctly from the start |
-| Design is coupled to a front-end framework | Redesigning or porting the UX requires rewriting both design and implementation; design decisions are constrained by framework capabilities rather than user needs |
-| Complexity is exposed by default | Users encounter features they do not need before they understand the ones they do; first-use abandonment increases; the product appears more complex than its core value warrants |
-| Agent scope on the account is undefined | Agent writes, reads, or triggers actions beyond the user's expectation; the system has no mechanism to audit or limit what the agent did on the user's behalf |
+| Design is coupled to a front-end framework                  | Redesigning or porting the UX requires rewriting both design and implementation; design decisions are constrained by framework capabilities rather than user needs                       |
+| Complexity is exposed by default                            | Users encounter features they do not need before they understand the ones they do; first-use abandonment increases; the product appears more complex than its core value warrants        |
+| Agent scope on the account is undefined                     | Agent writes, reads, or triggers actions beyond the user's expectation; the system has no mechanism to audit or limit what the agent did on the user's behalf                            |
 
 ---
 
@@ -258,4 +258,3 @@ See [`agent-context/implementation-ts/ux-implementation.md`](../implementation-t
 - **Multiple equally prominent paths to the same action.** Offering two buttons that appear to do the same thing, two navigation entries for the same destination, or two API endpoints for the same operation forces the user to reason about whether the paths are truly equivalent. They will often be wrong. One path is a design decision; two paths are an unresolved design conflict.
 
 - **Complexity surfaced by default.** Showing all capabilities, settings, and options on first use causes cognitive overload and slows users to the speed of their least-needed feature. Default views must be designed for the primary task; everything else requires deliberate disclosure.
-

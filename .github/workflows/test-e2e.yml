@@ -34,7 +34,7 @@ jobs:
         uses: oven-sh/setup-bun@v1
       - name: Install Dependencies
         run: bun install
-      - name: Install Playwright OS Dependencies
-        run: bunx playwright install-deps && bunx playwright install chromium
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
       - name: Run E2E Tests
         run: bunx playwright test

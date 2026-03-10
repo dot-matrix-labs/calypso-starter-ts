@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──referenced by── agent-communication.md §Workflow: Hardening
-  this ──requires────────▶ implementation-ts/[domain]-implementation.md (correctness and antipattern checklists)
+this ◀──referenced by── agent-communication.md §Workflow: Hardening
+this ──requires────────▶ implementation-ts/[domain]-implementation.md (correctness and antipattern checklists)
 
 ---
 
@@ -345,21 +345,23 @@ Store vendor CLI credentials as base64-encoded GitHub Secrets. See `reference/ag
 
 ## Conventions
 
-| Item | Rule |
-|---|---|
-| Commit prefix | `harden:` |
-| Branch name | `harden/<discipline>-<YYYYMMDD>` (e.g. `harden/coverage-20260308`) |
-| PR size | Under 5 files changed |
-| Session timeout | 30 minutes |
-| Max agent turns | 10 |
-| Disciplines per run | 1 |
-| PRs per run | 1 |
+| Item                 | Rule                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| Commit prefix        | `harden:`                                                                             |
+| Branch name          | `harden/<discipline>-<YYYYMMDD>` (e.g. `harden/coverage-20260308`)                    |
+| PR size              | Under 5 files changed                                                                 |
+| Session timeout      | 30 minutes                                                                            |
+| Max agent turns      | 10                                                                                    |
+| Disciplines per run  | 1                                                                                     |
+| PRs per run          | 1                                                                                     |
 | `retroactive_prompt` | Describes the specific weakness addressed and why it was the highest priority finding |
 
 **`retroactive_prompt` example (correct):**
+
 > "The `/api/users` endpoint accepted arbitrary SQL ORDER BY column names passed directly from query params, enabling SQL injection. Added parameterized column allowlist and a test that verifies the injection pattern is rejected."
 
 **`retroactive_prompt` example (wrong):**
+
 > "Security hardening pass. Fixed SQL issues."
 
 ---

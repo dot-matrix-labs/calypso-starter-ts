@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/process-implementation.md
-  this ◀──referenced by──── development/development-standards.md
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/process-implementation.md
+this ◀──referenced by──── development/development-standards.md
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines the development process for AI-agent-built software: how work is planned, how progress is tracked, and how an agent advances through a product lifecycle without continuous human prompting.
@@ -16,9 +16,9 @@ CONTEXT MAP
 
 Software development is a state machine. Each unit of work transforms the project from one known state to a known next state. In human-driven development, the state machine runs on tribal knowledge, standup meetings, and ticket boards — none of which an AI agent can attend. When an agent starts a session, it has no memory of what happened yesterday, no sense of what is blocked, and no intuition about what matters most. Without an explicit, machine-readable process, the agent either waits for a human to tell it what to do next (defeating the purpose of autonomous development) or guesses (producing work that may be irrelevant, redundant, or out of order).
 
-A correct process for agent-driven development makes the state machine explicit. The product requirements describe *what* to build. The implementation plan describes *how* to build it and tracks completion. The next-prompt file tells the agent exactly what to do when it wakes up. Together, these three documents form a closed loop: every commit advances the plan and writes the instructions for the next commit. The agent becomes self-advancing — a human can walk away for hours and return to find meaningful, ordered progress.
+A correct process for agent-driven development makes the state machine explicit. The product requirements describe _what_ to build. The implementation plan describes _how_ to build it and tracks completion. The next-prompt file tells the agent exactly what to do when it wakes up. Together, these three documents form a closed loop: every commit advances the plan and writes the instructions for the next commit. The agent becomes self-advancing — a human can walk away for hours and return to find meaningful, ordered progress.
 
-**Scope Note:** This blueprint applies exclusively to the agent's *engineering and development roles* (e.g., writing code, planning features, scaffolding projects). It does not govern any administrative, operational, or in-app roles the agent may hold on behalf of end-users within the deployed software. Those roles are governed by the respective functional blueprints including Auth, Data, and UX.
+**Scope Note:** This blueprint applies exclusively to the agent's _engineering and development roles_ (e.g., writing code, planning features, scaffolding projects). It does not govern any administrative, operational, or in-app roles the agent may hold on behalf of end-users within the deployed software. Those roles are governed by the respective functional blueprints including Auth, Data, and UX.
 
 The cost of ignoring this blueprint is an agent that produces impressive-looking code in random order, skipping foundational work to build visible features, leaving gaps that compound until the project requires a human to manually re-plan and re-prioritize. The process is not overhead — it is the mechanism that converts an agent from a sophisticated autocomplete into a reliable development partner.
 
@@ -26,17 +26,17 @@ The cost of ignoring this blueprint is an agent that produces impressive-looking
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Agent starts a session with no context about prior work | Continuity — the agent must resume exactly where the last session left off |
-| Agent builds features before foundational infrastructure exists | Build order — scaffolding, CI, and test stubs must precede feature work |
-| Product requirements change mid-development | Adaptability — the plan must accommodate changes without losing track of completed work |
-| Agent works on low-priority tasks while critical work is blocked | Prioritization — the implementation plan must encode priority and ordering |
-| Multiple agents work on the same project with conflicting plans | Single source of truth — one plan file, one next-prompt, no parallel plans |
-| Agent completes work but does not update the plan | Plan accuracy — the plan must reflect reality at every commit |
-| Human overrides the agent's next task | Human authority — the next-prompt file is human-editable and the agent respects overrides |
-| Agent session crashes mid-task | Recoverability — git commits are the unit of durable progress; uncommitted work is forfeit |
-| Requirements are ambiguous or incomplete | Requirement quality — the PRD interview must extract concrete, testable requirements |
+| Scenario                                                         | What must be protected                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Agent starts a session with no context about prior work          | Continuity — the agent must resume exactly where the last session left off                 |
+| Agent builds features before foundational infrastructure exists  | Build order — scaffolding, CI, and test stubs must precede feature work                    |
+| Product requirements change mid-development                      | Adaptability — the plan must accommodate changes without losing track of completed work    |
+| Agent works on low-priority tasks while critical work is blocked | Prioritization — the implementation plan must encode priority and ordering                 |
+| Multiple agents work on the same project with conflicting plans  | Single source of truth — one plan file, one next-prompt, no parallel plans                 |
+| Agent completes work but does not update the plan                | Plan accuracy — the plan must reflect reality at every commit                              |
+| Human overrides the agent's next task                            | Human authority — the next-prompt file is human-editable and the agent respects overrides  |
+| Agent session crashes mid-task                                   | Recoverability — git commits are the unit of durable progress; uncommitted work is forfeit |
+| Requirements are ambiguous or incomplete                         | Requirement quality — the PRD interview must extract concrete, testable requirements       |
 
 ---
 
@@ -56,7 +56,7 @@ An agent should never need to decide "what should I do now?" by analyzing the en
 
 ### Requirements are extracted, not assumed
 
-The agent does not guess what the product should do. It generates structured interview questions for the Product Owner, collects answers, and writes a canonical Product Requirements Document. The PRD is owned by the human; the implementation plan is derived from it by the agent. This separation ensures the human controls *what* and the agent controls *how*.
+The agent does not guess what the product should do. It generates structured interview questions for the Product Owner, collects answers, and writes a canonical Product Requirements Document. The PRD is owned by the human; the implementation plan is derived from it by the agent. This separation ensures the human controls _what_ and the agent controls _how_.
 
 ### Infrastructure enforces sequencing
 

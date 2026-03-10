@@ -3,10 +3,10 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──requires────────▶ blueprints/auth-blueprint.md (agent credential mechanics)
-  this ──requires────────▶ blueprints/data-blueprint.md (data tier the agent operates on)
-  this ──requires────────▶ blueprints/environment-blueprint.md (worker container model)
-  this ◀──referenced by──── index.md
+this ──requires────────▶ blueprints/auth-blueprint.md (agent credential mechanics)
+this ──requires────────▶ blueprints/data-blueprint.md (data tier the agent operates on)
+this ──requires────────▶ blueprints/environment-blueprint.md (worker container model)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines the agent-as-service execution model: how AI agents run as containerized daemons, what data they may read, why they may never write directly to the database, and how they submit results through user-authenticated API transactions. Read the [Auth Blueprint](./auth-blueprint.md) for agent credential mechanics and the [Data Blueprint](./data-blueprint.md) for the data tier the agent operates on.
@@ -29,18 +29,18 @@ The cost of ignoring this blueprint is an agent-shaped hole in the application's
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Agent writes malformed or adversarially crafted data directly to the database | Data integrity — all writes must pass through the API layer's validation and business logic |
-| Compromised agent credential grants write access to the database | Database integrity — the agent DB role must be read-only; write access is structurally impossible regardless of credential scope |
-| Agent reads data outside its authorized scope (e.g., another user's records) | User data privacy — agent DB role must be restricted to task-queue views and anonymized/aggregated data, enforced by row-level security |
-| Agent acts on a task that has already been claimed or cancelled | Task integrity — task queue must use atomic claim operations; acting on a stale task must produce a rejected API response |
-| Delegated user token used by agent outlives the task it was issued for | Authorization scope — delegated tokens must be single-use and task-scoped; a consumed token must not be reusable |
-| Agent submits a result that impersonates a different user | User identity integrity — the API layer must verify that the delegated token's user identity matches the task's owner |
-| Agent container gains shell access or package management capability | Container security — worker containers are distroless; no shell, no package manager, no escalation path |
-| Agent type A accesses task types or data views belonging to agent type B | Agent isolation — each agent type's DB role grants access only to its own task queue view; type claims are validated by the API |
-| AI vendor API key leaked from worker container environment | Blast radius of key compromise — vendor API keys must be scoped to minimum permissions and rotated on schedule |
-| Agent spawns a vendor CLI binary that exfiltrates data via network | Egress control — worker containers must have narrowly scoped network egress; vendor CLI calls must be audited via structured logging |
+| Scenario                                                                      | What must be protected                                                                                                                  |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Agent writes malformed or adversarially crafted data directly to the database | Data integrity — all writes must pass through the API layer's validation and business logic                                             |
+| Compromised agent credential grants write access to the database              | Database integrity — the agent DB role must be read-only; write access is structurally impossible regardless of credential scope        |
+| Agent reads data outside its authorized scope (e.g., another user's records)  | User data privacy — agent DB role must be restricted to task-queue views and anonymized/aggregated data, enforced by row-level security |
+| Agent acts on a task that has already been claimed or cancelled               | Task integrity — task queue must use atomic claim operations; acting on a stale task must produce a rejected API response               |
+| Delegated user token used by agent outlives the task it was issued for        | Authorization scope — delegated tokens must be single-use and task-scoped; a consumed token must not be reusable                        |
+| Agent submits a result that impersonates a different user                     | User identity integrity — the API layer must verify that the delegated token's user identity matches the task's owner                   |
+| Agent container gains shell access or package management capability           | Container security — worker containers are distroless; no shell, no package manager, no escalation path                                 |
+| Agent type A accesses task types or data views belonging to agent type B      | Agent isolation — each agent type's DB role grants access only to its own task queue view; type claims are validated by the API         |
+| AI vendor API key leaked from worker container environment                    | Blast radius of key compromise — vendor API keys must be scoped to minimum permissions and rotated on schedule                          |
+| Agent spawns a vendor CLI binary that exfiltrates data via network            | Egress control — worker containers must have narrowly scoped network egress; vendor CLI calls must be audited via structured logging    |
 
 ---
 
@@ -252,24 +252,24 @@ interface AgentTask {
   type: AgentTaskType;
   ownerId: string;
   payload: unknown;
-  delegatedToken: string;   // single-use, task-scoped, short TTL
+  delegatedToken: string; // single-use, task-scoped, short TTL
   claimedAt: string;
   expiresAt: string;
 }
 
-type AgentTaskType = "coding" | "analysis"; // extended as new types are added
+type AgentTaskType = 'coding' | 'analysis'; // extended as new types are added
 
 interface TaskResult {
   taskId: string;
   agentType: AgentTaskType;
-  outputHash: string;       // SHA-256 of the full output, for audit
-  payload: unknown;         // the structured result, validated by API on receipt
+  outputHash: string; // SHA-256 of the full output, for audit
+  payload: unknown; // the structured result, validated by API on receipt
 }
 
 interface VendorExecutionRecord {
   taskId: string;
-  vendor: "claude" | "gemini" | "codex";
-  inputHash: string;        // SHA-256 of prompt — content not stored here
+  vendor: 'claude' | 'gemini' | 'codex';
+  inputHash: string; // SHA-256 of prompt — content not stored here
   outputHash: string;
   durationMs: number;
   exitCode: number;
@@ -282,10 +282,10 @@ interface VendorExecutionRecord {
 // queue.ts — simplified; full implementation in containers/agent/lib/queue.ts
 async function claimNextTask(apiBase: string, agentType: AgentTaskType): Promise<AgentTask | null> {
   const res = await fetch(`${apiBase}/api/agent/tasks/claim`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "content-type": "application/json",
-      "authorization": `Bearer ${process.env.AGENT_SERVICE_TOKEN}`,
+      'content-type': 'application/json',
+      authorization: `Bearer ${process.env.AGENT_SERVICE_TOKEN}`,
     },
     body: JSON.stringify({ agentType }),
   });
@@ -296,10 +296,10 @@ async function claimNextTask(apiBase: string, agentType: AgentTaskType): Promise
 
 async function submitResult(apiBase: string, task: AgentTask, result: TaskResult): Promise<void> {
   const res = await fetch(`${apiBase}/api/agent/tasks/${task.id}/result`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "content-type": "application/json",
-      "x-delegated-token": task.delegatedToken,  // user-scoped, single-use
+      'content-type': 'application/json',
+      'x-delegated-token': task.delegatedToken, // user-scoped, single-use
     },
     body: JSON.stringify(result),
   });
@@ -309,14 +309,14 @@ async function submitResult(apiBase: string, task: AgentTask, result: TaskResult
 
 ### Dependency Justification
 
-| Package / Tool | Reason | Decision |
-|---|---|---|
-| `bun` (runtime) | Consistent with project standard; fast process spawn; built-in fetch | Buy |
-| `node` (runtime, for vendor CLIs) | Claude Code CLI and Gemini CLI require Node to execute | Buy — no DIY path |
-| `claude` CLI binary | Claude Code's tool-use and coding capabilities require the official CLI | Buy |
-| `gemini` CLI binary | Gemini's multimodal and analysis capabilities via official CLI | Buy |
-| Custom queue poller | Simple polling loop; no queue library justified at this scale | DIY |
-| Custom delegated token handler | Token format is application-specific; no library matches the single-use pattern | DIY |
+| Package / Tool                    | Reason                                                                          | Decision          |
+| --------------------------------- | ------------------------------------------------------------------------------- | ----------------- |
+| `bun` (runtime)                   | Consistent with project standard; fast process spawn; built-in fetch            | Buy               |
+| `node` (runtime, for vendor CLIs) | Claude Code CLI and Gemini CLI require Node to execute                          | Buy — no DIY path |
+| `claude` CLI binary               | Claude Code's tool-use and coding capabilities require the official CLI         | Buy               |
+| `gemini` CLI binary               | Gemini's multimodal and analysis capabilities via official CLI                  | Buy               |
+| Custom queue poller               | Simple polling loop; no queue library justified at this scale                   | DIY               |
+| Custom delegated token handler    | Token format is application-specific; no library matches the single-use pattern | DIY               |
 
 ---
 

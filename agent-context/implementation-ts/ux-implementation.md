@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──implements──▶ blueprints/ux-blueprint.md
-  this ◀──referenced by── index.md
+this ──implements──▶ blueprints/ux-blueprint.md
+this ◀──referenced by── index.md
 
 > Implements: UX Blueprint (`agent-context/blueprints/ux-blueprint.md`)
 
@@ -36,9 +36,9 @@ The principles, threat model, and patterns in that document apply equally to oth
 ```typescript
 // Service capability — the atomic unit of UX design
 interface Capability {
-  id: string;                     // e.g. 'invoice.create'
-  allowedActors: ActorType[];     // ['end-user', 'admin', 'agent']
-  requiredScopes: string[];       // e.g. ['invoices:write']
+  id: string; // e.g. 'invoice.create'
+  allowedActors: ActorType[]; // ['end-user', 'admin', 'agent']
+  requiredScopes: string[]; // e.g. ['invoices:write']
 }
 
 // Actor types — determines which interface surface is appropriate
@@ -48,8 +48,8 @@ type ActorType = 'end-user' | 'admin' | 'agent';
 interface AgentPresence {
   agentId: string;
   accountId: string;
-  declaredScopes: string[];       // what the agent is authorized to do
-  visibleToAccountHolder: true;   // invariant: always true
+  declaredScopes: string[]; // what the agent is authorized to do
+  visibleToAccountHolder: true; // invariant: always true
   grantedAt: number;
   lastActiveAt: number;
 }
@@ -59,7 +59,7 @@ interface AgentActionRecord {
   agentId: string;
   accountId: string;
   capabilityId: string;
-  inputSummary: string;           // human-readable, not raw payload
+  inputSummary: string; // human-readable, not raw payload
   outcome: 'success' | 'rejected' | 'failed';
   timestamp: number;
 }
@@ -75,20 +75,20 @@ interface ServiceFlowTransition {
   id: string;
   trigger: 'user-action' | 'system-event' | 'agent-action';
   targetStateId: string;
-  requiredCapability: string;     // maps to Capability.id
+  requiredCapability: string; // maps to Capability.id
 }
 ```
 
 ## Dependency Justification
 
-| Package | Decision | Reason |
-|---|---|---|
-| React | Buy | UI component model; no viable DIY for the browser rendering layer |
-| Tailwind CSS | Buy | Design token system and utility classes; DIY CSS at scale is unmaintainable without a preprocessor or framework |
-| Design token generator | DIY | Token definitions are a JSON file; no package needed |
-| Agent SDK HTTP client | DIY | `fetch` is native to Bun; a thin typed wrapper over `fetch` is < 50 lines |
-| Component documentation tool | DIY | Design system documentation is a static markdown or auto-generated HTML artifact produced by the build pipeline; no runtime dev server tool (e.g. Storybook) is warranted |
-| Form state management | DIY | React `useState` + controlled inputs handle all form cases; no external library needed at Calypso scale |
+| Package                      | Decision | Reason                                                                                                                                                                    |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| React                        | Buy      | UI component model; no viable DIY for the browser rendering layer                                                                                                         |
+| Tailwind CSS                 | Buy      | Design token system and utility classes; DIY CSS at scale is unmaintainable without a preprocessor or framework                                                           |
+| Design token generator       | DIY      | Token definitions are a JSON file; no package needed                                                                                                                      |
+| Agent SDK HTTP client        | DIY      | `fetch` is native to Bun; a thin typed wrapper over `fetch` is < 50 lines                                                                                                 |
+| Component documentation tool | DIY      | Design system documentation is a static markdown or auto-generated HTML artifact produced by the build pipeline; no runtime dev server tool (e.g. Storybook) is warranted |
+| Form state management        | DIY      | React `useState` + controlled inputs handle all form cases; no external library needed at Calypso scale                                                                   |
 
 ---
 

@@ -40,8 +40,11 @@ The E2E workflow fails because:
 
 - [x] **Fix post-commit and pre-push hooks:** Run `bunx prettier --write docs/plans/next-prompt.md` after appending to avoid blocking the next push.
 - [x] **Rebase onto starter/main:** Force-rebased `feat/scaffold` onto `dot-matrix-labs/calypso-starter:main` to establish shared history for PR creation.
+- [x] **tsconfig excludes for browser tests:** Both root and `apps/web` tsconfigs exclude `tests/component` so `expect.element()` is never seen by standalone `tsc --noEmit`.
+- [x] **Playwright CI install:** Use `bunx playwright install --with-deps chromium` (not `install-deps && install`) in both E2E and component workflows to avoid downloading all browser deps.
 - [x] **Fix `playwright.config.ts` webServer:** Changed command to `bun run --filter web build && bun run apps/server/src/index.ts`. Uses `url:` (not `port:`) with 60s timeout.
 - [x] **Fix `.github/workflows/test-e2e.yml`:** Added `postgres:16` service with `DATABASE_URL`. Fixed branch refs (`master` → `main`) in all four workflow files.
+- [x] **E2E console error filter:** Filter out 401/Unauthorized network errors from E2E console error checks — Playwright captures browser-level network failures as console errors; /api/auth/me returning 401 is expected and handled gracefully.
 - [x] **Rewrite `tests/e2e/app.spec.ts`:** Two smoke tests — (1) login screen renders, (2) register → Calypso layout shell visible (Main Project + Team Chat). Selectors match actual Login.tsx markup.
 - [x] **Verify unit and component tests pass:** All three test stubs are clean (no stale journalism references).
 
@@ -49,8 +52,13 @@ The E2E workflow fails because:
 
 Implement the core task management interface with the required views.
 
-- [ ] **Task Creation & Editing:** Forms/modals to create tasks with the required semantic fields.
-- [ ] **View 1: List View:** Asana-style data table with inline editing and checkboxes.
+- [x] **Task Creation & Editing:** `POST /api/tasks` endpoint + New Task modal with name, owner, priority, due date fields.
+- [x] **View 1: List View:** `TaskListView` — Asana-style table with status cycling, priority color, due date. Wired into App.tsx. Blueprint-compliant component tests in headless Chromium (Playwright).
+- [x] **Blueprint compliance:** Component tests run in headless Chromium via `playwright-component.config.ts`. API integration tests start server + Postgres in CI. `wait-on` added as dev dep.
+- [x] **`apps/web/tsconfig.json`:** Scoped to `src/` and `tests/` with DOM lib — prevents web build from picking up Bun-typed server files.
+- [x] **Vitest runtime:** All `bunx vitest` replaced with `bun --bun vitest` so workers run in Bun runtime. Note: Vitest's Vite transform pipeline still intercepts `import.meta.dir` — integration tests must not call `migrate()` directly; the running server handles it on startup.
+- [x] **Server static path:** Use `import.meta.dir` for the web/dist path in `apps/server/src/index.ts` so it resolves correctly regardless of cwd (fixes E2E/component webServer startup).
+- [x] **Component tests:** Migrate from standalone Playwright config to Vitest Browser Mode (`@vitest/browser` + `playwright` provider + `vitest-browser-react`) for proper React component testing in Chromium. Config: `apps/web/vitest.browser.config.ts`. CI: `test-component.yml` runs `bun --bun vitest run --config apps/web/vitest.browser.config.ts` (no server or Postgres needed). Root `tsconfig.json` excludes `apps/web/tests/component` — no custom `.d.ts` needed.
 - [ ] **View 2: Kanban View:** GitHub Projects-style drag-and-drop board based on customizable status columns.
 - [ ] **View 3: Gantt Waterfall:** Timeline view visualizing tasks based on `Estimate Start`, `Estimated Deliver`, and `Depends On` relationships.
 

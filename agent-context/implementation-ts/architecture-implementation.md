@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──implements──▶ blueprints/architecture-blueprint.md
-  this ◀──referenced by── index.md
+this ──implements──▶ blueprints/architecture-blueprint.md
+this ◀──referenced by── index.md
 
 > Implements: Architecture Blueprint (`agent-context/blueprints/architecture-blueprint.md`)
 
@@ -14,16 +14,16 @@ The principles, threat model, and patterns in that document apply equally to oth
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Language | TypeScript (only) |
-| Runtime | Bun (server and build) |
-| UI Framework | React (latest stable) |
-| Styling | Tailwind CSS (vanilla, no processors) |
-| State Management | React hooks and minimal context (no heavy state libraries) |
-| Unit Testing | Vitest |
-| Browser/E2E Testing | Playwright |
-| API Style | REST |
+| Layer               | Choice                                                     |
+| ------------------- | ---------------------------------------------------------- |
+| Language            | TypeScript (only)                                          |
+| Runtime             | Bun (server and build)                                     |
+| UI Framework        | React (latest stable)                                      |
+| Styling             | Tailwind CSS (vanilla, no processors)                      |
+| State Management    | React hooks and minimal context (no heavy state libraries) |
+| Unit Testing        | Vitest                                                     |
+| Browser/E2E Testing | Playwright                                                 |
+| API Style           | REST                                                       |
 
 ## Repository Structure
 
@@ -62,24 +62,24 @@ The principles, threat model, and patterns in that document apply equally to oth
 
 ## Core Service Categories
 
-| Service Area | Location |
-|---|---|
+| Service Area                           | Location                                       |
+| -------------------------------------- | ---------------------------------------------- |
 | Ingestion / integration (REST clients) | `/packages/services`, `/packages/integrations` |
-| Core business logic / domain | `/packages/core` |
-| UI modules, editors, workspaces | `/packages/ui`, `/apps/web` |
-| Export / external integration | `/packages/integrations` |
-| Authentication and authorization | `/apps/server` (middleware) |
+| Core business logic / domain           | `/packages/core`                               |
+| UI modules, editors, workspaces        | `/packages/ui`, `/apps/web`                    |
+| Export / external integration          | `/packages/integrations`                       |
+| Authentication and authorization       | `/apps/server` (middleware)                    |
 
 ## Dependency Policy
 
 **Threshold:** Both must be true: (1) critical functionality not feasible internally, (2) mature, minimal footprint, well-maintained.
 
-| Package | Reason | Buy or DIY |
-|---|---|---|
-| Stripe SDK | Payment processing with PCI compliance; infeasible to DIY | Buy |
-| `date-fns` | Basic date formatting; agent generates a focused internal version | DIY |
-| Playwright | Headless browser automation; no viable internal alternative | Buy |
-| Small UI components | Agent generates tested, tree-shaken versions | DIY |
+| Package             | Reason                                                            | Buy or DIY |
+| ------------------- | ----------------------------------------------------------------- | ---------- |
+| Stripe SDK          | Payment processing with PCI compliance; infeasible to DIY         | Buy        |
+| `date-fns`          | Basic date formatting; agent generates a focused internal version | DIY        |
+| Playwright          | Headless browser automation; no viable internal alternative       | Buy        |
+| Small UI components | Agent generates tested, tree-shaken versions                      | DIY        |
 
 All dependencies documented in `docs/dependencies.md` with risk/benefit justification. Versions locked. Transitive trees reviewed regularly.
 

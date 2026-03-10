@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──implements──▶ blueprints/data-blueprint.md
-  this ◀──referenced by── index.md
+this ──implements──▶ blueprints/data-blueprint.md
+this ◀──referenced by── index.md
 
 > Implements: Data Blueprint (`agent-context/blueprints/data-blueprint.md`)
 
@@ -16,19 +16,19 @@ The principles, threat model, and patterns in that document apply equally to oth
 
 PostgreSQL from the first commit. Three core tables in `calypso_app` provide a flexible property graph model.
 
-| Table | Purpose |
-|---|---|
-| `entities` | The nodes: `id`, `type`, `properties` (JSONB), `tenant_id`, `version`. |
-| `relations` | The edges: `id`, `source_id`, `target_id`, `type`, `properties` (JSONB). |
+| Table          | Purpose                                                                          |
+| -------------- | -------------------------------------------------------------------------------- |
+| `entities`     | The nodes: `id`, `type`, `properties` (JSONB), `tenant_id`, `version`.           |
+| `relations`    | The edges: `id`, `source_id`, `target_id`, `type`, `properties` (JSONB).         |
 | `entity_types` | The registry: `type` (PK), `schema` (JSONB), `sensitive` (text[]), `kms_key_id`. |
 
 ### Roles and Privileges
 
-| Database | Role | Privileges |
-|---|---|---|
-| `calypso_app` | `app_rw` | Read + write on `entities`, `relations`, `entity_types`. |
-| `calypso_analytics` | `analytics_w` | `INSERT` only on analytics entities/relations. |
-| `calypso_audit` | `audit_w` | `INSERT` only on the audit log table. |
+| Database            | Role          | Privileges                                               |
+| ------------------- | ------------- | -------------------------------------------------------- |
+| `calypso_app`       | `app_rw`      | Read + write on `entities`, `relations`, `entity_types`. |
+| `calypso_analytics` | `analytics_w` | `INSERT` only on analytics entities/relations.           |
+| `calypso_audit`     | `audit_w`     | `INSERT` only on the audit log table.                    |
 
 The application server holds three separate connection pools. `app_rw` credentials are used for the transactional graph; `analytics_w` for the analytics tier; `audit_w` for the append-only audit log.
 
@@ -153,8 +153,8 @@ interface FieldEncryptor {
 interface AnalyticsEvent {
   type: string;
   payload: Record<string, unknown>;
-  sessionPseudonym: string;  // rotating session pseudonym, never a user ID
-  eventId: string;           // UUIDv4 — used for idempotent INSERT ON CONFLICT
+  sessionPseudonym: string; // rotating session pseudonym, never a user ID
+  eventId: string; // UUIDv4 — used for idempotent INSERT ON CONFLICT
   timestamp: number;
   // signature: base64url(HMAC-SHA256(sessionSigningKey, type + eventId + timestamp + payload))
   //
@@ -185,15 +185,15 @@ type QueryFn<TParams, TResult> = (params: TParams) => Promise<TResult[]>;
 
 ## Dependency Justification
 
-| Package | Reason | Buy or DIY |
-|---|---|---|
-| `postgres` (npm) | PostgreSQL wire protocol client for Node/Bun — tagged template literal API produces parameterized queries by default, making string-concatenation injection structurally difficult | Buy |
-| AES-256-GCM encrypt/decrypt | Web Crypto API (`crypto.subtle`) covers this natively | DIY |
-| Key derivation (HKDF) | Web Crypto API covers this natively | DIY |
-| ORM (Prisma, TypeORM, Drizzle) | Adds schema file, generation step, runtime abstraction; agents write SQL directly | Do not buy |
-| Differential privacy library | Laplace noise addition is ~20 lines. **Caveat:** privacy budget tracking (epsilon accounting per dataset, atomic decrement, exhaustion enforcement) is an additional ~100 lines of DB-backed state in `calypso_app` — not a library concern, but it must be built before DP is considered active | DIY |
-| KMS SDK (AWS/GCP/Vault) | Required for cloud KMS and Vault integration; use the official thin client for the target provider | Buy (when needed) |
-| `bun:sqlite` | No longer used | Do not use |
+| Package                        | Reason                                                                                                                                                                                                                                                                                           | Buy or DIY        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| `postgres` (npm)               | PostgreSQL wire protocol client for Node/Bun — tagged template literal API produces parameterized queries by default, making string-concatenation injection structurally difficult                                                                                                               | Buy               |
+| AES-256-GCM encrypt/decrypt    | Web Crypto API (`crypto.subtle`) covers this natively                                                                                                                                                                                                                                            | DIY               |
+| Key derivation (HKDF)          | Web Crypto API covers this natively                                                                                                                                                                                                                                                              | DIY               |
+| ORM (Prisma, TypeORM, Drizzle) | Adds schema file, generation step, runtime abstraction; agents write SQL directly                                                                                                                                                                                                                | Do not buy        |
+| Differential privacy library   | Laplace noise addition is ~20 lines. **Caveat:** privacy budget tracking (epsilon accounting per dataset, atomic decrement, exhaustion enforcement) is an additional ~100 lines of DB-backed state in `calypso_app` — not a library concern, but it must be built before DP is considered active | DIY               |
+| KMS SDK (AWS/GCP/Vault)        | Required for cloud KMS and Vault integration; use the official thin client for the target provider                                                                                                                                                                                               | Buy (when needed) |
+| `bun:sqlite`                   | No longer used                                                                                                                                                                                                                                                                                   | Do not use        |
 
 ---
 

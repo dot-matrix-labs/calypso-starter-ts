@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──implements──▶ blueprints/process-blueprint.md
-  this ◀──referenced by── index.md
+this ──implements──▶ blueprints/process-blueprint.md
+this ◀──referenced by── index.md
 
 > Implements: Process Blueprint (`agent-context/blueprints/process-blueprint.md`)
 
@@ -14,11 +14,11 @@ The principles, threat model, and patterns in that document apply equally to oth
 
 ## Planning Documents
 
-| File | Scope | Owner |
-|---|---|---|
-| `docs/prd.md` | What the product must do | Human (Product Owner) |
+| File                                | Scope                                     | Owner                      |
+| ----------------------------------- | ----------------------------------------- | -------------------------- |
+| `docs/prd.md`                       | What the product must do                  | Human (Product Owner)      |
 | `docs/plans/implementation-plan.md` | All tasks, ordered, with completion state | Agent, updated each commit |
-| `docs/plans/next-prompt.md` | The single next action | Agent, updated each commit |
+| `docs/plans/next-prompt.md`         | The single next action                    | Agent, updated each commit |
 
 ## Requirements Interview
 
@@ -28,12 +28,14 @@ The agent generates a structured interview using the template in the process sta
 
 ```markdown
 ## Phase: Scaffold
+
 - [x] Initialize git repository
 - [x] Create GitHub remote
 - [x] Set up CI workflows
 - [ ] Stub all test suites
 
 ## Phase: Prototype
+
 - [ ] Create landing page with mock data
 - [ ] Implement basic navigation
 ```
@@ -74,6 +76,6 @@ The git pre-commit hook (defined in `git-standards.md`) verifies that both `docs
 
 ## Dependency Justification
 
-| Package | Reason | Buy or DIY |
-|---|---|---|
-| None required | The process blueprint introduces no runtime dependencies | N/A |
+| Package       | Reason                                                   | Buy or DIY |
+| ------------- | -------------------------------------------------------- | ---------- |
+| None required | The process blueprint introduces no runtime dependencies | N/A        |

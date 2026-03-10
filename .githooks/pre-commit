@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # commit size advisory + lint/format auto-fix.
 STAGED=$(git diff --cached --name-only)
-STAGED_DIFF=$(git diff --cached -- ':!.githooks')
+STAGED_DIFF=$(git diff --cached -- ':!.githooks' ':!bun.lock' ':!package-lock.json' ':!yarn.lock')
 
 # These are deterministic checks on the staged diff — no agent assertion needed.
 VIOLATIONS=()

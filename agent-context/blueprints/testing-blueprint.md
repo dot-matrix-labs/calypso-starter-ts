@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/testing-implementation.md
-  this ──requires────────▶ blueprints/environment-blueprint.md (ephemeral test containers)
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/testing-implementation.md
+this ──requires────────▶ blueprints/environment-blueprint.md (ephemeral test containers)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines the testing strategy for AI-agent-built software: what to test, how to test it, and how continuous integration enforces correctness at every commit.
@@ -24,17 +24,17 @@ The testing strategy for agent-built software rejects mocking as a foundational 
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Code passes tests on macOS but fails on Linux in production | Environment parity — tests must run on the same OS and runtime as production |
-| Mock-based test passes but real API behavior differs | Test validity — tests must exercise real behavior, not developer assumptions |
-| Agent generates test fixtures by guessing API response shapes | Fixture accuracy — fixtures must be recorded from real API calls, never fabricated |
-| Browser test passes in Node/JSDOM but fails in real Chromium | Browser fidelity — component and E2E tests must run in a real browser engine |
-| Test suite passes but critical user workflow is untested | Coverage completeness — test categories must cover unit, integration, component, and end-to-end |
-| CI allows merge despite failing tests | Merge gating — no code merges without all test suites passing |
-| Flaky test is ignored or disabled instead of fixed | Test reliability — every test must be deterministic; flaky tests are bugs |
-| Agent writes tests after implementation, confirming existing behavior rather than specifying intent | Test-first discipline — test stubs are written before features, encoding expected behavior |
-| A single CI workflow failure gives no information about which suite failed | Failure diagnosis — each test suite runs in its own workflow for precise identification |
+| Scenario                                                                                            | What must be protected                                                                          |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Code passes tests on macOS but fails on Linux in production                                         | Environment parity — tests must run on the same OS and runtime as production                    |
+| Mock-based test passes but real API behavior differs                                                | Test validity — tests must exercise real behavior, not developer assumptions                    |
+| Agent generates test fixtures by guessing API response shapes                                       | Fixture accuracy — fixtures must be recorded from real API calls, never fabricated              |
+| Browser test passes in Node/JSDOM but fails in real Chromium                                        | Browser fidelity — component and E2E tests must run in a real browser engine                    |
+| Test suite passes but critical user workflow is untested                                            | Coverage completeness — test categories must cover unit, integration, component, and end-to-end |
+| CI allows merge despite failing tests                                                               | Merge gating — no code merges without all test suites passing                                   |
+| Flaky test is ignored or disabled instead of fixed                                                  | Test reliability — every test must be deterministic; flaky tests are bugs                       |
+| Agent writes tests after implementation, confirming existing behavior rather than specifying intent | Test-first discipline — test stubs are written before features, encoding expected behavior      |
+| A single CI workflow failure gives no information about which suite failed                          | Failure diagnosis — each test suite runs in its own workflow for precise identification         |
 
 ---
 

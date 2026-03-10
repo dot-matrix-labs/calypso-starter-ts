@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──referenced by── agent-communication.md §Workflow: New Feature Development
-  this ──requires────────▶ blueprints/process-blueprint.md
+this ◀──referenced by── agent-communication.md §Workflow: New Feature Development
+this ──requires────────▶ blueprints/process-blueprint.md
 
 ## Overview
 
@@ -42,8 +42,8 @@ Contents:
 - **Product Features**: What are we building?
 - **Technical Implementation**: Libraries, patterns, architecture
 - **Prioritized Task List**:
-    - Incremental (buildable pieces)
-    - **Risk-First**: Tackle biggest unknowns early
+  - Incremental (buildable pieces)
+  - **Risk-First**: Tackle biggest unknowns early
 
 #### Feasibility Review
 
@@ -94,8 +94,8 @@ The same or similar agent reviews the plan for:
 
 1. **Create file structures**: All classes, functions, signatures
 2. **Add documentation**:
-    - Module `README.md`
-    - Extensive inline comments (JSDoc, docstrings)
+   - Module `README.md`
+   - Extensive inline comments (JSDoc, docstrings)
 3. **Ensure compilability**: Use `throw new Error("Not implemented")` or similar
 4. **No logic yet**: Just structure
 
@@ -109,22 +109,22 @@ The same or similar agent reviews the plan for:
  * See docs/plan/payment_plan.md for architecture.
  */
 export class PaymentService {
-    /**
-     * Process a payment
-     *
-     * @param amount - Amount in cents
-     * @param currency - ISO currency code (e.g., "usd")
-     * @param paymentMethodId - Stripe payment method ID
-     * @returns Payment confirmation object
-     * @throws PaymentError if payment fails
-     */
-    async processPayment(
-        amount: number,
-        currency: string,
-        paymentMethodId: string
-    ): Promise<PaymentConfirmation> {
-        throw new Error("Not implemented");
-    }
+  /**
+   * Process a payment
+   *
+   * @param amount - Amount in cents
+   * @param currency - ISO currency code (e.g., "usd")
+   * @param paymentMethodId - Stripe payment method ID
+   * @returns Payment confirmation object
+   * @throws PaymentError if payment fails
+   */
+  async processPayment(
+    amount: number,
+    currency: string,
+    paymentMethodId: string,
+  ): Promise<PaymentConfirmation> {
+    throw new Error('Not implemented');
+  }
 }
 ```
 
@@ -133,20 +133,20 @@ export class PaymentService {
 Create test files with test case signatures:
 
 ```typescript
-describe("PaymentService", () => {
-    describe("processPayment", () => {
-        it("should process valid payment", async () => {
-            // TODO: implement
-        });
-
-        it("should throw PaymentError on invalid card", async () => {
-            // TODO: implement
-        });
-
-        it("should handle network failures gracefully", async () => {
-            // TODO: implement
-        });
+describe('PaymentService', () => {
+  describe('processPayment', () => {
+    it('should process valid payment', async () => {
+      // TODO: implement
     });
+
+    it('should throw PaymentError on invalid card', async () => {
+      // TODO: implement
+    });
+
+    it('should handle network failures gracefully', async () => {
+      // TODO: implement
+    });
+  });
 });
 ```
 
@@ -262,9 +262,9 @@ Repeat:
 1. **Check Plan**: What's next priority?
 2. **Pick Task**: High-priority/high-risk
 3. **Implement** (TDD):
-    - Write test
-    - Implement
-    - Refactor
+   - Write test
+   - Implement
+   - Refactor
 4. **Update Plan**: Mark complete
 5. **Commit**: Git-brain commit with reasoning
 
@@ -322,8 +322,8 @@ Follow the new-module-development workflow from
 
 - ~~Use REST API for payment webhooks~~ (CHANGED)
 - Use Stripe webhooks with signature verification
-    - Reason: Stripe provides built-in retry logic
-    - See stripe-webhooks branch for implementation
+  - Reason: Stripe provides built-in retry logic
+  - See stripe-webhooks branch for implementation
 ```
 
 ---

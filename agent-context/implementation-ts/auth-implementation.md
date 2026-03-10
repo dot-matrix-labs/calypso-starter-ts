@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──implements──▶ blueprints/auth-blueprint.md
-  this ◀──referenced by── index.md
+this ──implements──▶ blueprints/auth-blueprint.md
+this ◀──referenced by── index.md
 
 > Implements: Authentication & Authorization Blueprint (`agent-context/blueprints/auth-blueprint.md`)
 
@@ -62,10 +62,7 @@ function requireScope(required: string) {
 }
 
 // Usage: scope check runs before the handler
-router.get('/analytics/summary',
-  requireScope('analytics:read'),
-  handleAnalyticsSummary
-);
+router.get('/analytics/summary', requireScope('analytics:read'), handleAnalyticsSummary);
 ```
 
 A route without a `requireScope` call is accessible to any valid token regardless of `kind`. This must be treated as a misconfiguration, not a valid open route. Routes that are intentionally unauthenticated are explicitly marked with a `public()` decorator so the absence of `requireScope` is visible and deliberate.
@@ -100,11 +97,11 @@ interface PasskeyCredential {
 
 // JWT token payload
 interface TokenPayload {
-  sub: string;        // user or agent ID
-  jti: string;        // unique token ID for revocation
-  scopes: string[];   // access scopes
-  exp: number;        // expiry timestamp
-  iat: number;        // issued-at timestamp
+  sub: string; // user or agent ID
+  jti: string; // unique token ID for revocation
+  scopes: string[]; // access scopes
+  exp: number; // expiry timestamp
+  iat: number; // issued-at timestamp
   kind: 'user' | 'agent';
 }
 
@@ -117,7 +114,7 @@ interface AgentTokenRequest {
 // Recovery shard (encrypted, stored server-side)
 interface RecoveryShard {
   userId: string;
-  encryptedShard: Uint8Array;  // AES-256-GCM encrypted under key derived from BIP-39 mnemonic via HKDF
+  encryptedShard: Uint8Array; // AES-256-GCM encrypted under key derived from BIP-39 mnemonic via HKDF
   // secondFactorKind distinguishes what secondFactorVerifier represents:
   // 'backup-code' → Argon2id hash of a one-time printed backup code (32 random bytes, base32 encoded)
   // 'hardware-key' → SHA-256 of the hardware key's credential ID (public, used for lookup only)
@@ -130,13 +127,13 @@ interface RecoveryShard {
 
 ## Dependency Justification
 
-| Package | Reason | Buy or DIY |
-|---|---|---|
-| `@simplewebauthn/server` | FIDO2 protocol is complex and security-critical; `@simplewebauthn/server` is the standard Node/Bun library — actively maintained, full FIDO2 conformance, no native dependencies | Buy |
-| JWT sign/verify | ~50 lines with Web Crypto (`crypto.subtle.sign` with ECDSA) | DIY |
-| BIP-39 mnemonic generation | BIP-39 is the cryptocurrency wallet standard for high-entropy human-readable mnemonics. It is used here not for its blockchain origins but because it provides a standardized 2048-word list, well-specified entropy-to-mnemonic encoding, and audited library implementations (`@scure/bip39` is recommended). The mnemonic is the recovery passphrase — entropy and auditability matter more than origin. | Buy |
-| Auth SaaS (Auth0, Clerk) | Adds latency, cost, vendor lock-in; agent builds auth in minutes | Do not buy (unless mandated) |
-| Rate limiting library | Simple token bucket is ~30 lines | DIY |
+| Package                    | Reason                                                                                                                                                                                                                                                                                                                                                                                                      | Buy or DIY                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `@simplewebauthn/server`   | FIDO2 protocol is complex and security-critical; `@simplewebauthn/server` is the standard Node/Bun library — actively maintained, full FIDO2 conformance, no native dependencies                                                                                                                                                                                                                            | Buy                          |
+| JWT sign/verify            | ~50 lines with Web Crypto (`crypto.subtle.sign` with ECDSA)                                                                                                                                                                                                                                                                                                                                                 | DIY                          |
+| BIP-39 mnemonic generation | BIP-39 is the cryptocurrency wallet standard for high-entropy human-readable mnemonics. It is used here not for its blockchain origins but because it provides a standardized 2048-word list, well-specified entropy-to-mnemonic encoding, and audited library implementations (`@scure/bip39` is recommended). The mnemonic is the recovery passphrase — entropy and auditability matter more than origin. | Buy                          |
+| Auth SaaS (Auth0, Clerk)   | Adds latency, cost, vendor lock-in; agent builds auth in minutes                                                                                                                                                                                                                                                                                                                                            | Do not buy (unless mandated) |
+| Rate limiting library      | Simple token bucket is ~30 lines                                                                                                                                                                                                                                                                                                                                                                            | DIY                          |
 
 ---
 

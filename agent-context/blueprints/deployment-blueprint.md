@@ -3,9 +3,9 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/deployment-implementation.md
-  this ──requires────────▶ blueprints/environment-blueprint.md (container topology)
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/deployment-implementation.md
+this ──requires────────▶ blueprints/environment-blueprint.md (container topology)
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines how AI-agent-built software is deployed, kept alive, observed, and recovered — from the first demo through production.
@@ -24,17 +24,17 @@ The cost of ignoring this blueprint is a system that works in development and fa
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Application container crashes and is not restarted | Service availability — the container orchestrator must restart crashed containers automatically |
-| Server runs out of disk space due to unrotated logs | Host stability — log retention policies must prevent disk exhaustion |
-| Error occurs in the browser and is never reported to the server | Observability completeness — browser errors must be captured and forwarded to the server |
-| Agent reads logs to diagnose an issue but context window fills with duplicate errors | Diagnostic efficiency — deduplicated error summaries must exist alongside chronological logs |
-| Deployment requires manual steps that an agent cannot perform | Deployment autonomy — the full deploy process must be scriptable and non-interactive |
-| Environment variables containing secrets are committed to the repository | Secret protection — production secrets must never be in version control |
-| A deploy happens with failing tests | Deployment safety — CI must gate all deployments |
-| The server is unreachable and no one knows why | Network observability — the container orchestrator and health checks must report status |
-| A rollback is needed but the previous version is not available | Rollback capability — previous builds must be recoverable from version control |
+| Scenario                                                                             | What must be protected                                                                          |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Application container crashes and is not restarted                                   | Service availability — the container orchestrator must restart crashed containers automatically |
+| Server runs out of disk space due to unrotated logs                                  | Host stability — log retention policies must prevent disk exhaustion                            |
+| Error occurs in the browser and is never reported to the server                      | Observability completeness — browser errors must be captured and forwarded to the server        |
+| Agent reads logs to diagnose an issue but context window fills with duplicate errors | Diagnostic efficiency — deduplicated error summaries must exist alongside chronological logs    |
+| Deployment requires manual steps that an agent cannot perform                        | Deployment autonomy — the full deploy process must be scriptable and non-interactive            |
+| Environment variables containing secrets are committed to the repository             | Secret protection — production secrets must never be in version control                         |
+| A deploy happens with failing tests                                                  | Deployment safety — CI must gate all deployments                                                |
+| The server is unreachable and no one knows why                                       | Network observability — the container orchestrator and health checks must report status         |
+| A rollback is needed but the previous version is not available                       | Rollback capability — previous builds must be recoverable from version control                  |
 
 ---
 
@@ -81,6 +81,7 @@ Environment variables containing secrets (API keys, database passwords, signing 
 **Problem:** A chronological log file is complete but overwhelming. An agent diagnosing an issue must read potentially thousands of lines, most of which are duplicates of the same error. The signal-to-noise ratio makes log-based diagnosis expensive in tokens and time.
 
 **Solution:** Maintain two log outputs:
+
 - **Chronological log:** Every event, in order, with full detail. The complete record.
 - **Unique error log:** A deduplicated set of error categories currently affecting the system. Each entry appears once regardless of how many times it occurred. Includes a count and the most recent timestamp.
 

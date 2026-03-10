@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ──extends──────────▶ agent-communication.md §Workflow: Product Requirements Collection (steps 1–7)
-  this ◀──referenced by──── init/scaffold-task.md §Step 10
+this ──extends──────────▶ agent-communication.md §Workflow: Product Requirements Collection (steps 1–7)
+this ◀──referenced by──── init/scaffold-task.md §Step 10
 
 > **Scope:** This document is the interview template supplement for the Product Requirements Collection workflow defined in `agent-communication.md §Workflow: Product Requirements Collection`. Follow the steps defined there; use this document for the questionnaire content at step 2. Do NOT duplicate those workflow steps here.
 
@@ -73,28 +73,33 @@ IF external API credentials are not provided at interview time:
 Generate and pre-fill high-impact questions under each of the following critical categories. Present as a single markdown-formatted questionnaire addressed to the Product Owner. Pre-fill every answer based on the Product Owner's description; use multiple-choice options where you cannot confidently infer. Focus on product features, user stories, user roles, and workflows only — do not ask technical architecture questions.
 
 ### 1. Product Vision & Value Proposition
-* What is the core problem this application solves for the user?
-* How does the user currently solve this problem, and how is this application better?
-* What does a successful outcome look like for the primary user?
+
+- What is the core problem this application solves for the user?
+- How does the user currently solve this problem, and how is this application better?
+- What does a successful outcome look like for the primary user?
 
 ### 2. Core Workflows & User Stories
-* Describe the "Happy Path" workflow from the moment a user signs up to the moment they achieve their primary goal.
-* What are the most common edge cases or alternative workflows a user might take?
-* Are there complex state machines for entities (e.g., an order moving from Draft -> Paid -> Shipped -> Delivered)? 
-* *Agent instruction: Formulate specific questions to extract exactly what entities exist and how they interact, and pre-fill them.*
+
+- Describe the "Happy Path" workflow from the moment a user signs up to the moment they achieve their primary goal.
+- What are the most common edge cases or alternative workflows a user might take?
+- Are there complex state machines for entities (e.g., an order moving from Draft -> Paid -> Shipped -> Delivered)?
+- _Agent instruction: Formulate specific questions to extract exactly what entities exist and how they interact, and pre-fill them._
 
 ### 3. User Roles, Permissions, and Access
-* What distinct types/roles of users exist in the system (e.g., Administrator, Free User, Premium Customer)?
-* What specific features and data can each role access? What are they restricted from seeing or doing?
-* Does authorization depend on complex conditions (e.g., "A manager can only approve requests from their own department")?
+
+- What distinct types/roles of users exist in the system (e.g., Administrator, Free User, Premium Customer)?
+- What specific features and data can each role access? What are they restricted from seeing or doing?
+- Does authorization depend on complex conditions (e.g., "A manager can only approve requests from their own department")?
 
 ### 4. External Integrations (Business Context)
-* What external services (e.g., Payment Gateways like Stripe, CRMs like Salesforce, Email Providers like SendGrid) must the system integrate with to support the user workflow?
-* What specific business actions trigger a call to these external services (e.g., "When a user upgrades their plan, charge their card")?
+
+- What external services (e.g., Payment Gateways like Stripe, CRMs like Salesforce, Email Providers like SendGrid) must the system integrate with to support the user workflow?
+- What specific business actions trigger a call to these external services (e.g., "When a user upgrades their plan, charge their card")?
 
 ### 5. Test Credentials and Setup
-* *Note: All external API interactions are considered critical to test. The AI must execute real network requests.*
-* Please provide the necessary Sandbox/Test API keys and connection credentials for all external services so I can build the automated fixture generator. (Ensure these test credentials will not cause destructive side-effects in your production environment).
+
+- _Note: All external API interactions are considered critical to test. The AI must execute real network requests._
+- Please provide the necessary Sandbox/Test API keys and connection credentials for all external services so I can build the automated fixture generator. (Ensure these test credentials will not cause destructive side-effects in your production environment).
 
 **Output Format:**
 Output the pre-filled questionnaire as a single markdown document addressed to the Product Owner. Use blockquotes or clear formatting to show your inferred answers or your multiple-choice lists, asking them to simply edit, confirm, or select the correct options.

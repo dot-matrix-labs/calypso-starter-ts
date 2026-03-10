@@ -1,5 +1,5 @@
-import { migrate } from "./index";
+import { migrate } from './index';
 
 migrate();
-console.log("Migration script executed successfully for CI/CD.");
+console.log('Migration script executed successfully for CI/CD.');
 process.exit(0);

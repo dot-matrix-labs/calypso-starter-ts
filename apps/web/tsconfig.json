@@ -8,7 +8,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "noEmit": true
+    "noEmit": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
   },
-  "exclude": ["node_modules", "apps/web/tests/component"]
+  "include": ["src", "tests"],
+  "exclude": ["tests/component"]
 }

@@ -9,13 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
       - name: Install Dependencies
         run: bun install
-      - name: Lint and Format Check
-        run: bun run lint
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
       - name: Run Component Tests
-        run: bunx vitest run apps/web/tests/component
+        run: bun --bun vitest run --config apps/web/vitest.browser.config.ts

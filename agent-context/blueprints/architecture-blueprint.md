@@ -3,8 +3,8 @@
 <!-- last-edited: 2026-03-10 -->
 
 CONTEXT MAP
-  this ◀──implemented by── implementation-ts/architecture-implementation.md
-  this ◀──referenced by──── index.md
+this ◀──implemented by── implementation-ts/architecture-implementation.md
+this ◀──referenced by──── index.md
 
 > [!IMPORTANT]
 > This blueprint defines the structural architecture for AI-agent-built web applications: how code is organized, how boundaries are enforced, and how dependencies are governed.
@@ -23,17 +23,17 @@ A well-architected codebase has a small number of top-level directories with cle
 
 ## Threat Model
 
-| Scenario | What must be protected |
-|---|---|
-| Server-side code imported into browser bundle | Runtime separation — server secrets, Node APIs, and database access must never reach the client |
-| Browser-side code executed on the server | Security boundary — untrusted client logic must not run in a trusted context |
-| Agent places new code in the wrong directory | Structural consistency — the directory tree must unambiguously encode where each type of code belongs |
-| Shared types drift between client and server | Contract integrity — a single source of truth for data shapes must exist and be enforced |
-| Agent adds a dependency for a trivial function | Dependency minimalism — each dependency is an ongoing maintenance and security liability |
-| Dependency has a deep transitive tree that introduces vulnerabilities | Supply chain integrity — the total dependency surface must be auditable and minimal |
-| Agent generates a new package or service without clear boundaries | Modularity — new packages must have explicit responsibilities that don't overlap with existing ones |
-| API contracts change without updating consumers | Type safety — API inputs and outputs must be validated against actual production schemas |
-| Monorepo structure becomes too deep or too flat to navigate | Navigability — an agent must be able to locate any component within seconds by reading the tree |
+| Scenario                                                              | What must be protected                                                                                |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Server-side code imported into browser bundle                         | Runtime separation — server secrets, Node APIs, and database access must never reach the client       |
+| Browser-side code executed on the server                              | Security boundary — untrusted client logic must not run in a trusted context                          |
+| Agent places new code in the wrong directory                          | Structural consistency — the directory tree must unambiguously encode where each type of code belongs |
+| Shared types drift between client and server                          | Contract integrity — a single source of truth for data shapes must exist and be enforced              |
+| Agent adds a dependency for a trivial function                        | Dependency minimalism — each dependency is an ongoing maintenance and security liability              |
+| Dependency has a deep transitive tree that introduces vulnerabilities | Supply chain integrity — the total dependency surface must be auditable and minimal                   |
+| Agent generates a new package or service without clear boundaries     | Modularity — new packages must have explicit responsibilities that don't overlap with existing ones   |
+| API contracts change without updating consumers                       | Type safety — API inputs and outputs must be validated against actual production schemas              |
+| Monorepo structure becomes too deep or too flat to navigate           | Navigability — an agent must be able to locate any component within seconds by reading the tree       |
 
 ---
 
@@ -54,7 +54,6 @@ Every external package is a commitment to track its releases, audit its security
 ### Types are shared, logic is not
 
 Data shapes that cross boundaries (API request/response types, domain types, shared enums) live in a single canonical location imported by both sides. Business logic, rendering logic, and data access logic are never shared across the client-server boundary — even if they look similar. Sharing logic creates coupling; sharing types creates contracts.
-
 
 ### Simplicity scales; cleverness does not
 
@@ -219,4 +218,3 @@ See [`agent-context/implementation-ts/architecture-implementation.md`](../implem
 - **Server code in the browser bundle.** Importing a server utility "just for one function" into the client. The bundler pulls in the entire module and its dependencies. At best, the bundle bloats. At worst, server secrets or Node-only APIs are shipped to the browser.
 
 - **Premature microservices.** Splitting a monorepo into separate services before the product has proven its domain boundaries. Each service needs its own deployment, monitoring, and contract management. For an agent-built early-stage product, this is overhead with no benefit — the boundaries are not yet known.
-
