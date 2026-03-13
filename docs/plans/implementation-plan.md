@@ -102,6 +102,7 @@ Implement the one-way synchronization for public issue tracking.
 - [x] Consolidate the repo so the canonical reference docs live under `calypso-blueprint/` while `.github/workflows/` and `agent-context/workflows/` remain the repo-specific workflow trees.
 - [x] Import canonical blueprint docs via the `./calypso-blueprint` git submodule while preserving local `agent-context/workflows/`
 - [x] Exclude the imported `./calypso-blueprint` submodule from root Prettier checks so push gates do not lint external vendored content
+- [x] Resolve merge conflict with main (calypso-blueprint submodule + next-prompt.md)
 
 ## Studio Mode
 
