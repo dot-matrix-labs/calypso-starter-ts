@@ -109,7 +109,7 @@ test('register and login renders the Calypso layout shell', async () => {
   await page.getByPlaceholder('••••••••').fill('smokepass123');
   await page.getByRole('button', { name: 'Create Account' }).click();
 
-  await playwrightExpect(page.getByRole('heading', { name: 'Main Project' })).toBeVisible({
+  await playwrightExpect(page.getByRole('heading', { name: 'Projeto Principal' })).toBeVisible({
     timeout: 15_000,
   });
   await playwrightExpect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
