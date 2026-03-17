@@ -26,11 +26,31 @@ type FixtureTask = {
   estimateStart: string | null;
   dependsOn: string[];
   tags: string[];
+  targetPersonId: string | null;
+  createdAt: string;
+};
+
+type FixturePerson = {
+  id: string;
+  name: string;
+  properties: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type FixtureRelationship = {
+  id: string;
+  personAId: string;
+  personBId: string;
+  score: number;
+  reason: string;
   createdAt: string;
 };
 
 type FixtureState = {
   tasks?: FixtureTask[];
+  persons?: FixturePerson[];
+  relationships?: FixtureRelationship[];
   studioStatus?: StudioStatus | FixtureResponse<StudioStatus>;
   studioChatResponse?: StudioChatResponse | FixtureResponse<StudioChatResponse>;
   studioRollbackResponse?: StudioRollbackResponse | FixtureResponse<StudioRollbackResponse>;
@@ -70,6 +90,7 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
       estimateStart: null,
       dependsOn: [],
       tags: [],
+      targetPersonId: (body.targetPersonId as string | null) ?? null,
       createdAt: new Date().toISOString(),
     } satisfies FixtureTask;
     return json(created);
@@ -88,8 +109,50 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
       estimateStart: null,
       dependsOn: [],
       tags: [],
+      targetPersonId: null,
       createdAt: new Date().toISOString(),
     });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/persons') {
+    return json(state.persons ?? []);
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/persons') {
+    const body = (await req.json()) as Record<string, unknown>;
+    const created: FixturePerson = {
+      id: 'person-new',
+      name: String(body.name ?? ''),
+      properties: { name: String(body.name ?? '') } as Record<string, unknown>,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    return json(created, 201);
+  }
+
+  if (req.method === 'GET' && url.pathname.match(/^\/api\/persons\/[^/]+\/relationships$/)) {
+    const personId = url.pathname.split('/')[3];
+    const rels = (state.relationships ?? []).filter(
+      (r) => r.personAId === personId || r.personBId === personId,
+    );
+    return json(rels);
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/relationships') {
+    return json(state.relationships ?? []);
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/relationships') {
+    const body = (await req.json()) as Record<string, unknown>;
+    const created: FixtureRelationship = {
+      id: 'rel-new',
+      personAId: String(body.personAId ?? ''),
+      personBId: String(body.personBId ?? ''),
+      score: Number(body.score ?? 3),
+      reason: String(body.reason ?? ''),
+      createdAt: new Date().toISOString(),
+    };
+    return json(created, 201);
   }
 
   if (req.method === 'GET' && url.pathname === '/studio/status') {
@@ -113,9 +176,9 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
   );
 }
 
-function json(payload: unknown): Response {
+function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
-    status: 200,
+    status,
     headers: { 'Content-Type': 'application/json' },
   });
 }

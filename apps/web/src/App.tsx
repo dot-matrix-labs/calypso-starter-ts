@@ -9,15 +9,19 @@ import {
   LayoutDashboard,
   ChevronRight,
   ChevronLeft,
+  Users,
 } from 'lucide-react';
 import { TaskListView } from './components/TaskListView';
+import { PersonsView } from './components/PersonsView';
 import { StudioChat } from './components/StudioChat';
+
+type ActiveView = 'board' | 'persons' | 'settings';
 
 function App() {
   const { user, logout, loading } = useAuth();
 
   // Core Layout State
-  const [activeView, setActiveView] = useState<'board' | 'settings'>('board');
+  const [activeView, setActiveView] = useState<ActiveView>('board');
   const [chatExpanded, setChatExpanded] = useState(true);
 
   if (loading) {
@@ -45,12 +49,21 @@ function App() {
             <button
               onClick={() => setActiveView('board')}
               className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'board' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
+              title="Quadro de tarefas"
             >
               <LayoutDashboard size={20} strokeWidth={2.5} />
             </button>
             <button
+              onClick={() => setActiveView('persons')}
+              className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'persons' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
+              title="Pessoas e relacionamentos"
+            >
+              <Users size={20} strokeWidth={2.5} />
+            </button>
+            <button
               onClick={() => setActiveView('settings')}
               className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
+              title="Configurações"
             >
               <Settings size={20} strokeWidth={2.5} />
             </button>
@@ -75,25 +88,35 @@ function App() {
           <header className="h-12 px-5 border-b border-zinc-200 flex items-center justify-between shrink-0 bg-white shadow-sm">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-2 ring-indigo-100" />
-              <h1 className="text-sm font-semibold tracking-tight text-zinc-900">Main Project</h1>
+              <h1 className="text-sm font-semibold tracking-tight text-zinc-900">
+                {activeView === 'persons' ? 'CRM — Relacionamentos' : 'Projeto Principal'}
+              </h1>
               <span className="text-zinc-200 font-light text-base leading-none">/</span>
               <span className="text-xs text-zinc-400 font-medium">dot-matrix-labs/calypso</span>
             </div>
-            <button
-              onClick={() => {
-                const event = new CustomEvent('calypso:new-task');
-                window.dispatchEvent(event);
-              }}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
-            >
-              <Plus size={13} strokeWidth={2.5} />
-              New Task
-            </button>
+            {activeView === 'board' && (
+              <button
+                onClick={() => {
+                  const event = new CustomEvent('calypso:new-task');
+                  window.dispatchEvent(event);
+                }}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
+              >
+                <Plus size={13} strokeWidth={2.5} />
+                Nova Tarefa
+              </button>
+            )}
           </header>
 
           {/* Board Content */}
           <div className="flex-1 overflow-hidden">
-            <TaskListView />
+            {activeView === 'board' && <TaskListView />}
+            {activeView === 'persons' && <PersonsView />}
+            {activeView === 'settings' && (
+              <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
+                Configurações em breve
+              </div>
+            )}
           </div>
         </div>
 

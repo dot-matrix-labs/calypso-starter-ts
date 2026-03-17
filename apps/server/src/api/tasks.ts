@@ -23,6 +23,7 @@ function rowToTask(row: { id: string; properties: TaskProperties; created_at: st
     estimatedDeliver: p.estimatedDeliver ?? null,
     dependsOn: p.dependsOn ?? [],
     tags: p.tags ?? [],
+    targetPersonId: p.targetPersonId ?? null,
     createdAt: row.created_at,
   };
 }
@@ -64,6 +65,7 @@ export async function handleTasksRequest(req: Request, url: URL): Promise<Respon
       estimatedDeliver = null,
       dependsOn = [],
       tags = [],
+      targetPersonId = null,
     } = body;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
@@ -81,6 +83,7 @@ export async function handleTasksRequest(req: Request, url: URL): Promise<Respon
       estimatedDeliver,
       dependsOn,
       tags,
+      targetPersonId,
     };
 
     const [row] = await sql<{ id: string; properties: TaskProperties; created_at: string }[]>`

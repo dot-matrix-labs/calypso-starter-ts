@@ -2,116 +2,46 @@
 
 ## Context
 
-The repo now sources the canonical blueprint docs from the `./calypso-blueprint`
-git submodule while `.github/workflows/` and `agent-context/workflows/` remain
-localized workflow trees. CI workflow drift has already been corrected, and
-the flaky StudioChat component test no longer depends on one shared
-fixture-state reset across files.
+Branch: feat/1-hot-or-not-core-crm (GitHub issue #1, draft PR #5)
 
-The remaining next priority is the failing Studio API integration suite
-reported by the push hooks.
+Commit 1 of the CRM feature has just landed. It includes:
+
+- `packages/core/types.ts`: `Person`, `PersonProperties`, `Relationship`, `RelationshipScore`, `RELATIONSHIP_SCORE_LABELS`, biographical entry types, `UpdateTempo`, and `targetPersonId` on `Task`/`TaskProperties`
+- `packages/db/schema.sql`: added `person` and `relationship` entity type seeds
+- `apps/server/src/api/persons.ts`: full CRUD for `/api/persons` and `/api/relationships`, bidirectional relationship lookup at `/api/persons/:id/relationships`
+- `apps/server/src/index.ts`: wired in `handlePersonsRequest`
+- `apps/server/src/api/tasks.ts`: `targetPersonId` support in POST and rowToTask
+- `apps/web/src/components/TaskListView.tsx`: pt-BR text, Pessoa Alvo column and modal field
+- `apps/web/src/components/PersonForm.tsx`: create-person modal
+- `apps/web/src/components/RelationshipView.tsx`: relationship list + create form for a person
+- `apps/web/src/components/PersonsView.tsx`: people list + detail panel with biographical sections
+- `apps/web/src/App.tsx`: People nav item using `Users` icon
+- `apps/web/tests/component/fixture-server.ts`: persons/relationships fixture routes
+- `apps/web/tests/component/task-list.test.tsx`: updated for pt-BR text and new Task fields
+- `apps/server/tests/integration/persons-api.test.ts`: full integration test suite
 
 ## Next Action
 
 Read these files first:
 
-1. `apps/server/tests/integration/studio-api.test.ts`
-2. `apps/server/src/api/studio.ts`
-3. `apps/server/src/studio/agent.ts`
-4. `docs/plans/implementation-plan.md`
-5. this file
+1. `docs/plans/implementation-plan.md` (check remaining unchecked items)
+2. This file
+3. `apps/web/tests/component/task-list.test.tsx` (current component tests)
 
-Then do this next:
+Then do:
 
-1. Reproduce the failing Studio API integration tests.
-2. Determine whether each failure is in the tests or the implementation.
-3. Fix them without weakening coverage.
-4. After the Studio API suite is green, reconcile the remaining implementation companions to the current workflow YAMLs and release-gate model.
-
-After editing, update `docs/plans/implementation-plan.md` and overwrite this file with the next self-contained prompt.
-
----
+1. Add component tests for `PersonForm` (renders, creates a person, shows error on failure).
+2. Add component tests for `PersonsView` (empty state, renders person list).
+3. After the component tests are passing, check whether any acceptance criteria remain unchecked in `docs/plans/implementation-plan.md` and address them.
+4. Commit and push.
 
 ## FAILING TESTS — Must be addressed before next push
 
-The following tests were failing at the time of the last push.
-They must be **checked, fixed, or rewritten. Never ignore or skip them.**
+Verify the existing suites still pass after the pt-BR text and type changes:
 
-```
- FAIL |server|  tests/integration/task-write-boundary.test.ts [ apps/server/tests/integration/task-write-boundary.test.ts ]
-```
+- `bun --bun vitest run apps/server/tests/integration/api.test.ts`
+- `bun --bun vitest run apps/server/tests/integration/task-write-boundary.test.ts`
+- `bun --bun vitest run apps/server/tests/integration/persons-api.test.ts`
+- `bun --bun vitest run --config apps/web/vitest.browser.config.ts`
 
-For each failure: determine whether the test is wrong (fix the test to match
-correct behaviour) or the implementation is wrong (fix the code). Do not
-disable, comment out, or add skip/todo markers to avoid addressing failures.
-
----
-
-## FAILING TESTS — Must be addressed before next push
-
-The following tests were failing at the time of the last push.
-They must be **checked, fixed, or rewritten. Never ignore or skip them.**
-
-```
-   × Studio API integration > GET /studio/status returns inactive when .studio is absent 35ms
-   × Studio API integration > GET /studio/status returns session metadata when .studio is present 11ms
-   × Studio API integration > POST /studio/chat returns 403 when studio mode is inactive 225ms
-   × Studio API integration > POST /studio/chat returns 400 when message is missing 56ms
-   × Studio API integration > POST /studio/chat preserves prior turns across a multi-turn session 2ms
-   × Studio API integration > POST /studio/reset clears prior session context 2ms
-   × Studio API integration > POST /studio/rollback returns 400 when hash is missing 3ms
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > GET /studio/status returns inactive when .studio is absent
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > GET /studio/status returns session metadata when .studio is present
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/chat returns 403 when studio mode is inactive
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/chat returns 400 when message is missing
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/chat preserves prior turns across a multi-turn session
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/reset clears prior session context
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/rollback returns 400 when hash is missing
-```
-
-For each failure: determine whether the test is wrong (fix the test to match
-correct behaviour) or the implementation is wrong (fix the code). Do not
-disable, comment out, or add skip/todo markers to avoid addressing failures.
-
----
-
-## FAILING TESTS — Must be addressed before next push
-
-The following tests were failing at the time of the last push.
-They must be **checked, fixed, or rewritten. Never ignore or skip them.**
-
-```
-   × Studio API integration > GET /studio/status returns inactive when .studio is absent 28ms
-   × Studio API integration > GET /studio/status returns session metadata when .studio is present 11ms
-   × Studio API integration > POST /studio/chat returns 403 when studio mode is inactive 174ms
-   × Studio API integration > POST /studio/chat returns 400 when message is missing 2ms
-   × Studio API integration > POST /studio/chat preserves prior turns across a multi-turn session 1ms
-   × Studio API integration > POST /studio/reset clears prior session context 1ms
-   × Studio API integration > POST /studio/rollback returns 400 when hash is missing 1ms
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > GET /studio/status returns inactive when .studio is absent
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > GET /studio/status returns session metadata when .studio is present
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/chat returns 403 when studio mode is inactive
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/chat returns 400 when message is missing
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/chat preserves prior turns across a multi-turn session
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/reset clears prior session context
- FAIL |server|  tests/integration/studio-api.test.ts > Studio API integration > POST /studio/rollback returns 400 when hash is missing
-```
-
-For each failure: determine whether the test is wrong (fix the test to match
-correct behaviour) or the implementation is wrong (fix the code). Do not
-disable, comment out, or add skip/todo markers to avoid addressing failures.
-
----
-
-## FAILING TESTS — Must be addressed before next push
-
-The following tests were failing at the time of the last push.
-They must be **checked, fixed, or rewritten. Never ignore or skip them.**
-
-```
- FAIL |server|  tests/integration/task-write-boundary.test.ts [ apps/server/tests/integration/task-write-boundary.test.ts ]
-```
-
-For each failure: determine whether the test is wrong (fix the test to match
-correct behaviour) or the implementation is wrong (fix the code). Do not
-disable, comment out, or add skip/todo markers to avoid addressing failures.
+The task-list component test text was updated to pt-BR and MOCK_TASK now includes `targetPersonId: null`. If those still fail, fix them before pushing.
