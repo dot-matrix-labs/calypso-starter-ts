@@ -57,7 +57,7 @@ function RelationshipForm({
       onCreated(created);
     } else {
       const body = await res.json();
-      setError((body as { error?: string }).error ?? 'Erro ao criar relacionamento');
+      setError((body as { error?: string }).error ?? 'Failed to create relationship');
     }
     setSaving(false);
   }
@@ -66,7 +66,7 @@ function RelationshipForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 border border-zinc-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-zinc-900">Novo Relacionamento</h2>
+          <h2 className="text-lg font-bold text-zinc-900">New Relationship</h2>
           <button
             onClick={onClose}
             className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400"
@@ -78,7 +78,7 @@ function RelationshipForm({
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                Pessoa A *
+                Person A *
               </label>
               <select
                 required
@@ -86,7 +86,7 @@ function RelationshipForm({
                 onChange={(e) => setPersonAId(e.target.value)}
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">Selecione…</option>
+                <option value="">Select…</option>
                 {persons.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -96,7 +96,7 @@ function RelationshipForm({
             </div>
             <div className="flex-1">
               <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                Pessoa B *
+                Person B *
               </label>
               <select
                 required
@@ -104,7 +104,7 @@ function RelationshipForm({
                 onChange={(e) => setPersonBId(e.target.value)}
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">Selecione…</option>
+                <option value="">Select…</option>
                 {persons
                   .filter((p) => p.id !== personAId)
                   .map((p) => (
@@ -117,7 +117,7 @@ function RelationshipForm({
           </div>
           <div>
             <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-              Força do Relacionamento *
+              Relationship Strength *
             </label>
             <div className="flex gap-2">
               {([1, 2, 3, 4, 5] as RelationshipScore[]).map((s) => (
@@ -141,14 +141,14 @@ function RelationshipForm({
           </div>
           <div>
             <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-              Motivo / Contexto
+              Reason / Context
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-              placeholder="Descreva o contexto desta relação…"
+              placeholder="Describe the context of this relationship…"
             />
           </div>
           {error && <p className="text-xs text-red-500">{error}</p>}
@@ -158,14 +158,14 @@ function RelationshipForm({
               onClick={onClose}
               className="px-4 py-2 text-sm text-zinc-600 hover:text-zinc-900 transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
               className="px-4 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
-              {saving ? 'Criando…' : 'Criar Relacionamento'}
+              {saving ? 'Creating…' : 'Create Relationship'}
             </button>
           </div>
         </form>
@@ -202,21 +202,21 @@ export function RelationshipView({ personId, persons, onPersonsChange }: Relatio
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">
-          Relacionamentos
+          Relationships
         </h3>
         <button
           onClick={() => setShowForm(true)}
           className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400 hover:text-zinc-600"
-          title="Novo relacionamento"
+          title="New relationship"
         >
           <Plus size={16} />
         </button>
       </div>
       {loading ? (
-        <p className="text-xs text-zinc-400">Carregando…</p>
+        <p className="text-xs text-zinc-400">Loading…</p>
       ) : relationships.length === 0 ? (
         <p className="text-xs text-zinc-400 italic">
-          Sem relacionamentos definidos. Score: 0 / sem relação
+          No relationships defined. Score: 0 / no relationship
         </p>
       ) : (
         <ul className="space-y-2">
@@ -230,7 +230,7 @@ export function RelationshipView({ personId, persons, onPersonsChange }: Relatio
                 <ScoreBadge score={rel.score} />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-zinc-900">
-                    {other?.name ?? '(desconhecido)'}
+                    {other?.name ?? '(unknown)'}
                   </p>
                   <p className="text-xs text-zinc-500 truncate">
                     {RELATIONSHIP_SCORE_LABELS[rel.score]}

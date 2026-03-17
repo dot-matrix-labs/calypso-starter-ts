@@ -18,7 +18,7 @@ function StatusIcon({ status }: { status: TaskStatus }) {
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 interface NewTaskForm {
@@ -139,18 +139,18 @@ export function TaskListView() {
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32 text-zinc-400 text-sm">
-            Carregando tarefas…
+            Loading tasks…
           </div>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <p className="text-zinc-400 text-sm mb-4">
-              Nenhuma tarefa ainda. Crie uma para começar.
+              No tasks yet. Create one to get started.
             </p>
             <button
               onClick={() => setShowModal(true)}
               className="px-4 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-2"
             >
-              <Plus size={14} /> Nova Tarefa
+              <Plus size={14} /> New Task
             </button>
           </div>
         ) : (
@@ -158,12 +158,12 @@ export function TaskListView() {
             <thead>
               <tr className="border-b border-zinc-100 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 <th className="w-8 px-4 py-3" />
-                <th className="px-4 py-3">Nome</th>
-                <th className="px-4 py-3">Responsável</th>
-                <th className="px-4 py-3">Prioridade</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Owner</th>
+                <th className="px-4 py-3">Priority</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Entrega</th>
-                <th className="px-4 py-3">Pessoa Alvo</th>
+                <th className="px-4 py-3">Due</th>
+                <th className="px-4 py-3">Target Person</th>
               </tr>
             </thead>
             <tbody>
@@ -225,11 +225,11 @@ export function TaskListView() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-zinc-200">
-            <h2 className="text-lg font-bold mb-4 text-zinc-900">Nova Tarefa</h2>
+            <h2 className="text-lg font-bold mb-4 text-zinc-900">New Task</h2>
             <form onSubmit={createTask} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                  Nome *
+                  Name *
                 </label>
                 <input
                   autoFocus
@@ -238,25 +238,25 @@ export function TaskListView() {
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Nome da tarefa"
+                  placeholder="Task name"
                 />
               </div>
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                    Responsável
+                    Owner
                   </label>
                   <input
                     type="text"
                     value={form.owner}
                     onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))}
                     className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Usuário"
+                    placeholder="Username"
                   />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                    Prioridade
+                    Priority
                   </label>
                   <select
                     value={form.priority}
@@ -265,15 +265,15 @@ export function TaskListView() {
                     }
                     className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="low">Baixa</option>
-                    <option value="medium">Média</option>
-                    <option value="high">Alta</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
                   </select>
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                  Data de Entrega
+                  Due Date
                 </label>
                 <input
                   type="date"
@@ -284,14 +284,14 @@ export function TaskListView() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-                  Pessoa Alvo
+                  Target Person
                 </label>
                 <select
                   value={form.targetPersonId}
                   onChange={(e) => setForm((f) => ({ ...f, targetPersonId: e.target.value }))}
                   className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="">Nenhuma</option>
+                  <option value="">None</option>
                   {persons.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -309,7 +309,7 @@ export function TaskListView() {
                       <p className="mt-1 text-xs text-zinc-400">
                         {maxScore > 0
                           ? `Score: ${maxScore}/5 — ${RELATIONSHIP_SCORE_LABELS[maxScore as 1 | 2 | 3 | 4 | 5]}`
-                          : 'Score: 0 / sem relação'}
+                          : 'Score: 0 / no relationship'}
                       </p>
                     );
                   })()}
@@ -323,14 +323,14 @@ export function TaskListView() {
                   }}
                   className="px-4 py-2 text-sm text-zinc-600 hover:text-zinc-900 transition-colors"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-4 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Criando…' : 'Criar Tarefa'}
+                  {saving ? 'Creating…' : 'Create Task'}
                 </button>
               </div>
             </form>

@@ -57,12 +57,12 @@ test('POST /api/persons creates a person with only a name', async () => {
   const res = await fetch(`${BASE}/api/persons`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'João Silva' }),
+    body: JSON.stringify({ name: 'John Smith' }),
   });
   expect(res.status).toBe(201);
   const person = await res.json();
   expect(person.id).toBeTruthy();
-  expect(person.name).toBe('João Silva');
+  expect(person.name).toBe('John Smith');
   expect(person.properties).toBeTruthy();
   expect(person.properties.education).toBeTruthy();
   expect(person.properties.employment).toBeTruthy();
@@ -88,7 +88,7 @@ test('GET /api/persons/:id returns the person after creation', async () => {
   const createRes = await fetch(`${BASE}/api/persons`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Maria Costa' }),
+    body: JSON.stringify({ name: 'Jane Doe' }),
   });
   const created = await createRes.json();
 
@@ -98,14 +98,14 @@ test('GET /api/persons/:id returns the person after creation', async () => {
   expect(getRes.status).toBe(200);
   const fetched = await getRes.json();
   expect(fetched.id).toBe(created.id);
-  expect(fetched.name).toBe('Maria Costa');
+  expect(fetched.name).toBe('Jane Doe');
 });
 
 test('biographical data types have configurable tempo fields', async () => {
   const res = await fetch(`${BASE}/api/persons`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Carlos Neves' }),
+    body: JSON.stringify({ name: 'Alex Carter' }),
   });
   const person = await res.json();
   expect(person.properties.education.tempo).toBe('stable');
@@ -122,12 +122,12 @@ test('POST /api/relationships creates a relationship between two persons', async
     fetch(`${BASE}/api/persons`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-      body: JSON.stringify({ name: 'Pessoa A' }),
+      body: JSON.stringify({ name: 'Person A' }),
     }).then((r) => r.json()),
     fetch(`${BASE}/api/persons`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-      body: JSON.stringify({ name: 'Pessoa B' }),
+      body: JSON.stringify({ name: 'Person B' }),
     }).then((r) => r.json()),
   ]);
 
@@ -138,7 +138,7 @@ test('POST /api/relationships creates a relationship between two persons', async
       personAId: pa.id,
       personBId: pb.id,
       score: 5,
-      reason: 'co-conselheiros de uma ONG',
+      reason: 'co-board members of a nonprofit',
     }),
   });
   expect(res.status).toBe(201);
@@ -147,7 +147,7 @@ test('POST /api/relationships creates a relationship between two persons', async
   expect(rel.personAId).toBe(pa.id);
   expect(rel.personBId).toBe(pb.id);
   expect(rel.score).toBe(5);
-  expect(rel.reason).toBe('co-conselheiros de uma ONG');
+  expect(rel.reason).toBe('co-board members of a nonprofit');
 });
 
 test('POST /api/relationships returns 400 when score is out of range', async () => {
@@ -155,12 +155,12 @@ test('POST /api/relationships returns 400 when score is out of range', async () 
     fetch(`${BASE}/api/persons`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-      body: JSON.stringify({ name: 'Pessoa X' }),
+      body: JSON.stringify({ name: 'Person X' }),
     }).then((r) => r.json()),
     fetch(`${BASE}/api/persons`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-      body: JSON.stringify({ name: 'Pessoa Y' }),
+      body: JSON.stringify({ name: 'Person Y' }),
     }).then((r) => r.json()),
   ]);
 
@@ -177,12 +177,12 @@ test('GET /api/persons/:id/relationships shows relationship from both A and B pe
     fetch(`${BASE}/api/persons`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-      body: JSON.stringify({ name: 'Diretora Alpha' }),
+      body: JSON.stringify({ name: 'Director Alpha' }),
     }).then((r) => r.json()),
     fetch(`${BASE}/api/persons`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-      body: JSON.stringify({ name: 'Diretor Beta' }),
+      body: JSON.stringify({ name: 'Director Beta' }),
     }).then((r) => r.json()),
   ]);
 
@@ -193,7 +193,7 @@ test('GET /api/persons/:id/relationships shows relationship from both A and B pe
       personAId: pA.id,
       personBId: pB.id,
       score: 5,
-      reason: 'co-conselheiros',
+      reason: 'co-board members',
     }),
   });
 
@@ -228,7 +228,7 @@ test('GET /api/persons/:id/relationships returns empty array for person with no 
   const person = await fetch(`${BASE}/api/persons`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Pessoa Isolada' }),
+    body: JSON.stringify({ name: 'Isolated Person' }),
   }).then((r) => r.json());
 
   const res = await fetch(`${BASE}/api/persons/${person.id}/relationships`, {
@@ -246,14 +246,14 @@ test('POST /api/tasks supports targetPersonId field', async () => {
   const person = await fetch(`${BASE}/api/persons`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Alvo da Tarefa' }),
+    body: JSON.stringify({ name: 'Task Target Person' }),
   }).then((r) => r.json());
 
   const taskRes = await fetch(`${BASE}/api/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
     body: JSON.stringify({
-      name: 'Contactar pessoa alvo',
+      name: 'Contact target person',
       targetPersonId: person.id,
     }),
   });
@@ -266,13 +266,13 @@ test('PATCH /api/tasks/:id supports setting targetPersonId', async () => {
   const person = await fetch(`${BASE}/api/persons`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Novo Alvo' }),
+    body: JSON.stringify({ name: 'New Target' }),
   }).then((r) => r.json());
 
   const taskRes = await fetch(`${BASE}/api/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Tarefa sem alvo inicial' }),
+    body: JSON.stringify({ name: 'Task without initial target' }),
   }).then((r) => r.json());
 
   const patchRes = await fetch(`${BASE}/api/tasks/${taskRes.id}`, {
@@ -289,7 +289,7 @@ test('task without targetPersonId has null targetPersonId', async () => {
   const taskRes = await fetch(`${BASE}/api/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: authCookie },
-    body: JSON.stringify({ name: 'Tarefa padrão' }),
+    body: JSON.stringify({ name: 'Default task' }),
   });
   expect(taskRes.status).toBe(201);
   const task = await taskRes.json();

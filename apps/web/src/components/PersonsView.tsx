@@ -29,28 +29,28 @@ export function PersonsView() {
       {/* List panel */}
       <div className="w-72 shrink-0 border-r border-zinc-100 flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
-          <h2 className="text-sm font-semibold text-zinc-700">Pessoas</h2>
+          <h2 className="text-sm font-semibold text-zinc-700">People</h2>
           <button
             onClick={() => setShowForm(true)}
             className="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md transition-colors flex items-center gap-1"
           >
             <Plus size={12} strokeWidth={2.5} />
-            Nova
+            New
           </button>
         </div>
         <div className="flex-1 overflow-auto">
           {loading ? (
             <div className="flex items-center justify-center h-16 text-zinc-400 text-xs">
-              Carregando…
+              Loading…
             </div>
           ) : persons.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center px-4">
-              <p className="text-zinc-400 text-xs">Nenhuma pessoa cadastrada.</p>
+              <p className="text-zinc-400 text-xs">No people added yet.</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="mt-2 text-indigo-600 text-xs hover:underline"
               >
-                Criar a primeira
+                Add the first
               </button>
             </div>
           ) : (
@@ -86,8 +86,8 @@ export function PersonsView() {
               <div>
                 <h2 className="text-xl font-bold text-zinc-900">{selected.name}</h2>
                 <p className="text-xs text-zinc-400">
-                  Criado em{' '}
-                  {new Date(selected.createdAt).toLocaleDateString('pt-BR', {
+                  Added{' '}
+                  {new Date(selected.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -106,31 +106,31 @@ export function PersonsView() {
               {/* Biographical data summary */}
               <div>
                 <h3 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-3">
-                  Dados Biográficos
+                  Biographical Data
                 </h3>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <BiographySection
-                    label="Educação"
+                    label="Education"
                     tempo={selected.properties.education.tempo}
                     count={selected.properties.education.entries.length}
                   />
                   <BiographySection
-                    label="Empregos"
+                    label="Employment"
                     tempo={selected.properties.employment.tempo}
                     count={selected.properties.employment.entries.length}
                   />
                   <BiographySection
-                    label="Conselhos"
+                    label="Board Positions"
                     tempo={selected.properties.boardPositions.tempo}
                     count={selected.properties.boardPositions.entries.length}
                   />
                   <BiographySection
-                    label="Funções Part-time"
+                    label="Part-time Roles"
                     tempo={selected.properties.partTimeRoles.tempo}
                     count={selected.properties.partTimeRoles.entries.length}
                   />
                   <BiographySection
-                    label="Geografia"
+                    label="Geography"
                     tempo={selected.properties.geography.tempo}
                     count={selected.properties.geography.entries.length}
                   />
@@ -140,12 +140,12 @@ export function PersonsView() {
                     count={selected.properties.hobbies.entries.length}
                   />
                   <BiographySection
-                    label="Doações"
+                    label="Donations"
                     tempo={selected.properties.donations.tempo}
                     count={selected.properties.donations.entries.length}
                   />
                   <BiographySection
-                    label="Apresentações"
+                    label="Conferences"
                     tempo={selected.properties.conferences.tempo}
                     count={selected.properties.conferences.entries.length}
                   />
@@ -155,7 +155,7 @@ export function PersonsView() {
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-300 text-sm">
-            Selecione uma pessoa para ver os detalhes
+            Select a person to view details
           </div>
         )}
       </div>
@@ -184,16 +184,16 @@ function BiographySection({
   count: number;
 }) {
   const tempoLabels: Record<string, string> = {
-    stable: 'estável',
-    annual: 'anual',
-    quarterly: 'trimestral',
-    monthly: 'mensal',
+    stable: 'stable',
+    annual: 'annual',
+    quarterly: 'quarterly',
+    monthly: 'monthly',
   };
   return (
     <div className="p-3 bg-zinc-50 rounded-lg border border-zinc-100">
       <p className="font-semibold text-zinc-600">{label}</p>
       <p className="text-zinc-400 mt-0.5">
-        {count} {count === 1 ? 'registro' : 'registros'} · {tempoLabels[tempo] ?? tempo}
+        {count} {count === 1 ? 'entry' : 'entries'} · {tempoLabels[tempo] ?? tempo}
       </p>
     </div>
   );

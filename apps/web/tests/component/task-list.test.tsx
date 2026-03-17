@@ -39,15 +39,15 @@ afterEach(async () => {
 test('renders empty state when there are no tasks', async () => {
   await setTasksFixture();
   const screen = render(<TaskListView />);
-  await expect.element(screen.getByText(/Nenhuma tarefa ainda/)).toBeVisible();
+  await expect.element(screen.getByText(/No tasks yet/)).toBeVisible();
 });
 
-test('opens Nova Tarefa modal when empty state button is clicked', async () => {
+test('opens New Task modal when empty state button is clicked', async () => {
   await setTasksFixture();
   const screen = render(<TaskListView />);
-  await screen.getByRole('button', { name: /Nova Tarefa/i }).click();
-  await expect.element(screen.getByRole('heading', { name: 'Nova Tarefa' })).toBeVisible();
-  await expect.element(screen.getByPlaceholder('Nome da tarefa')).toBeVisible();
+  await screen.getByRole('button', { name: /New Task/i }).click();
+  await expect.element(screen.getByRole('heading', { name: 'New Task' })).toBeVisible();
+  await expect.element(screen.getByPlaceholder('Task name')).toBeVisible();
 });
 
 test('renders column headers when tasks exist', async () => {
@@ -55,13 +55,12 @@ test('renders column headers when tasks exist', async () => {
   const screen = render(<TaskListView />);
   // Wait for the task name to appear (confirms fetch resolved and table rendered)
   await expect.element(screen.getByRole('cell', { name: 'Fix the bug' })).toBeVisible();
-  // th elements render the column headers (pt-BR)
-  await expect.element(screen.getByText('Nome')).toBeVisible();
-  await expect.element(screen.getByText('Responsável')).toBeVisible();
-  await expect.element(screen.getByText('Prioridade')).toBeVisible();
+  await expect.element(screen.getByText('Name')).toBeVisible();
+  await expect.element(screen.getByText('Owner')).toBeVisible();
+  await expect.element(screen.getByText('Priority')).toBeVisible();
   await expect.element(screen.getByText('Status')).toBeVisible();
-  await expect.element(screen.getByText('Entrega')).toBeVisible();
-  await expect.element(screen.getByText('Pessoa Alvo')).toBeVisible();
+  await expect.element(screen.getByText('Due')).toBeVisible();
+  await expect.element(screen.getByText('Target Person')).toBeVisible();
 });
 
 test('renders task row with correct data', async () => {

@@ -28,7 +28,7 @@ export function PersonForm({ onCreated, onClose }: PersonFormProps) {
       onCreated(created);
     } else {
       const body = await res.json();
-      setError((body as { error?: string }).error ?? 'Erro ao criar pessoa');
+      setError((body as { error?: string }).error ?? 'Failed to create person');
     }
     setSaving(false);
   }
@@ -37,7 +37,7 @@ export function PersonForm({ onCreated, onClose }: PersonFormProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-zinc-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-zinc-900">Nova Pessoa</h2>
+          <h2 className="text-lg font-bold text-zinc-900">New Person</h2>
           <button
             onClick={onClose}
             className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400"
@@ -48,7 +48,7 @@ export function PersonForm({ onCreated, onClose }: PersonFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-zinc-500 mb-1 uppercase tracking-wide">
-              Nome *
+              Name *
             </label>
             <input
               autoFocus
@@ -57,7 +57,7 @@ export function PersonForm({ onCreated, onClose }: PersonFormProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Nome completo"
+              placeholder="Full name"
             />
           </div>
           {error && <p className="text-xs text-red-500">{error}</p>}
@@ -67,14 +67,14 @@ export function PersonForm({ onCreated, onClose }: PersonFormProps) {
               onClick={onClose}
               className="px-4 py-2 text-sm text-zinc-600 hover:text-zinc-900 transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
               className="px-4 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
-              {saving ? 'Criando…' : 'Criar Pessoa'}
+              {saving ? 'Creating…' : 'Create Person'}
             </button>
           </div>
         </form>

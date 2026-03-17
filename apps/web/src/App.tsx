@@ -49,21 +49,21 @@ function App() {
             <button
               onClick={() => setActiveView('board')}
               className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'board' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
-              title="Quadro de tarefas"
+              title="Task board"
             >
               <LayoutDashboard size={20} strokeWidth={2.5} />
             </button>
             <button
               onClick={() => setActiveView('persons')}
               className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'persons' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
-              title="Pessoas e relacionamentos"
+              title="People & relationships"
             >
               <Users size={20} strokeWidth={2.5} />
             </button>
             <button
               onClick={() => setActiveView('settings')}
               className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
-              title="Configurações"
+              title="Settings"
             >
               <Settings size={20} strokeWidth={2.5} />
             </button>
@@ -89,7 +89,7 @@ function App() {
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-2 ring-indigo-100" />
               <h1 className="text-sm font-semibold tracking-tight text-zinc-900">
-                {activeView === 'persons' ? 'CRM — Relacionamentos' : 'Projeto Principal'}
+                {activeView === 'persons' ? 'CRM — Relationships' : 'Main Project'}
               </h1>
               <span className="text-zinc-200 font-light text-base leading-none">/</span>
               <span className="text-xs text-zinc-400 font-medium">dot-matrix-labs/calypso</span>
@@ -103,7 +103,7 @@ function App() {
                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
               >
                 <Plus size={13} strokeWidth={2.5} />
-                Nova Tarefa
+                New Task
               </button>
             )}
           </header>
@@ -114,7 +114,7 @@ function App() {
             {activeView === 'persons' && <PersonsView />}
             {activeView === 'settings' && (
               <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
-                Configurações em breve
+                Settings coming soon
               </div>
             )}
           </div>

@@ -46,9 +46,9 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center font-sans">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Calypso Weekly</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Hot CRM</h1>
         <p className="text-gray-500 text-center mb-8">
-          {isRegister ? 'Create a Journalist Account' : 'Sign in to your account'}
+          {isRegister ? 'Create an account' : 'Sign in to your account'}
         </p>
 
         {error && (
@@ -64,7 +64,7 @@ export const Login: React.FC = () => {
               type="text"
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
-              placeholder="e.g. KaraSwisher"
+              placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />

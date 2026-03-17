@@ -61,7 +61,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
     });
 
   const user = await getAuthenticatedUser(req);
-  if (!user) return json({ error: 'Não autorizado' }, 401);
+  if (!user) return json({ error: 'Unauthorized' }, 401);
 
   // ── Person routes ──────────────────────────────────────────────────────────
 
@@ -87,7 +87,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
     };
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
-      return json({ error: 'name é obrigatório' }, 400);
+      return json({ error: 'name is required' }, 400);
     }
 
     const id = crypto.randomUUID();
@@ -119,7 +119,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
       FROM entities
       WHERE id = ${id} AND type = 'person'
     `;
-    if (!row) return json({ error: 'Pessoa não encontrada' }, 404);
+    if (!row) return json({ error: 'Person not found' }, 404);
     return json(rowToPerson(row));
   }
 
@@ -129,7 +129,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
     const [existing] = await sql<{ properties: PersonProperties }[]>`
       SELECT properties FROM entities WHERE id = ${id} AND type = 'person'
     `;
-    if (!existing) return json({ error: 'Pessoa não encontrada' }, 404);
+    if (!existing) return json({ error: 'Person not found' }, 404);
 
     const patch = await req.json();
     const updated: PersonProperties = {
@@ -195,13 +195,13 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
     };
 
     if (!personAId || !personBId) {
-      return json({ error: 'personAId e personBId são obrigatórios' }, 400);
+      return json({ error: 'personAId and personBId are required' }, 400);
     }
     if (personAId === personBId) {
-      return json({ error: 'Uma pessoa não pode ter relacionamento consigo mesma' }, 400);
+      return json({ error: 'A person cannot have a relationship with themselves' }, 400);
     }
     if (!score || score < 1 || score > 5 || !Number.isInteger(score)) {
-      return json({ error: 'score deve ser um inteiro entre 1 e 5' }, 400);
+      return json({ error: 'score must be an integer between 1 and 5' }, 400);
     }
 
     // Verify both persons exist
@@ -210,7 +210,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
       WHERE id IN (${personAId}, ${personBId}) AND type = 'person'
     `;
     if (personCheck.length < 2) {
-      return json({ error: 'Uma ou ambas as pessoas não foram encontradas' }, 404);
+      return json({ error: 'One or both persons not found' }, 404);
     }
 
     const id = crypto.randomUUID();
@@ -241,7 +241,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
       FROM entities
       WHERE id = ${id} AND type = 'relationship'
     `;
-    if (!row) return json({ error: 'Relacionamento não encontrado' }, 404);
+    if (!row) return json({ error: 'Relationship not found' }, 404);
     return json(rowToRelationship(row));
   }
 
@@ -251,7 +251,7 @@ export async function handlePersonsRequest(req: Request, url: URL): Promise<Resp
     const [existing] = await sql<{ properties: RelationshipProperties }[]>`
       SELECT properties FROM entities WHERE id = ${id} AND type = 'relationship'
     `;
-    if (!existing) return json({ error: 'Relacionamento não encontrado' }, 404);
+    if (!existing) return json({ error: 'Relationship not found' }, 404);
 
     const patch = await req.json();
     const updated: RelationshipProperties = {
