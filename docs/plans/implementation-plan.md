@@ -1,4 +1,8 @@
-# MVP Implementation Plan: Calypso Project Management & Chat
+# Implementation Plan
+
+> **Pivot (2026-03-17):** This project is pivoting from a project management tool to **hot-or-not**, a contextual relationship strength CRM. New feature work is tracked as GitHub issues on `dot-matrix-labs/calypso-starter-ts`. The phases below are historical context from the prior Calypso direction.
+
+# Prior Plan: Calypso Project Management & Chat
 
 ## Goal Description
 
