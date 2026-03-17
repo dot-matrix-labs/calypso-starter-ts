@@ -1,4 +1,29 @@
-# MVP Implementation Plan: Calypso Project Management & Chat
+# Implementation Plan
+
+> **Pivot (2026-03-17):** This project is pivoting from a project management tool to **hot-or-not**, a contextual relationship strength CRM. New feature work is tracked as GitHub issues on `dot-matrix-labs/calypso-starter-ts`. The phases below are historical context from the prior Calypso direction.
+
+## Issue #1: hot-or-not — Core CRM (feat/1-hot-or-not-core-crm)
+
+### Acceptance criteria checklist
+
+- [x] Person entity with all biographical data types (education, employment, board, geography, hobbies, donations, family, conferences, press) — stored as JSONB
+- [x] Each biographical data type has a configurable `tempo` field
+- [x] Person record with only a name is valid and saves correctly
+- [x] Relationship entity with 1–5 strength score and reason field
+- [x] Relationships are bidirectional — A→B is visible from B's profile
+- [x] Two persons with no relationship show score 0 / "sem relação"
+- [x] Task can be linked to a target Person via `targetPersonId` field
+- [x] Task detail view shows the target person's name and relationship score
+- [x] Person profile page with biographical data sections
+- [x] Relationship view with score badges and labels (pt-BR)
+- [x] New Task modal includes Pessoa Alvo selector with score preview
+- [x] API integration tests for all person/relationship/task-person routes
+- [x] Component tests updated for pt-BR text and new Task type fields
+- [ ] Component test: PersonForm renders and creates a person
+- [ ] Component test: RelationshipView shows 0/score when no relationship
+- [ ] E2E test: create two persons with board overlap, set 5/5, verify on both profiles
+
+# Prior Plan: Calypso Project Management & Chat
 
 ## Goal Description
 

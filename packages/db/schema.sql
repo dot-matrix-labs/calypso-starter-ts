@@ -37,10 +37,12 @@ CREATE INDEX IF NOT EXISTS idx_relations_type ON relations(type);
 
 -- Seed required entity types
 INSERT INTO entity_types (type, schema) VALUES
-  ('user',        '{}'),
-  ('task',        '{}'),
-  ('tag',         '{}'),
-  ('github_link', '{}'),
-  ('channel',     '{}'),
-  ('message',     '{}')
+  ('user',         '{}'),
+  ('task',         '{}'),
+  ('tag',          '{}'),
+  ('github_link',  '{}'),
+  ('channel',      '{}'),
+  ('message',      '{}'),
+  ('person',       '{}'),
+  ('relationship', '{}')
 ON CONFLICT (type) DO NOTHING;

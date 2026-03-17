@@ -9,6 +9,7 @@
 import { migrate } from 'db';
 import { handleAuthRequest } from './api/auth';
 import { handleTasksRequest } from './api/tasks';
+import { handlePersonsRequest } from './api/persons';
 import { handleStudioRequest } from './api/studio';
 
 // Starter behavior:
@@ -50,6 +51,11 @@ export default {
     if (url.pathname.startsWith('/api/tasks')) {
       const tasksRes = await handleTasksRequest(req, url);
       if (tasksRes) return tasksRes;
+    }
+
+    if (url.pathname.startsWith('/api/persons') || url.pathname.startsWith('/api/relationships')) {
+      const personsRes = await handlePersonsRequest(req, url);
+      if (personsRes) return personsRes;
     }
 
     if (url.pathname.startsWith('/studio')) {
