@@ -19,11 +19,12 @@
     "prettier": "prettier",
     "format": "bunx prettier --write .",
     "format:check": "bunx prettier --check .",
-    "dev": "bun run --filter '*' dev",
+    "dev": "bun run scripts/dev-start.ts",
     "studio": "bun run scripts/studio-start.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "vite": "^5.1.0",
     "@playwright/test": "^1.40.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.5",

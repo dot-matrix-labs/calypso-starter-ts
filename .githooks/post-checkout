@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-BRANCH=$(git branch --show-current 2>/dev/null)
-[[ "$BRANCH" == studio/session* ]] && exit 0
-
-# post-checkout: no-op. Calypso standards live in prompts/ in the repo.
-exit 0

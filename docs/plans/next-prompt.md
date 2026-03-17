@@ -2,46 +2,33 @@
 
 ## Context
 
-Branch: feat/1-hot-or-not-core-crm (GitHub issue #1, draft PR #5)
+The git hooks have been refactored: the planning-docs gate (requiring
+`implementation-plan.md` and `next-prompt.md` at every commit) has been
+removed from `pre-commit`. Test failures are now blocking in `pre-push`
+instead of advisory. The `dev` script now routes through
+`scripts/dev-start.ts`, which spins up an ephemeral Postgres container,
+runs migrations, then starts the API server and Vite in middleware mode as
+a single HTTP entry point.
 
-Commit 1 of the CRM feature has just landed. It includes:
-
-- `packages/core/types.ts`: `Person`, `PersonProperties`, `Relationship`, `RelationshipScore`, `RELATIONSHIP_SCORE_LABELS`, biographical entry types, `UpdateTempo`, and `targetPersonId` on `Task`/`TaskProperties`
-- `packages/db/schema.sql`: added `person` and `relationship` entity type seeds
-- `apps/server/src/api/persons.ts`: full CRUD for `/api/persons` and `/api/relationships`, bidirectional relationship lookup at `/api/persons/:id/relationships`
-- `apps/server/src/index.ts`: wired in `handlePersonsRequest`
-- `apps/server/src/api/tasks.ts`: `targetPersonId` support in POST and rowToTask
-- `apps/web/src/components/TaskListView.tsx`: pt-BR text, Pessoa Alvo column and modal field
-- `apps/web/src/components/PersonForm.tsx`: create-person modal
-- `apps/web/src/components/RelationshipView.tsx`: relationship list + create form for a person
-- `apps/web/src/components/PersonsView.tsx`: people list + detail panel with biographical sections
-- `apps/web/src/App.tsx`: People nav item using `Users` icon
-- `apps/web/tests/component/fixture-server.ts`: persons/relationships fixture routes
-- `apps/web/tests/component/task-list.test.tsx`: updated for pt-BR text and new Task fields
-- `apps/server/tests/integration/persons-api.test.ts`: full integration test suite
+There are known failing Studio API integration tests from the prior push.
 
 ## Next Action
 
 Read these files first:
 
-1. `docs/plans/implementation-plan.md` (check remaining unchecked items)
-2. This file
-3. `apps/web/tests/component/task-list.test.tsx` (current component tests)
+1. `apps/server/tests/integration/studio-api.test.ts`
+2. `apps/server/src/api/studio.ts`
+3. `apps/server/src/studio/agent.ts`
+4. `docs/plans/implementation-plan.md`
+5. this file
 
-Then do:
+Then do this:
 
-1. Add component tests for `PersonForm` (renders, creates a person, shows error on failure).
-2. Add component tests for `PersonsView` (empty state, renders person list).
-3. After the component tests are passing, check whether any acceptance criteria remain unchecked in `docs/plans/implementation-plan.md` and address them.
-4. Commit and push.
+1. Reproduce the failing Studio API integration tests.
+2. Determine whether each failure is in the tests or the implementation.
+3. Fix them without weakening coverage.
+4. After the Studio API suite is green, align the remaining implementation
+   companions to the current workflow YAMLs and release-gate model.
 
-## FAILING TESTS — Must be addressed before next push
-
-Verify the existing suites still pass after the pt-BR text and type changes:
-
-- `bun --bun vitest run apps/server/tests/integration/api.test.ts`
-- `bun --bun vitest run apps/server/tests/integration/task-write-boundary.test.ts`
-- `bun --bun vitest run apps/server/tests/integration/persons-api.test.ts`
-- `bun --bun vitest run --config apps/web/vitest.browser.config.ts`
-
-The task-list component test text was updated to pt-BR and MOCK_TASK now includes `targetPersonId: null`. If those still fail, fix them before pushing.
+After editing, update `docs/plans/implementation-plan.md` and overwrite this
+file with the next self-contained prompt.

@@ -109,6 +109,7 @@ Report the PR URL to the user before continuing.
 Launch a subagent with `isolation: "worktree"` to do the actual implementation.
 
 The subagent prompt MUST include:
+
 - The full issue body (behaviour, acceptance criteria, test plan)
 - The branch name to work on
 - The PR number (so the subagent can push to the correct branch)
@@ -148,6 +149,7 @@ Branch: {branch-name} (already pushed to remote with draft PR #{pr-number})
 After the subagent completes:
 
 1. Check CI status on the PR:
+
    ```bash
    gh pr checks {pr-number} --repo {tasks-repo}
    ```
@@ -157,11 +159,13 @@ After the subagent completes:
 3. Update the PR description with a proper summary of what was implemented.
 
 4. Update the PR from draft to ready:
+
    ```bash
    gh pr ready {pr-number}
    ```
 
 5. Update the issue stage to "In Review":
+
    ```bash
    # Fetch current body, replace Stage line, update
    ```

@@ -31,6 +31,7 @@ TASKS_REPO=$(gh repo view --json nameWithOwner -q '(.owner.login) + "/" + (.name
 ## Phase 1: Verify readiness
 
 1. Fetch the issue:
+
    ```bash
    gh issue view {issue-number} --repo {tasks-repo} --json title,body -q '.title,.body'
    ```
@@ -38,12 +39,14 @@ TASKS_REPO=$(gh repo view --json nameWithOwner -q '(.owner.login) + "/" + (.name
 2. Parse the Acceptance Criteria and Test Plan sections.
 
 3. Check that the current branch has all the implementation committed:
+
    ```bash
    git status
    git diff main...HEAD --stat
    ```
 
 4. Run the verification suite:
+
    ```bash
    bunx tsc --noEmit
    bun run lint
@@ -122,6 +125,7 @@ EOF
 ## Phase 3: Report
 
 Report to the user:
+
 - PR URL
 - CI status
 - Any acceptance criteria that are not yet met
