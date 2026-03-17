@@ -22,6 +22,7 @@ export const sql = postgres(getDbUrl(), {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
+  connection: { client_min_messages: 'warning' },
 });
 
 export interface MigrateOptions {
@@ -48,6 +49,7 @@ export async function migrate(options: MigrateOptions = {}) {
           max: 1,
           idle_timeout: 10,
           connect_timeout: 10,
+          connection: { client_min_messages: 'warning' },
         });
 
   try {

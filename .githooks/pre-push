@@ -3,7 +3,7 @@
 BRANCH=$(git branch --show-current 2>/dev/null)
 [[ "$BRANCH" == studio/session* ]] && exit 0
 
-# pre-push: Blueprint audit (blocks) + lint/format/type (blocks) + test suite (annotates).
+# pre-push: Blueprint audit (blocks) + lint/format/type (blocks) + test suite (blocks) + PR size (advisory).
 
 set -euo pipefail
 
@@ -24,7 +24,6 @@ PKG_HITS=$(find . -name "package.json" ! -path "*/node_modules/*" \
   -exec grep -lE "$FORBIDDEN" {} \; 2>/dev/null || true)
 [ -n "$PKG_HITS" ] && VIOLATIONS+=("Forbidden packages detected in:\n${PKG_HITS}")
 
-
 if [ ${#VIOLATIONS[@]} -gt 0 ]; then
   echo "" >&2
   echo "PUSH BLOCKED: Blueprint violations detected:" >&2
@@ -35,7 +34,7 @@ if [ ${#VIOLATIONS[@]} -gt 0 ]; then
   exit 1
 fi
 
-# ── 2. PR size gate (warning only) ────────────────────────────────────────────────
+# ── 2. PR size gate ─────────────────────────────────────────────────────────
 
 PR_FILE_LIMIT=20
 MERGE_BASE=$(git merge-base HEAD origin/main 2>/dev/null \
@@ -45,19 +44,8 @@ if [ -n "$MERGE_BASE" ]; then
   PR_FILE_COUNT=$(git diff --name-only "$MERGE_BASE"...HEAD | wc -l | tr -d ' ')
   if [ "$PR_FILE_COUNT" -gt "$PR_FILE_LIMIT" ]; then
     echo "" >&2
-    echo "WARNING: This PR changes ${PR_FILE_COUNT} files (limit: ${PR_FILE_LIMIT})." >&2
-    echo "Consider splitting into smaller PRs." >&2
-
-    cat >> docs/plans/next-prompt.md <<EOF
-
----
-
-# PR Size Warning
-
-This PR has ${PR_FILE_COUNT} files changed (limit: ${PR_FILE_LIMIT}). Consider splitting into smaller, more focused PRs.
-EOF
-    bunx prettier --write docs/plans/next-prompt.md >/dev/null 2>&1 || true
-    echo "Added note to docs/plans/next-prompt.md" >&2
+    echo "PR SIZE WARNING: This PR changes ${PR_FILE_COUNT} files (limit: ${PR_FILE_LIMIT})." >&2
+    echo "Consider splitting into smaller, more reviewable PRs." >&2
     echo "" >&2
   fi
 fi
@@ -77,7 +65,6 @@ if [ $QUALITY_FAILED -ne 0 ]; then
   echo "" >&2
   echo "PUSH BLOCKED: Lint, format, or type errors must be resolved before pushing." >&2
   echo -e "$QUALITY_OUTPUT" >&2
-  echo "These were warned about at commit time. Fix them, update next-prompt.md, and commit." >&2
   echo "" >&2
   exit 1
 fi
@@ -90,33 +77,14 @@ TEST_OUTPUT=$(bun --bun vitest run 2>&1) && TEST_EXIT=0 || TEST_EXIT=$?
 
 if [ $TEST_EXIT -ne 0 ]; then
   FAILING=$(echo "$TEST_OUTPUT" | grep -E "^\s*(FAIL|✗|×|●|not ok)" | head -30 || true)
-
-  cat >> docs/plans/next-prompt.md <<EOF
-
----
-
-## FAILING TESTS — Must be addressed before next push
-
-The following tests were failing at the time of the last push.
-They must be **checked, fixed, or rewritten. Never ignore or skip them.**
-
-\`\`\`
-${FAILING}
-\`\`\`
-
-For each failure: determine whether the test is wrong (fix the test to match
-correct behaviour) or the implementation is wrong (fix the code). Do not
-disable, comment out, or add skip/todo markers to avoid addressing failures.
-
-EOF
-
-  bunx prettier --write docs/plans/next-prompt.md >/dev/null 2>&1 || true
-
   echo "" >&2
-  echo "WARNING: Test failures detected. Push is proceeding, but" >&2
-  echo "docs/plans/next-prompt.md has been updated with the failing tests." >&2
-  echo "They must be resolved — not ignored — in the next commit." >&2
+  echo "PUSH BLOCKED: Test failures must be resolved before pushing." >&2
+  echo "$FAILING" >&2
   echo "" >&2
+  echo "Determine whether each test is wrong (fix the test) or the implementation is wrong" >&2
+  echo "(fix the code). Do not disable, skip, or add todo markers to avoid failures." >&2
+  echo "" >&2
+  exit 1
 fi
 
 exit 0

@@ -236,6 +236,7 @@ gh issue edit {issue-number} --repo {tasks-repo} --body "{updated body}"
 ```
 
 **IMPORTANT:**
+
 - Preserve all existing sections — only add or update the Dependents section.
 - Do NOT change the title, Stage, Acceptance criteria, Test plan, or any other section. Title changes happen in Phase 5.
 - Show the user a diff of what will change for each issue before editing.
@@ -265,6 +266,7 @@ if capacity allows, but sequential execution is the default assumption.
 ```
 
 Rules for the rewritten plan:
+
 - Use `**Batch N — {description}**` headings (replacing any prior Phase/Batch headings).
 - Entries are plain list items — **NEVER checkboxes**. A `- [ ]` or `- [x]` MUST NOT appear anywhere in the Plan body. Completion is determined solely by whether the linked GitHub issue is open or closed.
 - Include the `[risk: N]` annotation on each entry.

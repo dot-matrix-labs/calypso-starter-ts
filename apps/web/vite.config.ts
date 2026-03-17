@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
+import tailwindConfig from './tailwind.config';
 
 export function getApiPort(env: NodeJS.ProcessEnv = process.env): number {
   const rawPort = env.STUDIO_API_PORT ?? env.PORT ?? '31415';
@@ -34,7 +35,7 @@ export default defineConfig({
   },
   css: {
     postcss: {
-      plugins: [tailwindcss(), autoprefixer()],
+      plugins: [tailwindcss(tailwindConfig), autoprefixer()],
     },
   },
 });

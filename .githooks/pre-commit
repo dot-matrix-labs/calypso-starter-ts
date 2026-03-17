@@ -3,14 +3,13 @@
 BRANCH=$(git branch --show-current 2>/dev/null)
 [[ "$BRANCH" == studio/session* ]] && exit 0
 
-# commit size advisory + lint/format auto-fix.
+# pre-commit: Hard violation scans (blocks) + commit size advisory + lint/format auto-fix.
 STAGED=$(git diff --cached --name-only)
 STAGED_DIFF=$(git diff --cached -- ':!.githooks' ':!bun.lock' ':!package-lock.json' ':!yarn.lock')
 DOC_STAGED=$(echo "$STAGED" | grep -E '\.(md|rst|txt)$' || true)
 
 # ── 0. Documentation merge safety gate ───────────────────────────────────────
-# Docs cannot be auto-merged. We also block commits that still contain merge
-# markers to prevent accidental corruption.
+# Block commits that still contain merge markers to prevent accidental corruption.
 if [ -n "$DOC_STAGED" ]; then
   DOC_MARKERS=""
   while IFS= read -r file; do
@@ -34,7 +33,7 @@ if [ -n "$DOC_STAGED" ]; then
   fi
 fi
 
-# These are deterministic checks on the staged diff — no agent assertion needed.
+# ── 1. Hard violation scans ─────────────────────────────────────────────────
 VIOLATIONS=()
 
 # TypeScript only — no .js/.mjs logic files staged
@@ -72,35 +71,8 @@ if [ ${#VIOLATIONS[@]} -gt 0 ]; then
   exit 1
 fi
 
-# ── 2. Planning documents gate ──────────────────────────────────────────────
-PLAN_ERRORS=()
-
-if ! echo "$STAGED" | grep -q "^docs/plans/implementation-plan\.md$"; then
-  PLAN_ERRORS+=("docs/plans/implementation-plan.md")
-fi
-
-if ! echo "$STAGED" | grep -q "^docs/plans/next-prompt\.md$"; then
-  PLAN_ERRORS+=("docs/plans/next-prompt.md")
-fi
-
-if [ ${#PLAN_ERRORS[@]} -gt 0 ]; then
-  echo "" >&2
-  echo "COMMIT BLOCKED: The following planning files were not staged:" >&2
-  for f in "${PLAN_ERRORS[@]}"; do
-    echo "  - $f" >&2
-  done
-  echo "" >&2
-  echo "At every commit:" >&2
-  echo "  implementation-plan.md — check off completed tasks; add or reorder discovered tasks." >&2
-  echo "  next-prompt.md         — overwrite with the complete prompt for the next commit." >&2
-  echo "" >&2
-  exit 1
-fi
-
-# ── 3. Commit size advisory ─────────────────────────────────────────────────
-PLANNING_DOCS="docs/plans/implementation-plan.md
-docs/plans/next-prompt.md"
-STAGED_COUNT=$(echo "$STAGED" | grep -v "^$" | grep -vF "$PLANNING_DOCS" | wc -l | tr -d ' ')
+# ── 2. Commit size advisory ─────────────────────────────────────────────────
+STAGED_COUNT=$(echo "$STAGED" | grep -v "^$" | wc -l | tr -d ' ')
 COMMIT_FILE_LIMIT=10
 
 if [ "$STAGED_COUNT" -gt "$COMMIT_FILE_LIMIT" ]; then
@@ -108,17 +80,9 @@ if [ "$STAGED_COUNT" -gt "$COMMIT_FILE_LIMIT" ]; then
   echo "COMMIT SIZE WARNING: This commit touches ${STAGED_COUNT} files (limit: ${COMMIT_FILE_LIMIT})." >&2
   echo "Consider splitting this into smaller, more focused commits." >&2
   echo "" >&2
-
-  cat >> docs/plans/next-prompt.md <<EOF
-
----
-## Commit Size Warning
-The previous commit touched ${STAGED_COUNT} files (limit: ${COMMIT_FILE_LIMIT}).
-Commits should be small and focused. If the next task touches many files, split it.
-EOF
 fi
 
-# ── 4. Lint/format auto-fix + flag unfixable ────────────────────────────────
+# ── 3. Lint/format auto-fix + flag unfixable ────────────────────────────────
 bun run eslint . --fix 2>&1 || true
 bun run prettier --write . 2>&1 || true
 
@@ -132,15 +96,6 @@ if [ $ESLINT_CLEAN -eq 0 ] || [ $PRETTIER_CLEAN -eq 0 ]; then
   [ $PRETTIER_CLEAN -eq 0 ] && echo "$UNFIXED_PRETTIER" >&2
   echo "" >&2
   echo "Commit allowed. These issues WILL block your next push." >&2
-  echo "They have been appended to next-prompt.md." >&2
-
-  cat >> docs/plans/next-prompt.md <<EOF
-
----
-### Unfixed Lint/Format Issues — Must resolve before next push
-$([ $ESLINT_CLEAN -eq 0 ] && echo "### ESLint\n\`\`\`\n${UNFIXED_ESLINT}\n\`\`\`")
-$([ $PRETTIER_CLEAN -eq 0 ] && echo "### Prettier\n\`\`\`\n${UNFIXED_PRETTIER}\n\`\`\`")
-EOF
 fi
 
 exit 0
