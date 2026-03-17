@@ -28,7 +28,12 @@ interface RelationshipFormProps {
   defaultPersonAId?: string;
 }
 
-function RelationshipForm({ persons, onCreated, onClose, defaultPersonAId }: RelationshipFormProps) {
+function RelationshipForm({
+  persons,
+  onCreated,
+  onClose,
+  defaultPersonAId,
+}: RelationshipFormProps) {
   const [personAId, setPersonAId] = useState(defaultPersonAId ?? '');
   const [personBId, setPersonBId] = useState('');
   const [score, setScore] = useState<number>(3);
@@ -210,7 +215,9 @@ export function RelationshipView({ personId, persons, onPersonsChange }: Relatio
       {loading ? (
         <p className="text-xs text-zinc-400">Carregando…</p>
       ) : relationships.length === 0 ? (
-        <p className="text-xs text-zinc-400 italic">Sem relacionamentos definidos. Score: 0 / sem relação</p>
+        <p className="text-xs text-zinc-400 italic">
+          Sem relacionamentos definidos. Score: 0 / sem relação
+        </p>
       ) : (
         <ul className="space-y-2">
           {relationships.map((rel) => {

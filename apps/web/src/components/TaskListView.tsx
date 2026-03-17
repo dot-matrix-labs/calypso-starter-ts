@@ -50,10 +50,9 @@ function TargetPersonCell({ personId, persons, relationships }: TargetPersonCell
   if (!person) return <span className="text-zinc-300">—</span>;
 
   // Find the strongest relationship score for this person
-  const rels = relationships.filter(
-    (r) => r.personAId === personId || r.personBId === personId,
-  );
-  const maxScore = rels.length > 0 ? (Math.max(...rels.map((r) => r.score)) as 1 | 2 | 3 | 4 | 5) : null;
+  const rels = relationships.filter((r) => r.personAId === personId || r.personBId === personId);
+  const maxScore =
+    rels.length > 0 ? (Math.max(...rels.map((r) => r.score)) as 1 | 2 | 3 | 4 | 5) : null;
 
   return (
     <span className="flex items-center gap-1.5">
@@ -299,20 +298,21 @@ export function TaskListView() {
                     </option>
                   ))}
                 </select>
-                {form.targetPersonId && (() => {
-                  const rels = relationships.filter(
-                    (r) =>
-                      r.personAId === form.targetPersonId || r.personBId === form.targetPersonId,
-                  );
-                  const maxScore = rels.length > 0 ? Math.max(...rels.map((r) => r.score)) : 0;
-                  return (
-                    <p className="mt-1 text-xs text-zinc-400">
-                      {maxScore > 0
-                        ? `Score: ${maxScore}/5 — ${RELATIONSHIP_SCORE_LABELS[maxScore as 1 | 2 | 3 | 4 | 5]}`
-                        : 'Score: 0 / sem relação'}
-                    </p>
-                  );
-                })()}
+                {form.targetPersonId &&
+                  (() => {
+                    const rels = relationships.filter(
+                      (r) =>
+                        r.personAId === form.targetPersonId || r.personBId === form.targetPersonId,
+                    );
+                    const maxScore = rels.length > 0 ? Math.max(...rels.map((r) => r.score)) : 0;
+                    return (
+                      <p className="mt-1 text-xs text-zinc-400">
+                        {maxScore > 0
+                          ? `Score: ${maxScore}/5 — ${RELATIONSHIP_SCORE_LABELS[maxScore as 1 | 2 | 3 | 4 | 5]}`
+                          : 'Score: 0 / sem relação'}
+                      </p>
+                    );
+                  })()}
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button

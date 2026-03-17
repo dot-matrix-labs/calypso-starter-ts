@@ -45,9 +45,7 @@ export function PersonsView() {
             </div>
           ) : persons.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center px-4">
-              <p className="text-zinc-400 text-xs">
-                Nenhuma pessoa cadastrada.
-              </p>
+              <p className="text-zinc-400 text-xs">Nenhuma pessoa cadastrada.</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="mt-2 text-indigo-600 text-xs hover:underline"
