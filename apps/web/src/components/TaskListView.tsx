@@ -143,9 +143,7 @@ export function TaskListView() {
           </div>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <p className="text-zinc-400 text-sm mb-4">
-              No tasks yet. Create one to get started.
-            </p>
+            <p className="text-zinc-400 text-sm mb-4">No tasks yet. Create one to get started.</p>
             <button
               onClick={() => setShowModal(true)}
               className="px-4 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-2"

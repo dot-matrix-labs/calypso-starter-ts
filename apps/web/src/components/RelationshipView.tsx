@@ -229,9 +229,7 @@ export function RelationshipView({ personId, persons, onPersonsChange }: Relatio
               >
                 <ScoreBadge score={rel.score} />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-zinc-900">
-                    {other?.name ?? '(unknown)'}
-                  </p>
+                  <p className="text-sm font-medium text-zinc-900">{other?.name ?? '(unknown)'}</p>
                   <p className="text-xs text-zinc-500 truncate">
                     {RELATIONSHIP_SCORE_LABELS[rel.score]}
                   </p>
