@@ -41,18 +41,21 @@ Use those paths exactly. Skip the analysis below.
 ### If $ARGUMENTS is empty
 
 1. Read the current branch's theme from its name and recent commits:
+
    ```bash
    echo $CURRENT_BRANCH
    git log main..HEAD --oneline | head -10
    ```
 
 2. List all files that differ from main (committed or not):
+
    ```bash
    git diff main --name-only
    git status --short
    ```
 
 3. For each modified file, examine what changed:
+
    ```bash
    git diff main -- {file}
    ```
@@ -201,6 +204,7 @@ git apply /tmp/calypso-patch-extract.diff
 ```
 
 If `git apply` fails:
+
 - Try `git apply --3way /tmp/calypso-patch-extract.diff` as a fallback.
 - If that also fails, stop and report the conflict to the user. Do NOT force-apply
   or create the PR with a partial patch.
