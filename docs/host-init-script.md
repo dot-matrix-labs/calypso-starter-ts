@@ -19,19 +19,31 @@ hours to minutes and ensures nothing is missed.
    - Database mode: local (uses `k8s/postgres.yaml`) or remote managed (external PG URL).
    - App domain for TLS/ingress configuration.
    - Required credential values.
-3. Generates secrets:
+   - All `read` prompts are guarded with `[ -t 0 ]` (TTY check) — if stdin is not a terminal (CI/CD, piped input), prompts are skipped and the script uses env var values only.
+3. Validates remote PostgreSQL connectivity using bash `/dev/tcp` (no `postgresql-client` or `psql` required). Confirms host:port is reachable; credential validation is deferred to the db-init Job.
+   - In non-interactive mode (no TTY): fails immediately on connection failure instead of re-prompting.
+   - In interactive mode: re-prompts for host/port on failure.
+4. Generates secrets:
    - `JWT_SECRET` — random 64-byte hex.
    - `ENCRYPTION_MASTER_KEY` — random 32-byte hex.
    - `SUPERUSER_PASSWORD` or `SUPERUSER_MNEMONIC`.
-4. Writes a populated `k8s/secrets.yaml` from `k8s/secrets.example.yaml`.
-5. Applies all k8s manifests in order.
-6. Waits for the db-init-job to complete.
-7. Polls `GET /healthz` until the app responds (or times out).
+5. Writes a populated `k8s/secrets.yaml` from `k8s/secrets.example.yaml`.
+   - `REMOTE_PG_CA_CERT` is guarded with `${REMOTE_PG_CA_CERT:-}` after `unset` to prevent `set -e` crashes when the variable was never set.
+6. Applies all k8s manifests in order.
+7. Configures `ufw` firewall — runs `ufw disable` before `ufw --force reset` to avoid errors on first run when ufw has no existing rules.
+8. Waits for the db-init-job to complete.
+9. Polls `GET /healthz` until the app responds (or times out).
 
 ## Non-interactive mode
 
-When all required env vars are pre-set (`REMOTE_PG_URL`, `APP_DOMAIN`, etc.), the script
-skips all prompts. This enables use in CI/CD pipelines.
+When all required env vars are pre-set (`REMOTE_PG_HOST`, `REMOTE_PG_PORT`, `APP_DOMAIN`,
+etc.) and stdin is not a terminal, the script skips all prompts. Key behaviours:
+
+- SSL mode prompt is skipped when `REMOTE_PG_SSL` is already set (TTY guard: `[ -t 0 ]`)
+- Remote PG connectivity check aborts immediately on failure (no re-prompt loop)
+- All optional integrations (WhatsApp, Resend, Brevo) use `${VAR:-}` defaults
+
+This enables use in CI/CD pipelines and automated provisioning.
 
 ## Idempotency
 
