@@ -15,15 +15,19 @@ against most managed providers.
 
 ## Modes
 
-| `DB_SSL` value       | Behaviour                                              |
-| -------------------- | ------------------------------------------------------ |
-| unset or `"disable"` | No TLS — for local k8s-internal Postgres               |
-| `"require"`          | TLS enabled, server certificate **not** verified       |
-| `"verify-full"`      | TLS enabled, server cert verified against `DB_CA_CERT` |
-| anything else        | Warning logged, no TLS                                 |
+| `DB_SSL` value       | Behaviour                                              | `ssl` option returned              |
+| -------------------- | ------------------------------------------------------ | ---------------------------------- |
+| unset or `"disable"` | No TLS — for local k8s-internal Postgres               | `undefined`                        |
+| `"require"`          | TLS enabled, server certificate **not** verified       | `{ rejectUnauthorized: false }`    |
+| `"verify-full"`      | TLS enabled, server cert verified against `DB_CA_CERT` | `{ rejectUnauthorized: true, ca }` |
+| anything else        | Warning logged, no TLS                                 | `undefined`                        |
 
 For `verify-full`, the `DB_CA_CERT` environment variable must contain the PEM certificate.
 If `DB_CA_CERT` is missing, it logs a warning and falls back to `require` mode.
+
+**Important:** `DB_SSL=disable` must be handled as an explicit "no TLS" value, returning
+`undefined`. The rinzler implementation previously had a bug where `disable` fell through
+to the `require` code path (TLS without cert verification). This was fixed in rinzler PR #165.
 
 ## Usage
 
