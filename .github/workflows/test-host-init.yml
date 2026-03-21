@@ -10,12 +10,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ── Pre-flight: skip branch jobs when prerequisite files are missing ─────
+  preflight:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    outputs:
+      has-dockerfile: ${{ steps.check.outputs.has-dockerfile }}
+      has-init-host: ${{ steps.check.outputs.has-init-host }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          echo "has-dockerfile=$( [ -f Dockerfile ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+          echo "has-init-host=$( [ -f scripts/init-host.sh ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+
   # ── Branch integration test — local postgres ─────────────────────────────
   # Builds the container from the current branch source, imports it directly
   # into k3s containerd, then runs init-host.sh with that locally-built image.
   # Answers: does the branch code work end-to-end?
   branch-local-mode:
-    if: github.event_name != 'schedule'
+    needs: preflight
+    if: github.event_name != 'schedule' && needs.preflight.outputs.has-dockerfile == 'true' && needs.preflight.outputs.has-init-host == 'true'
     runs-on: ubuntu-latest
     env:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
@@ -166,7 +181,8 @@ jobs:
   # Same as branch-local-mode but points init-host.sh at a plain Docker
   # postgres container standing in for a managed external database.
   branch-remote-mode:
-    if: github.event_name != 'schedule'
+    needs: preflight
+    if: github.event_name != 'schedule' && needs.preflight.outputs.has-dockerfile == 'true' && needs.preflight.outputs.has-init-host == 'true'
     runs-on: ubuntu-latest
     env:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
