@@ -1,4 +1,4 @@
-name: React component tests v3
+name: React Component Tests
 
 on:
   push:
@@ -7,19 +7,17 @@ on:
     branches: [main]
   workflow_dispatch:
 
-concurrency:
-  group: test-component-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - name: Install dependencies
-        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      - name: Install Dependencies
+        run: bun install
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
-      - name: Run component tests
+      - name: Run Component Tests
         run: bun --bun vitest run --config apps/web/vitest.browser.config.ts

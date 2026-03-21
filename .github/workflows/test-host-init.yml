@@ -1,0 +1,643 @@
+name: Host Init Tests
+
+on:
+  push:
+    branches: [main, 'feat/**', 'fix/**']
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  # ── Branch integration test — local postgres ─────────────────────────────
+  # Builds the container from the current branch source, imports it directly
+  # into k3s containerd, then runs init-host.sh with that locally-built image.
+  # Answers: does the branch code work end-to-end?
+  branch-local-mode:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Build container image from branch source
+        run: docker build -t ghcr.io/${{ github.repository }}:branch-test .
+
+      # k3s must be running before the image import. init-host.sh detects it is
+      # already active and skips reinstallation (etcd encryption is not configured
+      # in CI — acceptable, secrets encryption-at-rest is not under test here).
+      - name: Install k3s
+        run: |
+          curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --disable traefik" sh -
+          for i in $(seq 1 30); do
+            sudo k3s ctr version > /dev/null 2>&1 && break
+            sleep 2
+          done
+
+      - name: Import branch image into k3s containerd
+        run: docker save ghcr.io/${{ github.repository }}:branch-test | sudo k3s ctr images import -
+
+      - name: Run init-host.sh (local mode, branch image)
+        run: sudo -E bash scripts/init-host.sh demo
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+          CALYPSO_IMAGE_TAG: branch-test
+
+      - name: Verify calypso-db-init-secret deleted
+        run: |
+          if kubectl get secret calypso-db-init-secret --namespace=calypso-demo 2>/dev/null; then
+            echo "ERROR: calypso-db-init-secret still exists after init-host.sh completed!" >&2
+            exit 1
+          fi
+          echo "Verified: calypso-db-init-secret has been deleted."
+
+      - name: Verify ADMIN_DATABASE_URL not in long-lived secrets
+        run: |
+          for secret in calypso-api-secrets calypso-db-secrets; do
+            if kubectl get secret "${secret}" --namespace=calypso-demo 2>/dev/null; then
+              keys=$(kubectl get secret "${secret}" --namespace=calypso-demo \
+                -o jsonpath='{.data}' 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(d.keys()))" || echo "")
+              if echo "${keys}" | grep -qi "admin"; then
+                echo "ERROR: admin credentials found in ${secret}!" >&2
+                exit 1
+              fi
+            fi
+          done
+          echo "Verified: ADMIN_DATABASE_URL not present in long-lived secrets."
+
+      # postgres is a k3s-internal service — port-forward it to localhost so that
+      # subsequent steps (migrate, psql checks, app server) can reach it from the
+      # CI host. Also add a /etc/hosts alias so the URL extracted from k8s secrets
+      # ("postgres:5432") resolves to localhost unchanged.
+      - name: Expose local postgres to CI host via port-forward
+        run: |
+          echo "127.0.0.1 postgres" | sudo tee -a /etc/hosts
+          kubectl port-forward svc/postgres 5432:5432 -n calypso-demo &
+          echo "PF_PID=$!" >> "$GITHUB_ENV"
+          sleep 3
+
+      - name: Extract connection URLs from calypso-api-secrets
+        run: |
+          DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
+          AUDIT_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.AUDIT_DATABASE_URL}' | base64 -d)
+          ANALYTICS_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.ANALYTICS_DATABASE_URL}' | base64 -d)
+          JWT_SECRET=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.JWT_SECRET}' | base64 -d)
+          echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "AUDIT_DATABASE_URL=${AUDIT_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "ANALYTICS_DATABASE_URL=${ANALYTICS_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "JWT_SECRET=${JWT_SECRET}" >> "$GITHUB_ENV"
+
+      - name: Run migrate()
+        run: bun run packages/db/migrate.ts
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          AUDIT_DATABASE_URL: ${{ env.AUDIT_DATABASE_URL }}
+          ANALYTICS_DATABASE_URL: ${{ env.ANALYTICS_DATABASE_URL }}
+
+      # psql runs via the same postgres:16-alpine container image used by test-pg.ts
+      # and the remote-mode simulation — no host postgresql-client needed and the
+      # DB client version always matches the server.
+      - name: Verify calypso_app tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${DATABASE_URL}" -c "\dt" | grep -E "entity_types|entities"
+
+      - name: Verify calypso_audit tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" -c "\dt" | grep "audit_log"
+
+      - name: Verify calypso_analytics tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${ANALYTICS_DATABASE_URL}" -c "\dt" | grep -E "analytics_events|audit_replica"
+
+      - name: Verify audit_w INSERT grant
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" \
+            -c "INSERT INTO audit_log (id, action, entity_type, entity_id, changes) VALUES ('ci-branch-local-1', 'create', 'test', 'test-1', '{}')"
+
+      - name: Start app server and assert /health returns 200
+        run: |
+          bun run apps/server/src/index.ts &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> "$GITHUB_ENV"
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:31415/health > /dev/null 2>&1; then
+              echo "App is healthy after ${i} attempts"
+              break
+            fi
+            echo "Waiting for app... attempt ${i}"
+            sleep 2
+          done
+          curl -sf http://localhost:31415/health
+        env:
+          PORT: 31415
+          ENCRYPTION_DISABLED: 'true'
+
+      - name: Stop app server and port-forward
+        if: always()
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill "$APP_PID" 2>/dev/null || true
+          fi
+          if [[ -n "${PF_PID:-}" ]]; then
+            kill "$PF_PID" 2>/dev/null || true
+          fi
+
+  # ── Branch integration test — remote postgres mock ────────────────────────
+  # Same as branch-local-mode but points init-host.sh at a plain Docker
+  # postgres container standing in for a managed external database.
+  branch-remote-mode:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Build container image from branch source
+        run: docker build -t ghcr.io/${{ github.repository }}:branch-test .
+
+      # k3s must be running before the image import. init-host.sh detects it is
+      # already active and skips reinstallation (etcd encryption is not configured
+      # in CI — acceptable, secrets encryption-at-rest is not under test here).
+      - name: Install k3s
+        run: |
+          curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --disable traefik" sh -
+          for i in $(seq 1 30); do
+            sudo k3s ctr version > /dev/null 2>&1 && break
+            sleep 2
+          done
+
+      - name: Import branch image into k3s containerd
+        run: docker save ghcr.io/${{ github.repository }}:branch-test | sudo k3s ctr images import -
+
+      # Uses the same postgres:16-alpine image as test-pg.ts so the remote-mode
+      # simulation always targets the same DB engine version as the unit/integration
+      # test suite. docker exec avoids a host psql dependency.
+      - name: Start postgres Docker container (simulates managed external DB)
+        run: |
+          docker run -d \
+            --name pg-remote \
+            -e POSTGRES_PASSWORD=adminpass \
+            -p 5432:5432 \
+            postgres:16-alpine
+          for i in $(seq 1 20); do
+            if docker exec pg-remote psql -U postgres -c "SELECT 1" > /dev/null 2>&1; then
+              echo "Postgres is ready after ${i} attempts"
+              break
+            fi
+            echo "Waiting for postgres... attempt ${i}"
+            sleep 2
+          done
+
+      - name: Run init-host.sh (remote mode, branch image)
+        run: sudo -E bash scripts/init-host.sh demo
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+          CALYPSO_IMAGE_TAG: branch-test
+          REMOTE_PG_HOST: 172.17.0.1
+          REMOTE_PG_PORT: '5432'
+          REMOTE_PG_ADMIN_DB: postgres
+          REMOTE_PG_ADMIN_USER: postgres
+          REMOTE_PG_ADMIN_PASSWORD: adminpass
+          REMOTE_PG_SSL: disable
+
+      - name: Verify calypso-db-init-secret deleted
+        run: |
+          if kubectl get secret calypso-db-init-secret --namespace=calypso-demo 2>/dev/null; then
+            echo "ERROR: calypso-db-init-secret still exists after init-host.sh completed!" >&2
+            exit 1
+          fi
+          echo "Verified: calypso-db-init-secret has been deleted."
+
+      - name: Verify ADMIN_DATABASE_URL not in long-lived secrets
+        run: |
+          for secret in calypso-api-secrets calypso-db-secrets; do
+            if kubectl get secret "${secret}" --namespace=calypso-demo 2>/dev/null; then
+              keys=$(kubectl get secret "${secret}" --namespace=calypso-demo \
+                -o jsonpath='{.data}' 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(d.keys()))" || echo "")
+              if echo "${keys}" | grep -qi "admin"; then
+                echo "ERROR: admin credentials found in ${secret}!" >&2
+                exit 1
+              fi
+            fi
+          done
+          echo "Verified: ADMIN_DATABASE_URL not present in long-lived secrets."
+
+      - name: Extract connection URLs from calypso-api-secrets
+        run: |
+          DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
+          AUDIT_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.AUDIT_DATABASE_URL}' | base64 -d)
+          ANALYTICS_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.ANALYTICS_DATABASE_URL}' | base64 -d)
+          JWT_SECRET=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.JWT_SECRET}' | base64 -d)
+          echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "AUDIT_DATABASE_URL=${AUDIT_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "ANALYTICS_DATABASE_URL=${ANALYTICS_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "JWT_SECRET=${JWT_SECRET}" >> "$GITHUB_ENV"
+
+      - name: Run migrate()
+        run: bun run packages/db/migrate.ts
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          AUDIT_DATABASE_URL: ${{ env.AUDIT_DATABASE_URL }}
+          ANALYTICS_DATABASE_URL: ${{ env.ANALYTICS_DATABASE_URL }}
+
+      - name: Verify calypso_app tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${DATABASE_URL}" -c "\dt" | grep -E "entity_types|entities"
+
+      - name: Verify calypso_audit tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" -c "\dt" | grep "audit_log"
+
+      - name: Verify calypso_analytics tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${ANALYTICS_DATABASE_URL}" -c "\dt" | grep -E "analytics_events|audit_replica"
+
+      - name: Verify audit_w INSERT grant
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" \
+            -c "INSERT INTO audit_log (id, action, entity_type, entity_id, changes) VALUES ('ci-branch-remote-1', 'create', 'test', 'test-1', '{}')"
+
+      - name: Verify idempotency — run init-host.sh a second time
+        run: sudo -E bash scripts/init-host.sh demo
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+          CALYPSO_IMAGE_TAG: branch-test
+          REMOTE_PG_HOST: 172.17.0.1
+          REMOTE_PG_PORT: '5432'
+          REMOTE_PG_ADMIN_DB: postgres
+          REMOTE_PG_ADMIN_USER: postgres
+          REMOTE_PG_ADMIN_PASSWORD: adminpass
+          REMOTE_PG_SSL: disable
+
+      - name: Start app server and assert /health returns 200
+        run: |
+          bun run apps/server/src/index.ts &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> "$GITHUB_ENV"
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:31415/health > /dev/null 2>&1; then
+              echo "App is healthy after ${i} attempts"
+              break
+            fi
+            echo "Waiting for app... attempt ${i}"
+            sleep 2
+          done
+          curl -sf http://localhost:31415/health
+        env:
+          PORT: 31415
+          ENCRYPTION_DISABLED: 'true'
+
+      - name: Stop app server
+        if: always()
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill "$APP_PID" 2>/dev/null || true
+          fi
+
+  # ── Release smoke test — local postgres ──────────────────────────────────
+  # Pulls the latest published GHCR tag and runs init-host.sh with it.
+  # Intentional: tests operational readiness of the released image, not the
+  # branch. Runs nightly, on workflow_dispatch, and on pushes to main.
+  release-local-mode:
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Get latest release tag
+        id: release
+        run: |
+          TAG=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run init-host.sh (local mode, latest release)
+        run: sudo -E bash scripts/init-host.sh demo
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+          CALYPSO_IMAGE_TAG: ${{ steps.release.outputs.tag }}
+
+      - name: Verify calypso-db-init-secret deleted
+        run: |
+          if kubectl get secret calypso-db-init-secret --namespace=calypso-demo 2>/dev/null; then
+            echo "ERROR: calypso-db-init-secret still exists after init-host.sh completed!" >&2
+            exit 1
+          fi
+          echo "Verified: calypso-db-init-secret has been deleted."
+
+      - name: Verify ADMIN_DATABASE_URL not in long-lived secrets
+        run: |
+          for secret in calypso-api-secrets calypso-db-secrets; do
+            if kubectl get secret "${secret}" --namespace=calypso-demo 2>/dev/null; then
+              keys=$(kubectl get secret "${secret}" --namespace=calypso-demo \
+                -o jsonpath='{.data}' 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(d.keys()))" || echo "")
+              if echo "${keys}" | grep -qi "admin"; then
+                echo "ERROR: admin credentials found in ${secret}!" >&2
+                exit 1
+              fi
+            fi
+          done
+          echo "Verified: ADMIN_DATABASE_URL not present in long-lived secrets."
+
+      # postgres is a k3s-internal service — port-forward it to localhost so that
+      # subsequent steps (migrate, psql checks, app server) can reach it from the
+      # CI host. Also add a /etc/hosts alias so the URL extracted from k8s secrets
+      # ("postgres:5432") resolves to localhost unchanged.
+      - name: Expose local postgres to CI host via port-forward
+        run: |
+          echo "127.0.0.1 postgres" | sudo tee -a /etc/hosts
+          kubectl port-forward svc/postgres 5432:5432 -n calypso-demo &
+          echo "PF_PID=$!" >> "$GITHUB_ENV"
+          sleep 3
+
+      - name: Extract connection URLs from calypso-api-secrets
+        run: |
+          DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
+          AUDIT_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.AUDIT_DATABASE_URL}' | base64 -d)
+          ANALYTICS_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.ANALYTICS_DATABASE_URL}' | base64 -d)
+          JWT_SECRET=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.JWT_SECRET}' | base64 -d)
+          echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "AUDIT_DATABASE_URL=${AUDIT_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "ANALYTICS_DATABASE_URL=${ANALYTICS_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "JWT_SECRET=${JWT_SECRET}" >> "$GITHUB_ENV"
+
+      - name: Run migrate()
+        run: bun run packages/db/migrate.ts
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          AUDIT_DATABASE_URL: ${{ env.AUDIT_DATABASE_URL }}
+          ANALYTICS_DATABASE_URL: ${{ env.ANALYTICS_DATABASE_URL }}
+
+      - name: Verify calypso_app tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${DATABASE_URL}" -c "\dt" | grep -E "entity_types|entities"
+
+      - name: Verify calypso_audit tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" -c "\dt" | grep "audit_log"
+
+      - name: Verify calypso_analytics tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${ANALYTICS_DATABASE_URL}" -c "\dt" | grep -E "analytics_events|audit_replica"
+
+      - name: Verify audit_w INSERT grant
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" \
+            -c "INSERT INTO audit_log (id, action, entity_type, entity_id, changes) VALUES ('ci-release-local-1', 'create', 'test', 'test-1', '{}')"
+
+      - name: Start app server and assert /health returns 200
+        run: |
+          bun run apps/server/src/index.ts &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> "$GITHUB_ENV"
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:31415/health > /dev/null 2>&1; then
+              echo "App is healthy after ${i} attempts"
+              break
+            fi
+            echo "Waiting for app... attempt ${i}"
+            sleep 2
+          done
+          curl -sf http://localhost:31415/health
+        env:
+          PORT: 31415
+          ENCRYPTION_DISABLED: 'true'
+
+      - name: Stop app server and port-forward
+        if: always()
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill "$APP_PID" 2>/dev/null || true
+          fi
+          if [[ -n "${PF_PID:-}" ]]; then
+            kill "$PF_PID" 2>/dev/null || true
+          fi
+
+  # ── Release smoke test — remote postgres mock ─────────────────────────────
+  # Same as release-local-mode but uses an external postgres container.
+  release-remote-mode:
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Get latest release tag
+        id: release
+        run: |
+          TAG=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Uses the same postgres:16-alpine image as test-pg.ts so the remote-mode
+      # simulation always targets the same DB engine version as the unit/integration
+      # test suite. docker exec avoids a host psql dependency.
+      - name: Start postgres Docker container (simulates managed external DB)
+        run: |
+          docker run -d \
+            --name pg-remote \
+            -e POSTGRES_PASSWORD=adminpass \
+            -p 5432:5432 \
+            postgres:16-alpine
+          for i in $(seq 1 20); do
+            if docker exec pg-remote psql -U postgres -c "SELECT 1" > /dev/null 2>&1; then
+              echo "Postgres is ready after ${i} attempts"
+              break
+            fi
+            echo "Waiting for postgres... attempt ${i}"
+            sleep 2
+          done
+
+      - name: Run init-host.sh (remote mode, latest release)
+        run: sudo -E bash scripts/init-host.sh demo
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+          CALYPSO_IMAGE_TAG: ${{ steps.release.outputs.tag }}
+          REMOTE_PG_HOST: 172.17.0.1
+          REMOTE_PG_PORT: '5432'
+          REMOTE_PG_ADMIN_DB: postgres
+          REMOTE_PG_ADMIN_USER: postgres
+          REMOTE_PG_ADMIN_PASSWORD: adminpass
+          REMOTE_PG_SSL: disable
+
+      - name: Verify calypso-db-init-secret deleted
+        run: |
+          if kubectl get secret calypso-db-init-secret --namespace=calypso-demo 2>/dev/null; then
+            echo "ERROR: calypso-db-init-secret still exists after init-host.sh completed!" >&2
+            exit 1
+          fi
+          echo "Verified: calypso-db-init-secret has been deleted."
+
+      - name: Verify ADMIN_DATABASE_URL not in long-lived secrets
+        run: |
+          for secret in calypso-api-secrets calypso-db-secrets; do
+            if kubectl get secret "${secret}" --namespace=calypso-demo 2>/dev/null; then
+              keys=$(kubectl get secret "${secret}" --namespace=calypso-demo \
+                -o jsonpath='{.data}' 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(' '.join(d.keys()))" || echo "")
+              if echo "${keys}" | grep -qi "admin"; then
+                echo "ERROR: admin credentials found in ${secret}!" >&2
+                exit 1
+              fi
+            fi
+          done
+          echo "Verified: ADMIN_DATABASE_URL not present in long-lived secrets."
+
+      - name: Extract connection URLs from calypso-api-secrets
+        run: |
+          DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
+          AUDIT_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.AUDIT_DATABASE_URL}' | base64 -d)
+          ANALYTICS_DATABASE_URL=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.ANALYTICS_DATABASE_URL}' | base64 -d)
+          JWT_SECRET=$(kubectl get secret calypso-api-secrets -n calypso-demo \
+            -o jsonpath='{.data.JWT_SECRET}' | base64 -d)
+          echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "AUDIT_DATABASE_URL=${AUDIT_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "ANALYTICS_DATABASE_URL=${ANALYTICS_DATABASE_URL}" >> "$GITHUB_ENV"
+          echo "JWT_SECRET=${JWT_SECRET}" >> "$GITHUB_ENV"
+
+      - name: Run migrate()
+        run: bun run packages/db/migrate.ts
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          AUDIT_DATABASE_URL: ${{ env.AUDIT_DATABASE_URL }}
+          ANALYTICS_DATABASE_URL: ${{ env.ANALYTICS_DATABASE_URL }}
+
+      - name: Verify calypso_app tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${DATABASE_URL}" -c "\dt" | grep -E "entity_types|entities"
+
+      - name: Verify calypso_audit tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" -c "\dt" | grep "audit_log"
+
+      - name: Verify calypso_analytics tables exist
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${ANALYTICS_DATABASE_URL}" -c "\dt" | grep -E "analytics_events|audit_replica"
+
+      - name: Verify audit_w INSERT grant
+        run: |
+          docker run --rm --network=host postgres:16-alpine \
+            psql "${AUDIT_DATABASE_URL}" \
+            -c "INSERT INTO audit_log (id, action, entity_type, entity_id, changes) VALUES ('ci-release-remote-1', 'create', 'test', 'test-1', '{}')"
+
+      - name: Verify idempotency — run init-host.sh a second time
+        run: sudo -E bash scripts/init-host.sh demo
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+          CALYPSO_IMAGE_TAG: ${{ steps.release.outputs.tag }}
+          REMOTE_PG_HOST: 172.17.0.1
+          REMOTE_PG_PORT: '5432'
+          REMOTE_PG_ADMIN_DB: postgres
+          REMOTE_PG_ADMIN_USER: postgres
+          REMOTE_PG_ADMIN_PASSWORD: adminpass
+          REMOTE_PG_SSL: disable
+
+      - name: Start app server and assert /health returns 200
+        run: |
+          bun run apps/server/src/index.ts &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> "$GITHUB_ENV"
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:31415/health > /dev/null 2>&1; then
+              echo "App is healthy after ${i} attempts"
+              break
+            fi
+            echo "Waiting for app... attempt ${i}"
+            sleep 2
+          done
+          curl -sf http://localhost:31415/health
+        env:
+          PORT: 31415
+          ENCRYPTION_DISABLED: 'true'
+
+      - name: Stop app server
+        if: always()
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill "$APP_PID" 2>/dev/null || true
+          fi

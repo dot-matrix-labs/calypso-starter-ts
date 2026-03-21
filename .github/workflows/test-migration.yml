@@ -1,23 +1,25 @@
-name: Unit Tests
+name: Migration Smoke Tests
 
 on:
-  push:
-    branches: [main, 'UX/**', 'feat/**', 'fix/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
-  workflow_call:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Fetch full history so we can access main branch's schema
+          fetch-depth: 0
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
+
       - name: Install Dependencies
         run: bun install
-      - name: Lint and Format Check
-        run: bun run lint
-      - name: Run Unit Tests
-        run: bun --bun vitest run tests/unit apps/*/tests/unit
+
+      - name: Run Migration Smoke Tests
+        run: bun --bun vitest run --config apps/server/vitest.migration.config.ts

@@ -1,33 +1,15 @@
-name: Release v3
+name: Release
 
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 permissions:
   contents: write
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  packages: write
 
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - name: Install dependencies
-        run: bun install --frozen-lockfile --ignore-scripts
-      - name: Lint
-        run: bun run lint
-      - name: Format check
-        run: bun run format:check
-      - name: Build verification
-        run: bun run build
-
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +17,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
+      - name: Lint and format check
+        run: bun run lint
       - name: Run unit tests
         run: bun --bun vitest run tests/unit apps/*/tests/unit
 
@@ -46,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
       - name: Run API integration tests
-        run: bun run test:api
+        run: bun --bun vitest run --config apps/server/vitest.integration.config.ts
 
   component-tests:
     runs-on: ubuntu-latest
@@ -72,19 +56,149 @@ jobs:
       - name: Run E2E tests
         run: bun --bun vitest run --config tests/e2e/vitest.config.ts
 
-  build-frontend:
-    needs: [quality, unit-tests, api-tests, component-tests, e2e-tests]
+  migration-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
+      - name: Run migration smoke tests
+        run: bun --bun vitest run --config apps/server/vitest.migration.config.ts
+
+  build-frontend:
+    needs: [unit-tests, api-tests, component-tests, e2e-tests, migration-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
       - name: Build frontend bundle
         run: cd apps/web && bun --bun vite build
+
       - name: Create release tarball
         run: tar -czf web-dist.tar.gz -C apps/web/dist .
-      - name: Create GitHub release
+
+      - name: Upload web-dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web-dist.tar.gz
+
+      - name: Create GitHub Release
+        run: |
+          gh release delete "${{ github.ref_name }}" --yes 2>/dev/null || true
+          gh release create "${{ github.ref_name }}" web-dist.tar.gz --title "${{ github.ref_name }}" --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${{ github.ref_name }}" web-dist.tar.gz --title "${{ github.ref_name }}" --generate-notes
+
+  build-container:
+    needs: [build-frontend]
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app_rw
+          POSTGRES_PASSWORD: app_rw_password
+          POSTGRES_DB: calypso_app
+        options: >-
+          --health-cmd "pg_isready -U app_rw -d calypso_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download web-dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+
+      - name: Extract web-dist
+        run: |
+          mkdir -p apps/web/dist
+          tar -xzf web-dist.tar.gz -C apps/web/dist
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build container image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.release
+          load: true
+          push: false
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Initialize databases
+        run: bun run packages/db/init-remote.ts
+        env:
+          ADMIN_DATABASE_URL: postgres://app_rw:app_rw_password@localhost:5432/calypso_app
+          APP_RW_PASSWORD: app_rw_password
+          AUDIT_W_PASSWORD: audit_w_password
+          ANALYTICS_W_PASSWORD: analytics_w_password
+
+      - name: Start app container
+        run: |
+          docker run -d \
+            --name calypso \
+            --network host \
+            -e DATABASE_URL=postgres://app_rw:app_rw_password@localhost:5432/calypso_app \
+            -e AUDIT_DATABASE_URL=postgres://audit_w:audit_w_password@localhost:5432/calypso_audit \
+            -e ANALYTICS_DATABASE_URL=postgres://analytics_w:analytics_w_password@localhost:5432/calypso_analytics \
+            -e JWT_SECRET=ci-smoke-test-secret \
+            -e PORT=31415 \
+            -e RELEASE_TAG=${{ github.ref_name }} \
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+
+      - name: Wait for health check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:31415/health; then
+              echo ""
+              echo "Container is healthy"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "Health check timed out — container logs:"
+          docker logs calypso
+          exit 1
+
+      - name: Stop test container
+        if: always()
+        run: docker rm -f calypso || true
+
+      - name: Push image
+        run: |
+          docker push ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository }}:latest
