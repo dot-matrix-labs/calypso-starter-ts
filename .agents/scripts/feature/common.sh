@@ -18,7 +18,7 @@ require_json_file() {
 }
 
 find_plan_issue_json() {
-  gh issue list --repo "$(tasks_repo)" --state open --json number,title,url --jq 'map(select(.title == "Plan")) | .[0]'
+  gh issue list --repo "$(tasks_repo)" --state open --limit 200 --json number,title,url --jq 'map(select(.title == "Plan")) | .[0]'
 }
 
 canonicalize_title() {
