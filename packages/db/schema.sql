@@ -86,3 +86,69 @@ CREATE INDEX IF NOT EXISTS idx_task_queue_poll
 CREATE INDEX IF NOT EXISTS idx_task_queue_stale
     ON task_queue (status, claim_expires_at)
     WHERE status = 'claimed';
+
+-- Idempotency deduplication index (also enforced by UNIQUE constraint above)
+CREATE INDEX IF NOT EXISTS idx_task_queue_idempotency
+    ON task_queue (idempotency_key);
+
+-- Enable Row-Level Security so per-type DB roles only see their own rows.
+-- Per-type RLS policies (task_queue_<type>_read) are applied by init-remote.ts
+-- after the agent roles are created, because CREATE POLICY requires the role to exist.
+ALTER TABLE task_queue ENABLE ROW LEVEL SECURITY;
+
+-- Per-type filtered views: expose only non-sensitive columns to each agent type.
+-- Sensitive columns excluded: delegated_token, created_by, result, error_message.
+CREATE OR REPLACE VIEW task_queue_view_coding AS
+    SELECT
+        id,
+        agent_type,
+        job_type,
+        status,
+        payload,
+        correlation_id,
+        claimed_by,
+        claimed_at,
+        claim_expires_at,
+        attempt,
+        max_attempts,
+        next_retry_at,
+        priority,
+        created_at,
+        updated_at
+    FROM task_queue
+    WHERE agent_type = 'coding';
+
+CREATE OR REPLACE VIEW task_queue_view_analysis AS
+    SELECT
+        id,
+        agent_type,
+        job_type,
+        status,
+        payload,
+        correlation_id,
+        claimed_by,
+        claimed_at,
+        claim_expires_at,
+        attempt,
+        max_attempts,
+        next_retry_at,
+        priority,
+        created_at,
+        updated_at
+    FROM task_queue
+    WHERE agent_type = 'analysis';
+
+-- LISTEN/NOTIFY trigger: wake the appropriate worker channel on task insertion.
+-- Blueprint: TQ-D-005 (listen-notify-wake)
+CREATE OR REPLACE FUNCTION notify_task_queue_insert()
+    RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM pg_notify('task_queue_' || NEW.agent_type, NEW.id::TEXT);
+    RETURN NEW;
+END
+$$;
+
+DROP TRIGGER IF EXISTS trg_task_queue_notify ON task_queue;
+CREATE TRIGGER trg_task_queue_notify
+    AFTER INSERT ON task_queue
+    FOR EACH ROW EXECUTE FUNCTION notify_task_queue_insert();

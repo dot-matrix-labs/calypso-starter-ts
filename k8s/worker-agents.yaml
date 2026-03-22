@@ -1,0 +1,192 @@
+# Per-type Worker Agent Deployments and NetworkPolicies
+#
+# Blueprint: WORKER-D-007 (per-agent-type-database-role)
+# Blueprint: WORKER-P-008 (agent-type-isolation)
+# Blueprint: WORKER-A-002 (multi-agent-concurrent-replicas)
+#
+# Each agent type is a separate Kubernetes Deployment with:
+#   - Its own DB Secret (agent_<type> role credentials)
+#   - Its own vendor API key Secret
+#   - A NetworkPolicy restricting outbound to the API gateway only
+#     (no direct database access from worker pods)
+#
+# Apply order (after genesis db-init-job completes):
+#   kubectl apply -f k8s/worker-secrets.yaml   # operator-created, not committed
+#   kubectl apply -f k8s/worker-agents.yaml
+#
+# To scale a specific worker type:
+#   kubectl scale deployment calypso-worker-coding --replicas=3
+
+# ── NetworkPolicy: coding worker ─────────────────────────────────────────────
+# Restricts outbound traffic from coding worker pods to the API gateway only.
+# Direct database access is structurally blocked at the network layer.
+# Blueprint: WORKER-C-006 (network-policy-blocks-direct-db)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calypso-worker-coding-egress
+  labels:
+    app: calypso-worker-coding
+spec:
+  podSelector:
+    matchLabels:
+      app: calypso-worker-coding
+  policyTypes:
+    - Egress
+  egress:
+    # Allow outbound to API gateway (calypso-app) on port 80
+    - to:
+        - podSelector:
+            matchLabels:
+              app: calypso-app
+      ports:
+        - protocol: TCP
+          port: 80
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+
+# ── NetworkPolicy: analysis worker ───────────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calypso-worker-analysis-egress
+  labels:
+    app: calypso-worker-analysis
+spec:
+  podSelector:
+    matchLabels:
+      app: calypso-worker-analysis
+  policyTypes:
+    - Egress
+  egress:
+    # Allow outbound to API gateway (calypso-app) on port 80
+    - to:
+        - podSelector:
+            matchLabels:
+              app: calypso-app
+      ports:
+        - protocol: TCP
+          port: 80
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+
+# ── Deployment: coding worker ─────────────────────────────────────────────────
+# Each replica polls task_queue_view_coding using agent_coding DB credentials.
+# Result submission goes through the API gateway using a delegated token.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calypso-worker-coding
+  labels:
+    app: calypso-worker-coding
+    agent-type: coding
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calypso-worker-coding
+  template:
+    metadata:
+      labels:
+        app: calypso-worker-coding
+        agent-type: coding
+    spec:
+      containers:
+        - name: worker
+          # Image tag is set via deploy.sh or kubectl set image
+          image: ghcr.io/<owner>/calypso-worker-coding:latest
+          env:
+            - name: AGENT_TYPE
+              value: 'coding'
+            # DB connection uses the agent_coding role (read-only, view-scoped)
+            - name: AGENT_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-worker-coding-secret
+                  key: AGENT_DATABASE_URL
+            # API gateway base URL for task claim and result submission
+            - name: API_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-worker-coding-secret
+                  key: API_BASE_URL
+            # Vendor API key for the coding agent (e.g. Claude API key)
+            - name: VENDOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-worker-coding-secret
+                  key: VENDOR_API_KEY
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '500m'
+              memory: '512Mi'
+
+
+# ── Deployment: analysis worker ───────────────────────────────────────────────
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calypso-worker-analysis
+  labels:
+    app: calypso-worker-analysis
+    agent-type: analysis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calypso-worker-analysis
+  template:
+    metadata:
+      labels:
+        app: calypso-worker-analysis
+        agent-type: analysis
+    spec:
+      containers:
+        - name: worker
+          # Image tag is set via deploy.sh or kubectl set image
+          image: ghcr.io/<owner>/calypso-worker-analysis:latest
+          env:
+            - name: AGENT_TYPE
+              value: 'analysis'
+            # DB connection uses the agent_analysis role (read-only, view-scoped)
+            - name: AGENT_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-worker-analysis-secret
+                  key: AGENT_DATABASE_URL
+            # API gateway base URL for task claim and result submission
+            - name: API_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-worker-analysis-secret
+                  key: API_BASE_URL
+            # Vendor API key for the analysis agent (e.g. Gemini API key)
+            - name: VENDOR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-worker-analysis-secret
+                  key: VENDOR_API_KEY
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '500m'
+              memory: '512Mi'

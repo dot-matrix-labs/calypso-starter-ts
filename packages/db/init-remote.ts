@@ -13,12 +13,42 @@ const ROLE_NAMES = {
   analytics: 'analytics_w',
 } as const;
 
+/**
+ * Base read-only worker role. All per-type agent roles are created IN ROLE
+ * agent_worker so they inherit any future shared grants applied to the base
+ * role (e.g. SELECT on public reference tables). agent_worker itself has no
+ * LOGIN — it is a privilege group, not a connection credential.
+ *
+ * Blueprint: WORKER-D-007 (per-agent-type-database-role), WORKER-P-001 (read-only-database-access)
+ */
+const AGENT_BASE_ROLE = 'agent_worker';
+
+/**
+ * Known agent types and their corresponding per-type DB roles and view names.
+ * Adding a new agent type here is the only change required to provision it.
+ *
+ * Blueprint: WORKER-P-008 (agent-type-isolation), TQ-D-004 (per-type-filtered-views)
+ */
+export const AGENT_TYPES = ['coding', 'analysis'] as const;
+export type AgentType = (typeof AGENT_TYPES)[number];
+
+export function agentRoleName(agentType: AgentType): string {
+  return `agent_${agentType}`;
+}
+
+export function agentViewName(agentType: AgentType): string {
+  return `task_queue_view_${agentType}`;
+}
+
+
 export interface InitRemoteConfig {
   adminDatabaseUrl: string;
   passwords: {
     app: string;
     audit: string;
     analytics: string;
+    /** Per-type agent role passwords keyed by agent type (e.g. coding, analysis) */
+    agents: Record<AgentType, string>;
   };
   databases: {
     app: string;
@@ -63,10 +93,20 @@ export function loadInitRemoteConfig(env: NodeJS.ProcessEnv = process.env): Init
     'ANALYTICS_W_PASSWORD',
   ] as const;
 
-  const missing = required.filter((key) => !env[key]);
+  // Agent type passwords: AGENT_<TYPE>_PASSWORD (e.g. AGENT_CODING_PASSWORD)
+  const agentPasswordKeys = AGENT_TYPES.map((t) => `AGENT_${t.toUpperCase()}_PASSWORD` as string);
+
+  const missing = [
+    ...required.filter((key) => !env[key]),
+    ...agentPasswordKeys.filter((key) => !env[key]),
+  ];
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
+
+  const agents = Object.fromEntries(
+    AGENT_TYPES.map((t) => [t, env[`AGENT_${t.toUpperCase()}_PASSWORD`]!]),
+  ) as Record<AgentType, string>;
 
   return {
     adminDatabaseUrl: env.ADMIN_DATABASE_URL!,
@@ -74,6 +114,7 @@ export function loadInitRemoteConfig(env: NodeJS.ProcessEnv = process.env): Init
       app: env.APP_RW_PASSWORD!,
       audit: env.AUDIT_W_PASSWORD!,
       analytics: env.ANALYTICS_W_PASSWORD!,
+      agents,
     },
     databases: {
       app: env.APP_DB || DEFAULT_DATABASE_NAMES.app,
@@ -203,6 +244,78 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${quoteIdentifier(ROLE_
 `);
 }
 
+/**
+ * Ensure the shared agent_worker base role exists (no LOGIN, no direct grants).
+ * All per-type agent roles are members of this group role.
+ *
+ * Blueprint: WORKER-D-007 (per-agent-type-database-role)
+ */
+async function ensureAgentBaseRole(admin: ReturnType<typeof makePool>): Promise<void> {
+  await admin.unsafe(`
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${AGENT_BASE_ROLE}') THEN
+    CREATE ROLE ${quoteIdentifier(AGENT_BASE_ROLE)} NOLOGIN;
+  END IF;
+END
+$$;
+`);
+}
+
+/**
+ * Ensure a per-type agent role exists as a member of agent_worker.
+ * The role gets LOGIN with the supplied password so worker pods can authenticate.
+ *
+ * Blueprint: WORKER-D-007 (per-agent-type-database-role), WORKER-P-008 (agent-type-isolation)
+ */
+async function ensureAgentTypeRole(
+  admin: ReturnType<typeof makePool>,
+  agentType: AgentType,
+  password: string,
+): Promise<void> {
+  const roleName = agentRoleName(agentType);
+  const escapedPassword = escapeSqlLiteral(password);
+  await admin.unsafe(`
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${roleName}') THEN
+    CREATE ROLE ${quoteIdentifier(roleName)} WITH LOGIN PASSWORD '${escapedPassword}' IN ROLE ${quoteIdentifier(AGENT_BASE_ROLE)};
+  ELSE
+    ALTER ROLE ${quoteIdentifier(roleName)} WITH LOGIN PASSWORD '${escapedPassword}';
+  END IF;
+END
+$$;
+`);
+}
+
+/**
+ * Grant each per-type agent role CONNECT on the app database and SELECT on its
+ * filtered view. No other grants are issued — write access is structurally absent.
+ *
+ * Blueprint: WORKER-P-001 (read-only-database-access), TQ-D-004 (per-type-filtered-views)
+ */
+async function configureAgentWorkerRoles(
+  admin: ReturnType<typeof makePool>,
+  appAdmin: ReturnType<typeof makePool>,
+  config: InitRemoteConfig,
+): Promise<void> {
+  for (const agentType of AGENT_TYPES) {
+    const roleName = agentRoleName(agentType);
+    const viewName = agentViewName(agentType);
+
+    // CONNECT on the app database
+    await admin.unsafe(
+      `GRANT CONNECT ON DATABASE ${quoteIdentifier(config.databases.app)} TO ${quoteIdentifier(roleName)}`,
+    );
+
+    // USAGE on public schema + SELECT on the per-type view only
+    await appAdmin.unsafe(`
+GRANT USAGE ON SCHEMA public TO ${quoteIdentifier(roleName)};
+GRANT SELECT ON ${quoteIdentifier(viewName)} TO ${quoteIdentifier(roleName)};
+`);
+  }
+}
+
 async function verifyRole(
   admin: ReturnType<typeof makePool>,
   roleName: string,
@@ -282,6 +395,72 @@ async function verifyColumnGrant(
   return count >= 1 ? null : `${roleName} missing ${privilegeType} on ${tableName}.${columnName}`;
 }
 
+async function verifyView(
+  db: ReturnType<typeof makePool>,
+  viewName: string,
+): Promise<string | null> {
+  const [{ count }] = await db<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count
+    FROM information_schema.views
+    WHERE table_schema = 'public' AND table_name = ${viewName}
+  `;
+  return count === 1 ? null : `missing view ${viewName}`;
+}
+
+async function verifyRlsPolicy(
+  db: ReturnType<typeof makePool>,
+  tableName: string,
+  policyName: string,
+): Promise<string | null> {
+  const [{ count }] = await db<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = ${tableName}
+      AND policyname = ${policyName}
+  `;
+  return count === 1 ? null : `missing RLS policy ${policyName} on ${tableName}`;
+}
+
+async function verifyRlsEnabled(
+  db: ReturnType<typeof makePool>,
+  tableName: string,
+): Promise<string | null> {
+  const [{ rowsecurity }] = await db<{ rowsecurity: boolean }[]>`
+    SELECT relrowsecurity AS rowsecurity
+    FROM pg_class
+    WHERE relname = ${tableName}
+      AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+  `;
+  return rowsecurity ? null : `RLS not enabled on ${tableName}`;
+}
+
+async function verifyAgentRoles(
+  admin: ReturnType<typeof makePool>,
+  appAdmin: ReturnType<typeof makePool>,
+  config: InitRemoteConfig,
+): Promise<string[]> {
+  const checks: Array<Promise<string | null>> = [
+    verifyRole(admin, AGENT_BASE_ROLE),
+    verifyRlsEnabled(appAdmin, 'task_queue'),
+  ];
+
+  for (const agentType of AGENT_TYPES) {
+    const roleName = agentRoleName(agentType);
+    const viewName = agentViewName(agentType);
+    checks.push(
+      verifyRole(admin, roleName),
+      verifyDatabaseConnect(admin, config.databases.app, roleName),
+      verifyView(appAdmin, viewName),
+      verifyTableGrant(appAdmin, viewName, roleName, 'SELECT'),
+      verifyRlsPolicy(appAdmin, 'task_queue', `task_queue_${agentType}_read`),
+    );
+  }
+
+  const results = await Promise.all(checks);
+  return results.filter((v): v is string => v !== null);
+}
+
 async function verifyAppSchemaPrivileges(appAdmin: ReturnType<typeof makePool>): Promise<string[]> {
   const [privileges] = await appAdmin<{ usage: boolean; create: boolean }[]>`
     SELECT
@@ -325,6 +504,7 @@ async function verifyInitRemote(
 
   const failures = checks.filter((value): value is string => value !== null);
   failures.push(...(await verifyAppSchemaPrivileges(appAdmin)));
+  failures.push(...(await verifyAgentRoles(admin, appAdmin, config)));
 
   if (failures.length > 0) {
     throw new Error(`Genesis verification failed:\n- ${failures.join('\n- ')}`);
@@ -358,6 +538,14 @@ export async function runInitRemote(env: NodeJS.ProcessEnv = process.env): Promi
     await configureAppDatabase(appAdmin);
     await configureAuditDatabase(auditAdmin);
     await configureAnalyticsDatabase(analyticsAdmin);
+
+    // Provision agent_worker base role and per-type agent roles
+    await ensureAgentBaseRole(admin);
+    for (const agentType of AGENT_TYPES) {
+      await ensureAgentTypeRole(admin, agentType, config.passwords.agents[agentType]);
+    }
+    await configureAgentWorkerRoles(admin, appAdmin, config);
+
     await verifyInitRemote(admin, appAdmin, auditAdmin, analyticsAdmin, config);
 
     console.log('Genesis database initialisation completed successfully.');
