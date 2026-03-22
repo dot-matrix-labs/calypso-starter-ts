@@ -42,6 +42,12 @@ export default {
   async fetch(req: Request) {
     const url = new URL(req.url);
 
+    // Health check endpoint — used by k8s liveness/readiness probes and CI smoke test
+    if (url.pathname === '/healthz' || url.pathname === '/health') {
+      const version = process.env.RELEASE_TAG ?? 'dev';
+      return Response.json({ status: 'ok', version });
+    }
+
     // Handle CORS for local dev
     if (req.method === 'OPTIONS') {
       const res = new Response('Departed', {

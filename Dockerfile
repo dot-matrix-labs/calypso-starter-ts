@@ -3,7 +3,7 @@
 # Stage 2: distroless runtime — no shell, no package manager.
 
 # --- builder stage ---
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.1@sha256:d6ad4d3280d3e7e92b793a924105d68766d60b1f36709f4cee11bc8737782621 AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN bun build apps/server/src/index.ts \
       --external postgres
 
 # --- production stage ---
-FROM oven/bun:1-distroless AS production
+FROM oven/bun:1.1-distroless@sha256:994252d8978f7fb4f12fb123c30d4405a46addc679f2cf1836d47f7350ce21b2 AS production
 
 WORKDIR /app
 
@@ -42,7 +42,7 @@ ENV PORT=31415
 
 # Health check — curl is absent in distroless so we use bun's built-in fetch
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 31415) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+  CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 31415) + '/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 EXPOSE 31415
 
