@@ -2,7 +2,13 @@ import { afterAll, beforeAll, expect, test } from 'vitest';
 import { migrate } from '../../packages/db';
 import { startPostgres, type PgContainer } from '../../packages/db/pg-container';
 
-const EXPECTED_TABLES = ['entities', 'entity_types', 'relations', 'revoked_tokens'] as const;
+const EXPECTED_TABLES = [
+  'entities',
+  'entity_types',
+  'relations',
+  'revoked_tokens',
+  'task_queue',
+] as const;
 
 let pg: PgContainer;
 
