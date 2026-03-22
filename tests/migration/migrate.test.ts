@@ -8,6 +8,8 @@ const EXPECTED_TABLES = [
   'relations',
   'revoked_tokens',
   'task_queue',
+  'task_queue_view_analysis',
+  'task_queue_view_coding',
 ] as const;
 
 let pg: PgContainer;
