@@ -1,3 +1,4 @@
+import { scrubPii } from 'core';
 import type { AppState } from '../index';
 import { signJwt, verifyJwt } from '../auth/jwt';
 import { revokeToken } from 'db/revocation';
@@ -139,7 +140,10 @@ export async function handleAuthRequest(
       res.headers.append('Set-Cookie', csrfCookieHeader(csrfToken));
       return res;
     } catch (err) {
-      console.error('REGISTER ERROR:', err);
+      console.error(
+        'REGISTER ERROR:',
+        scrubPii(err instanceof Error ? { message: err.message, stack: err.stack } : err),
+      );
       return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
         status: 500,
         headers: corsHeaders,
@@ -193,7 +197,10 @@ export async function handleAuthRequest(
       res.headers.append('Set-Cookie', csrfCookieHeader(csrfToken));
       return res;
     } catch (err) {
-      console.error('LOGIN ERROR:', err);
+      console.error(
+        'LOGIN ERROR:',
+        scrubPii(err instanceof Error ? { message: err.message, stack: err.stack } : err),
+      );
       return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
         status: 500,
         headers: corsHeaders,

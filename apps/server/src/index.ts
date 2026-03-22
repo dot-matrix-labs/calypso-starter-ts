@@ -8,6 +8,7 @@
 
 import { analyticsSql, auditSql, migrate, migrateAudit, sql } from 'db';
 import { cleanupExpiredRevocations, startRevocationCleanup } from 'db/revocation';
+import { scrubPii } from 'core';
 import { handleAuthRequest } from './api/auth';
 import { handlePasskeyRequest } from './api/passkey';
 import { handleTasksRequest } from './api/tasks';
@@ -145,6 +146,19 @@ export default {
 
     // Fallback to index.html for client-side React Router
     return withTrace(new Response(Bun.file(`${webDist}/index.html`)));
+  },
+
+  /**
+   * Top-level error handler for the Bun HTTP server.
+   * All logged objects are passed through `scrubPii` to prevent PII leaking
+   * into server logs.
+   */
+  error(err: Error) {
+    console.error('[server error]', scrubPii({ message: err.message, stack: err.stack }));
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   },
 };
 
