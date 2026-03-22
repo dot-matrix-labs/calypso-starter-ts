@@ -1,6 +1,6 @@
 import postgres from 'postgres';
-import { join } from 'path';
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { buildSslOptions } from './ssl';
 
 export { buildSslOptions } from './ssl';
@@ -66,7 +66,7 @@ export interface MigrateOptions {
  */
 export async function migrate(options: MigrateOptions = {}) {
   console.log('[db] Initializing PostgreSQL database schema...');
-  const schemaSql = readFileSync(join(import.meta.dir, 'schema.sql'), 'utf-8');
+  const schemaSql = readFileSync(fileURLToPath(new URL('./schema.sql', import.meta.url)), 'utf-8');
   const databaseUrl = options.databaseUrl ?? databaseUrls.app;
   const migrationSql =
     options.databaseUrl === undefined

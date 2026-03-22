@@ -9,6 +9,7 @@
     "postinstall": "git config core.hooksPath .githooks",
     "build": "bun run --filter '*' build",
     "test": "bun run test:unit && bun run test:api && bun run test:component && bun run test:e2e",
+    "test:migration": "bun --bun vitest run --config apps/server/vitest.migration.config.ts",
     "test:unit": "bun --bun vitest run tests/unit apps/*/tests/unit",
     "test:api": "for f in apps/server/tests/integration/*.test.ts; do case \"$f\" in *studio-api*) continue;; esac; bun --bun vitest run \"$f\" || exit 1; done",
     "test:pg-container": "bun --bun vitest run apps/server/tests/integration/pg-container.test.ts",
