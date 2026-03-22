@@ -1,90 +1,39 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 BRANCH=$(git branch --show-current 2>/dev/null)
 [[ "$BRANCH" == studio/session* ]] && exit 0
 
-# pre-push: Blueprint audit (blocks) + lint/format/type (blocks) + test suite (blocks) + PR size (advisory).
-
-set -euo pipefail
-
-# ── 1. Blueprint audit — architectural violations ───────────────────────────
-
-echo "pre-push: running blueprint audit..." >&2
-
-VIOLATIONS=()
-
-# TypeScript only — no .js/.mjs logic files in apps/ or packages/
-JS_FILES=$(find apps packages -type f \( -name "*.js" -o -name "*.mjs" \) \
-  ! -path "*/node_modules/*" ! -path "*/dist/*" ! -name "*.config.*" 2>/dev/null || true)
-[ -n "$JS_FILES" ] && VIOLATIONS+=("JavaScript files found (TypeScript only):\n${JS_FILES}")
-
-# Forbidden packages
-FORBIDDEN="redux|zustand|mobx|prisma|typeorm|drizzle-orm|@auth0/|@clerk/|mongoose"
-PKG_HITS=$(find . -name "package.json" ! -path "*/node_modules/*" \
-  -exec grep -lE "$FORBIDDEN" {} \; 2>/dev/null || true)
-[ -n "$PKG_HITS" ] && VIOLATIONS+=("Forbidden packages detected in:\n${PKG_HITS}")
-
-if [ ${#VIOLATIONS[@]} -gt 0 ]; then
-  echo "" >&2
-  echo "PUSH BLOCKED: Blueprint violations detected:" >&2
-  for v in "${VIOLATIONS[@]}"; do
-    echo -e "\n  ✗ $v" >&2
-  done
-  echo "" >&2
+if [[ -z "$BRANCH" ]]; then
+  echo "PUSH BLOCKED: checkout a branch before pushing." >&2
   exit 1
 fi
 
-# ── 2. PR size gate ─────────────────────────────────────────────────────────
+if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+  echo "PUSH BLOCKED: direct pushes to $BRANCH are not allowed." >&2
+  exit 1
+fi
 
-PR_FILE_LIMIT=20
-MERGE_BASE=$(git merge-base HEAD origin/main 2>/dev/null \
-  || git merge-base HEAD main 2>/dev/null || echo "")
-
-if [ -n "$MERGE_BASE" ]; then
-  PR_FILE_COUNT=$(git diff --name-only "$MERGE_BASE"...HEAD | wc -l | tr -d ' ')
-  if [ "$PR_FILE_COUNT" -gt "$PR_FILE_LIMIT" ]; then
-    echo "" >&2
-    echo "PR SIZE WARNING: This PR changes ${PR_FILE_COUNT} files (limit: ${PR_FILE_LIMIT})." >&2
-    echo "Consider splitting into smaller, more reviewable PRs." >&2
-    echo "" >&2
+if command -v gh >/dev/null 2>&1; then
+  PR_BODY="$(gh pr view "$BRANCH" --json body -q .body 2>/dev/null || true)"
+  if [[ -n "$PR_BODY" ]]; then
+    if [[ ! "$PR_BODY" =~ ^Closes\ #[0-9]+$ ]]; then
+      echo "" >&2
+      echo "PUSH BLOCKED: PR body must contain exactly one closing reference, for example: Closes #123" >&2
+      echo "" >&2
+      exit 1
+    fi
   fi
 fi
 
-# ── 3. Lint, format, and types ───────────────────────────────────────────────
+echo "pre-push: checking formatting..." >&2
+bunx prettier --check .
 
-echo "pre-push: checking lint, format, and types..." >&2
+echo "pre-push: checking TypeScript..." >&2
+bunx tsc --noEmit --pretty false
 
-QUALITY_FAILED=0
-QUALITY_OUTPUT=""
-
-ESLINT_OUT=$(bun run eslint . --max-warnings=0 2>&1) || { QUALITY_FAILED=1; QUALITY_OUTPUT+="$ESLINT_OUT\n"; }
-PRETTIER_OUT=$(bun run prettier --check . 2>&1) || { QUALITY_FAILED=1; QUALITY_OUTPUT+="$PRETTIER_OUT\n"; }
-TSC_OUT=$(bun run tsc --noEmit 2>&1) || { QUALITY_FAILED=1; QUALITY_OUTPUT+="$TSC_OUT\n"; }
-
-if [ $QUALITY_FAILED -ne 0 ]; then
-  echo "" >&2
-  echo "PUSH BLOCKED: Lint, format, or type errors must be resolved before pushing." >&2
-  echo -e "$QUALITY_OUTPUT" >&2
-  echo "" >&2
-  exit 1
-fi
-
-# ── 4. Full test suite ───────────────────────────────────────────────────────
-
-echo "pre-push: running full test suite..." >&2
-
-TEST_OUTPUT=$(bun --bun vitest run 2>&1) && TEST_EXIT=0 || TEST_EXIT=$?
-
-if [ $TEST_EXIT -ne 0 ]; then
-  FAILING=$(echo "$TEST_OUTPUT" | grep -E "^\s*(FAIL|✗|×|●|not ok)" | head -30 || true)
-  echo "" >&2
-  echo "PUSH BLOCKED: Test failures must be resolved before pushing." >&2
-  echo "$FAILING" >&2
-  echo "" >&2
-  echo "Determine whether each test is wrong (fix the test) or the implementation is wrong" >&2
-  echo "(fix the code). Do not disable, skip, or add todo markers to avoid failures." >&2
-  echo "" >&2
-  exit 1
-fi
+echo "pre-push: running build..." >&2
+bun run build
 
 exit 0

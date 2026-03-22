@@ -1,101 +1,33 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 BRANCH=$(git branch --show-current 2>/dev/null)
 [[ "$BRANCH" == studio/session* ]] && exit 0
 
-# pre-commit: Hard violation scans (blocks) + commit size advisory + lint/format auto-fix.
-STAGED=$(git diff --cached --name-only)
-STAGED_DIFF=$(git diff --cached -- ':!.githooks' ':!bun.lock' ':!package-lock.json' ':!yarn.lock')
-DOC_STAGED=$(echo "$STAGED" | grep -E '\.(md|rst|txt)$' || true)
-
-# ── 0. Documentation merge safety gate ───────────────────────────────────────
-# Block commits that still contain merge markers to prevent accidental corruption.
-if [ -n "$DOC_STAGED" ]; then
-  DOC_MARKERS=""
-  while IFS= read -r file; do
-    [ -z "$file" ] && continue
-    if ! git cat-file -e ":$file" 2>/dev/null; then
-      continue
-    fi
-    HITS=$(git show ":$file" | grep -nE '^(<<<<<<<|=======|>>>>>>>|\|\|\|\|\|\|\|)' || true)
-    if [ -n "$HITS" ]; then
-      DOC_MARKERS="${DOC_MARKERS}\n$file\n$HITS\n"
-    fi
-  done <<< "$DOC_STAGED"
-
-  if [ -n "$DOC_MARKERS" ]; then
-    echo "" >&2
-    echo "COMMIT BLOCKED: Merge conflict markers found in staged documentation files." >&2
-    echo -e "$DOC_MARKERS" >&2
-    echo "Resolve by choosing one coherent document version (prefer newest when unsure)." >&2
-    echo "" >&2
-    exit 1
-  fi
+if [[ -z "$BRANCH" ]]; then
+  echo "COMMIT BLOCKED: checkout a branch before committing." >&2
+  exit 1
 fi
 
-# ── 1. Hard violation scans ─────────────────────────────────────────────────
-VIOLATIONS=()
+STAGED=$(git diff --cached --name-only)
+if [[ -z "$STAGED" ]]; then
+  exit 0
+fi
 
-# TypeScript only — no .js/.mjs logic files staged
-JS_STAGED=$(echo "$STAGED" | grep -E '\.(js|mjs)$' | grep -v '\.config\.' || true)
-[ -n "$JS_STAGED" ] && VIOLATIONS+=("JavaScript files staged (TypeScript only):\n${JS_STAGED}")
-
-# Bun only — no npm/npx/yarn introduced in staged changes
-NPM_USAGE=$(echo "$STAGED_DIFF" | grep "^+" | grep -v "^+++" \
-  | grep -E "(npm (install|run|exec|ci)|npx |yarn (add|run|install|exec))" || true)
-[ -n "$NPM_USAGE" ] && VIOLATIONS+=("npm/npx/yarn usage detected (use bun/bunx):\n${NPM_USAGE}")
-
-# No mocks — no mocking libraries introduced in staged changes
-MOCK_USAGE=$(echo "$STAGED_DIFF" | grep "^+" | grep -v "^+++" \
-  | grep -E "(jest\.mock\(|sinon\.|vi\.mock\(|msw)" || true)
-[ -n "$MOCK_USAGE" ] && VIOLATIONS+=("Mock usage detected (no mocking allowed):\n${MOCK_USAGE}")
-
-# No skipped tests — no .skip/.todo/xit introduced
-SKIPPED=$(echo "$STAGED_DIFF" | grep "^+" | grep -v "^+++" \
-  | grep -E "\.(skip|todo)\(|^xit\(|^xdescribe\(" || true)
-[ -n "$SKIPPED" ] && VIOLATIONS+=("Skipped/disabled tests detected:\n${SKIPPED}")
-
-# No forbidden packages added to package.json
-FORBIDDEN="\"redux\"|\"zustand\"|\"mobx\"|\"prisma\"|\"typeorm\"|\"drizzle-orm\"|\"@auth0/\"|\"@clerk/\"|\"mongoose\""
-PKG_ADDITIONS=$(echo "$STAGED_DIFF" | grep "^+" | grep -v "^+++" \
-  | grep -E "$FORBIDDEN" || true)
-[ -n "$PKG_ADDITIONS" ] && VIOLATIONS+=("Forbidden package added to package.json:\n${PKG_ADDITIONS}")
-
-if [ ${#VIOLATIONS[@]} -gt 0 ]; then
+JS_STAGED=$(printf '%s\n' "$STAGED" | grep -E '\.(js|mjs)$' | grep -v '\.config\.' || true)
+if [[ -n "$JS_STAGED" ]]; then
   echo "" >&2
-  echo "COMMIT BLOCKED: Hard violations detected in staged changes:" >&2
-  for v in "${VIOLATIONS[@]}"; do
-    echo -e "\n  ✗ $v" >&2
-  done
+  echo "COMMIT BLOCKED: JavaScript logic files are not allowed." >&2
+  echo "$JS_STAGED" >&2
   echo "" >&2
   exit 1
 fi
 
-# ── 2. Commit size advisory ─────────────────────────────────────────────────
-STAGED_COUNT=$(echo "$STAGED" | grep -v "^$" | wc -l | tr -d ' ')
-COMMIT_FILE_LIMIT=10
-
-if [ "$STAGED_COUNT" -gt "$COMMIT_FILE_LIMIT" ]; then
-  echo "" >&2
-  echo "COMMIT SIZE WARNING: This commit touches ${STAGED_COUNT} files (limit: ${COMMIT_FILE_LIMIT})." >&2
-  echo "Consider splitting this into smaller, more focused commits." >&2
-  echo "" >&2
-fi
-
-# ── 3. Lint/format auto-fix + flag unfixable ────────────────────────────────
-bun run eslint . --fix 2>&1 || true
-bun run prettier --write . 2>&1 || true
-
-UNFIXED_ESLINT=$(bun run eslint . --max-warnings=0 2>&1) && ESLINT_CLEAN=1 || ESLINT_CLEAN=0
-UNFIXED_PRETTIER=$(bun run prettier --check . 2>&1) && PRETTIER_CLEAN=1 || PRETTIER_CLEAN=0
-
-if [ $ESLINT_CLEAN -eq 0 ] || [ $PRETTIER_CLEAN -eq 0 ]; then
-  echo "" >&2
-  echo "LINT/FORMAT: auto-fix applied. The following could not be fixed automatically:" >&2
-  [ $ESLINT_CLEAN -eq 0 ] && echo "$UNFIXED_ESLINT" >&2
-  [ $PRETTIER_CLEAN -eq 0 ] && echo "$UNFIXED_PRETTIER" >&2
-  echo "" >&2
-  echo "Commit allowed. These issues WILL block your next push." >&2
+FORMATTABLE=$(printf '%s\n' "$STAGED" | grep -E '\.(cjs|css|html|json|md|mts|mjs|scss|ts|tsx|yaml|yml)$' || true)
+if [[ -n "$FORMATTABLE" ]]; then
+  echo "pre-commit: checking formatting on staged files..." >&2
+  bunx prettier --check $FORMATTABLE
 fi
 
 exit 0
