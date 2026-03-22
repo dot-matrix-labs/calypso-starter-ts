@@ -1,4 +1,4 @@
-import { sql } from 'db';
+import type { AppState } from '../index';
 import { signJwt, verifyJwt } from '../auth/jwt';
 
 // Starter auth note:
@@ -48,8 +48,13 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
-export async function handleAuthRequest(req: Request, url: URL): Promise<Response | null> {
+export async function handleAuthRequest(
+  req: Request,
+  url: URL,
+  appState: AppState,
+): Promise<Response | null> {
   const corsHeaders = getCorsHeaders(req);
+  const { sql } = appState;
 
   // Preflight CORS
   if (req.method === 'OPTIONS' && url.pathname.startsWith('/api/auth')) {

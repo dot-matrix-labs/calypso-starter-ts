@@ -5,6 +5,18 @@ import { buildSslOptions } from './ssl';
 
 export { buildSslOptions } from './ssl';
 
+const DEFAULT_DATABASE_URLS = {
+  app: 'postgres://app_rw:app_rw_password@localhost:5432/calypso_app',
+  audit: 'postgres://audit_w:audit_w_password@localhost:5432/calypso_audit',
+  analytics: 'postgres://analytics_w:analytics_w_password@localhost:5432/calypso_analytics',
+} as const;
+
+export interface DatabaseUrls {
+  app: string;
+  audit: string;
+  analytics: string;
+}
+
 // Starter implementation note:
 // This package currently exposes a single connection pool bound to calypso_app.
 // The target blueprint posture splits transactional, analytics, and audit paths
@@ -14,20 +26,30 @@ function maskDbUrl(dbUrl: string): string {
   return dbUrl.replace(/:[^:@]+@/, ':***@');
 }
 
-function getDbUrl(): string {
-  const dbUrl =
-    process.env.DATABASE_URL || 'postgres://app_rw:app_rw_password@localhost:5432/calypso_app';
-  console.log(`[db] Binding to PostgreSQL at: ${maskDbUrl(dbUrl)}`);
-  return dbUrl;
+export function resolveDatabaseUrls(env: NodeJS.ProcessEnv = process.env): DatabaseUrls {
+  return {
+    app: env.DATABASE_URL || DEFAULT_DATABASE_URLS.app,
+    audit: env.AUDIT_DATABASE_URL || DEFAULT_DATABASE_URLS.audit,
+    analytics: env.ANALYTICS_DATABASE_URL || DEFAULT_DATABASE_URLS.analytics,
+  };
 }
 
-export const sql = postgres(getDbUrl(), {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
-  ssl: buildSslOptions(),
-  connection: { client_min_messages: 'warning' },
-});
+function createPool(databaseUrl: string, max: number) {
+  console.log(`[db] Binding to PostgreSQL at: ${maskDbUrl(databaseUrl)}`);
+  return postgres(databaseUrl, {
+    max,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    ssl: buildSslOptions(),
+    connection: { client_min_messages: 'warning' },
+  });
+}
+
+const databaseUrls = resolveDatabaseUrls();
+
+export const sql = createPool(databaseUrls.app, 10);
+export const auditSql = createPool(databaseUrls.audit, 5);
+export const analyticsSql = createPool(databaseUrls.analytics, 3);
 
 export interface MigrateOptions {
   databaseUrl?: string;
@@ -45,7 +67,7 @@ export interface MigrateOptions {
 export async function migrate(options: MigrateOptions = {}) {
   console.log('[db] Initializing PostgreSQL database schema...');
   const schemaSql = readFileSync(join(import.meta.dir, 'schema.sql'), 'utf-8');
-  const databaseUrl = options.databaseUrl ?? getDbUrl();
+  const databaseUrl = options.databaseUrl ?? databaseUrls.app;
   const migrationSql =
     options.databaseUrl === undefined
       ? sql

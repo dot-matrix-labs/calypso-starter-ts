@@ -1,4 +1,4 @@
-import { sql } from 'db';
+import type { AppState } from '../index';
 import type { Task, TaskProperties } from 'core';
 import { getCorsHeaders, getAuthenticatedUser } from './auth';
 import { applyTaskPatchThroughBoundary } from '../policies/task-write-service';
@@ -27,10 +27,15 @@ function rowToTask(row: { id: string; properties: TaskProperties; created_at: st
   };
 }
 
-export async function handleTasksRequest(req: Request, url: URL): Promise<Response | null> {
+export async function handleTasksRequest(
+  req: Request,
+  url: URL,
+  appState: AppState,
+): Promise<Response | null> {
   if (!url.pathname.startsWith('/api/tasks')) return null;
 
   const corsHeaders = getCorsHeaders(req);
+  const { sql } = appState;
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), {
       status,

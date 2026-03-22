@@ -6,7 +6,7 @@
  * the compiled frontend React application from `apps/web/dist`.
  */
 
-import { migrate } from 'db';
+import { analyticsSql, auditSql, migrate, sql } from 'db';
 import { handleAuthRequest } from './api/auth';
 import { handleTasksRequest } from './api/tasks';
 import { handleStudioRequest } from './api/studio';
@@ -17,6 +17,18 @@ import { handleStudioRequest } from './api/studio';
 // deployments should promote controlled migrations, journal checkpoint setup,
 // and recovery validation ahead of serving traffic.
 await migrate();
+
+export interface AppState {
+  sql: typeof sql;
+  auditSql: typeof auditSql;
+  analyticsSql: typeof analyticsSql;
+}
+
+export const appState: AppState = {
+  sql,
+  auditSql,
+  analyticsSql,
+};
 
 export default {
   port: Number(process.env.PORT) || 31415,
@@ -43,12 +55,12 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/auth')) {
-      const authRes = await handleAuthRequest(req, url);
+      const authRes = await handleAuthRequest(req, url, appState);
       if (authRes) return authRes;
     }
 
     if (url.pathname.startsWith('/api/tasks')) {
-      const tasksRes = await handleTasksRequest(req, url);
+      const tasksRes = await handleTasksRequest(req, url, appState);
       if (tasksRes) return tasksRes;
     }
 
