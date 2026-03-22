@@ -1,38 +1,52 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { _resetSecretsForTest, _seedSecretForTest } from '../../src/secrets/index';
-import { seedSuperuser } from '../../src/seed/superuser';
+import { seedSuperuser, type SeedSuperuserOptions } from '../../src/seed/superuser';
+
+type MockSql = SeedSuperuserOptions['sql'];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Minimal fake postgres.js SQL tagged-template object. */
-function makeSql(overrides: Partial<ReturnType<typeof makeSql>> = {}) {
+interface MakeSqlOptions {
+  selectResult?: unknown[];
+}
+
+/** Minimal fake SQL tagged-template that records inserts. */
+function makeSql(overrides: MakeSqlOptions = {}) {
   const insertedRows: unknown[] = [];
 
-  // The sql() call must be usable as a tagged template (sql`...`) which in
-  // postgres.js returns a promise-like query object. We simulate that here.
-  const sql = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
+  const fn = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
     const raw = strings.join('?');
 
-    // Distinguish between SELECT and INSERT by inspecting the query text.
     if (raw.trim().toUpperCase().startsWith('SELECT')) {
       return Promise.resolve(overrides.selectResult ?? []);
     }
 
-    // INSERT
+    // INSERT / other
     insertedRows.push(values);
     return Promise.resolve([]);
-  }) as unknown as {
-    (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
-    json: (v: unknown) => unknown;
-    insertedRows: unknown[];
-  };
+  });
 
-  (sql as unknown as Record<string, unknown>).json = (v: unknown) => v;
-  (sql as unknown as Record<string, unknown>).insertedRows = insertedRows;
+  (fn as unknown as Record<string, unknown>).json = (v: unknown) => v;
+  (fn as unknown as Record<string, unknown>).insertedRows = insertedRows;
 
-  return sql;
+  return fn as unknown as MockSql & { insertedRows: unknown[] };
+}
+
+function makeSqlSimple(selectResult: unknown[] = []) {
+  const insertedRows: unknown[] = [];
+  const fn = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
+    const raw = strings.join('');
+    if (raw.trim().toUpperCase().startsWith('SELECT')) {
+      return Promise.resolve(selectResult);
+    }
+    insertedRows.push(values);
+    return Promise.resolve([]);
+  });
+  (fn as unknown as Record<string, unknown>).json = (v: unknown) => v;
+  (fn as unknown as Record<string, unknown>).insertedRows = insertedRows;
+  return fn as unknown as MockSql & { insertedRows: unknown[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -52,7 +66,7 @@ describe('seedSuperuser()', () => {
     _seedSecretForTest('SUPERUSER_EMAIL', 'admin@example.com');
     _seedSecretForTest('SUPERUSER_PASSWORD', 'securepassword');
 
-    await seedSuperuser({ sql: sql as unknown as import('postgres').Sql });
+    await seedSuperuser({ sql });
 
     // No INSERT should have been attempted
     const calls = vi.mocked(sql as unknown as ReturnType<typeof vi.fn>).mock.calls;
@@ -67,7 +81,7 @@ describe('seedSuperuser()', () => {
     const sql = makeSql({ selectResult: [] });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await seedSuperuser({ sql: sql as unknown as import('postgres').Sql });
+    await seedSuperuser({ sql });
 
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('SUPERUSER_EMAIL is not set'));
   });
@@ -77,7 +91,7 @@ describe('seedSuperuser()', () => {
     _seedSecretForTest('SUPERUSER_EMAIL', 'admin@example.com');
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await seedSuperuser({ sql: sql as unknown as import('postgres').Sql });
+    await seedSuperuser({ sql });
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('Neither SUPERUSER_PASSWORD nor SUPERUSER_MNEMONIC'),
@@ -85,36 +99,18 @@ describe('seedSuperuser()', () => {
   });
 
   test('creates superuser using SUPERUSER_PASSWORD when set', async () => {
-    const insertedRows: unknown[] = [];
-    const sql = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
-      const raw = strings.join('');
-      if (raw.trim().toUpperCase().startsWith('SELECT')) {
-        return Promise.resolve([]);
-      }
-      insertedRows.push(values);
-      return Promise.resolve([]);
-    }) as unknown as import('postgres').Sql;
-    (sql as unknown as Record<string, unknown>).json = (v: unknown) => v;
+    const sql = makeSqlSimple([]);
 
     _seedSecretForTest('SUPERUSER_EMAIL', 'admin@example.com');
     _seedSecretForTest('SUPERUSER_PASSWORD', 'securepassword');
 
     await seedSuperuser({ sql });
 
-    expect(insertedRows.length).toBe(1);
+    expect(sql.insertedRows.length).toBe(1);
   });
 
   test('creates superuser using SUPERUSER_MNEMONIC when no password is set', async () => {
-    const insertedRows: unknown[] = [];
-    const sql = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
-      const raw = strings.join('');
-      if (raw.trim().toUpperCase().startsWith('SELECT')) {
-        return Promise.resolve([]);
-      }
-      insertedRows.push(values);
-      return Promise.resolve([]);
-    }) as unknown as import('postgres').Sql;
-    (sql as unknown as Record<string, unknown>).json = (v: unknown) => v;
+    const sql = makeSqlSimple([]);
 
     _seedSecretForTest('SUPERUSER_EMAIL', 'admin@example.com');
     _seedSecretForTest(
@@ -124,21 +120,13 @@ describe('seedSuperuser()', () => {
 
     await seedSuperuser({ sql });
 
-    expect(insertedRows.length).toBe(1);
+    expect(sql.insertedRows.length).toBe(1);
   });
 
   test('SUPERUSER_PASSWORD takes precedence over SUPERUSER_MNEMONIC', async () => {
     const hashSpy = vi.spyOn(Bun.password, 'hash');
 
-    const sql = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
-      void values;
-      const raw = strings.join('');
-      if (raw.trim().toUpperCase().startsWith('SELECT')) {
-        return Promise.resolve([]);
-      }
-      return Promise.resolve([]);
-    }) as unknown as import('postgres').Sql;
-    (sql as unknown as Record<string, unknown>).json = (v: unknown) => v;
+    const sql = makeSqlSimple([]);
 
     _seedSecretForTest('SUPERUSER_EMAIL', 'admin@example.com');
     _seedSecretForTest('SUPERUSER_PASSWORD', 'explicit-password');

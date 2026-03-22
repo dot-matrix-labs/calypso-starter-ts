@@ -17,12 +17,12 @@
  * database.
  */
 
-import type { Sql } from 'postgres';
+import type { sql as SqlPool } from 'db';
 import { getSecret } from '../secrets/index';
 
 export interface SeedSuperuserOptions {
   /** postgres.js connection pool to the app database */
-  sql: Sql;
+  sql: typeof SqlPool;
 }
 
 /**
