@@ -91,10 +91,9 @@ CREATE INDEX IF NOT EXISTS idx_task_queue_stale
 CREATE INDEX IF NOT EXISTS idx_task_queue_idempotency
     ON task_queue (idempotency_key);
 
--- Enable Row-Level Security so per-type DB roles only see their own rows.
--- Per-type RLS policies (task_queue_<type>_read) are applied by init-remote.ts
--- after the agent roles are created, because CREATE POLICY requires the role to exist.
-ALTER TABLE task_queue ENABLE ROW LEVEL SECURITY;
+-- Note: ALTER TABLE task_queue ENABLE ROW LEVEL SECURITY is executed by
+-- init-remote.ts (requires table ownership — the admin user owns the table).
+-- Per-type RLS policies are also applied there after agent roles are created.
 
 -- Per-type filtered views: expose only non-sensitive columns to each agent type.
 -- Sensitive columns excluded: delegated_token, created_by, result, error_message.

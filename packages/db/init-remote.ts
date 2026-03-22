@@ -300,6 +300,10 @@ async function configureAgentWorkerRoles(
   appAdmin: ReturnType<typeof makePool>,
   config: InitRemoteConfig,
 ): Promise<void> {
+  // Enable RLS on task_queue. This requires table ownership (the admin user owns
+  // the table after migrateAppSchema runs). The statement is idempotent.
+  await appAdmin.unsafe(`ALTER TABLE task_queue ENABLE ROW LEVEL SECURITY`);
+
   for (const agentType of AGENT_TYPES) {
     const roleName = agentRoleName(agentType);
     const viewName = agentViewName(agentType);
