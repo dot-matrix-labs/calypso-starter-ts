@@ -151,3 +151,40 @@ DROP TRIGGER IF EXISTS trg_task_queue_notify ON task_queue;
 CREATE TRIGGER trg_task_queue_notify
     AFTER INSERT ON task_queue
     FOR EACH ROW EXECUTE FUNCTION notify_task_queue_insert();
+
+-- Passkey / WebAuthn credentials
+-- Stores the public key credential registered by the user's authenticator.
+-- credential_id: base64url-encoded credential ID from the authenticator
+-- public_key: CBOR-encoded public key stored as hex bytes
+-- counter: signature counter for clone detection (reject if presented <= stored)
+-- aaguid: authenticator AAGUID (identifies the authenticator model)
+-- transports: array of transport hints (usb, nfc, ble, hybrid, internal)
+CREATE TABLE IF NOT EXISTS passkey_credentials (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    user_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    credential_id TEXT NOT NULL UNIQUE,
+    public_key BYTEA NOT NULL,
+    counter BIGINT NOT NULL DEFAULT 0,
+    aaguid TEXT NOT NULL DEFAULT '',
+    transports TEXT[] NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_passkey_credentials_user_id ON passkey_credentials(user_id);
+CREATE INDEX IF NOT EXISTS idx_passkey_credentials_credential_id ON passkey_credentials(credential_id);
+
+-- Passkey challenge store
+-- Short-lived challenges (5-minute TTL) used to prevent replay attacks during
+-- WebAuthn registration and authentication ceremonies.
+CREATE TABLE IF NOT EXISTS passkey_challenges (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    user_id TEXT REFERENCES entities(id) ON DELETE CASCADE,
+    challenge TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('registration', 'authentication')),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (NOW() + INTERVAL '5 minutes'),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_passkey_challenges_user_id ON passkey_challenges(user_id);
+CREATE INDEX IF NOT EXISTS idx_passkey_challenges_challenge ON passkey_challenges(challenge);

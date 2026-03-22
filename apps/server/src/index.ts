@@ -9,6 +9,7 @@
 import { analyticsSql, auditSql, migrate, migrateAudit, sql } from 'db';
 import { cleanupExpiredRevocations, startRevocationCleanup } from 'db/revocation';
 import { handleAuthRequest } from './api/auth';
+import { handlePasskeyRequest } from './api/passkey';
 import { handleTasksRequest } from './api/tasks';
 import { handleTaskQueueResultRequest } from './api/task-queue';
 import { handleStudioRequest } from './api/studio';
@@ -97,6 +98,11 @@ export default {
         },
       });
       return withTrace(res);
+    }
+
+    if (url.pathname.startsWith('/api/auth/passkey')) {
+      const passkeyRes = await handlePasskeyRequest(req, url, appState);
+      if (passkeyRes) return passkeyRes;
     }
 
     if (url.pathname.startsWith('/api/auth')) {
