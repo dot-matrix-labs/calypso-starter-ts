@@ -50,3 +50,39 @@ CREATE TABLE IF NOT EXISTS revoked_tokens (
   revoked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMPTZ NOT NULL
 );
+
+-- Task queue: single-table queue for all agent types (TQ-D-001).
+-- delegated_token stores the single-use JWT issued at task creation.
+-- The token is encrypted at rest in the column; workers receive it only
+-- through the claim API response.
+CREATE TABLE IF NOT EXISTS task_queue (
+    id TEXT PRIMARY KEY,
+    idempotency_key TEXT UNIQUE NOT NULL,
+    agent_type TEXT NOT NULL,
+    job_type TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending','claimed','running','submitting','completed','failed','dead')),
+    payload JSONB NOT NULL DEFAULT '{}',
+    created_by TEXT NOT NULL,
+    correlation_id TEXT,
+    claimed_by TEXT,
+    claimed_at TIMESTAMP WITH TIME ZONE,
+    claim_expires_at TIMESTAMP WITH TIME ZONE,
+    delegated_token TEXT,
+    result JSONB,
+    error_message TEXT,
+    attempt INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 3,
+    next_retry_at TIMESTAMP WITH TIME ZONE,
+    priority INTEGER NOT NULL DEFAULT 5,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_task_queue_poll
+    ON task_queue (agent_type, status, priority, created_at)
+    WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_task_queue_stale
+    ON task_queue (status, claim_expires_at)
+    WHERE status = 'claimed';

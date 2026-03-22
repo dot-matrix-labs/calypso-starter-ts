@@ -10,6 +10,7 @@ import { analyticsSql, auditSql, migrate, migrateAudit, sql } from 'db';
 import { cleanupExpiredRevocations, startRevocationCleanup } from 'db/revocation';
 import { handleAuthRequest } from './api/auth';
 import { handleTasksRequest } from './api/tasks';
+import { handleTaskQueueResultRequest } from './api/task-queue';
 import { handleStudioRequest } from './api/studio';
 import { handleAuditRequest } from './api/audit';
 
@@ -81,6 +82,11 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/tasks')) {
+      // Delegated-token result submission route must be checked before the
+      // cookie-auth tasks route so workers can submit without a user session.
+      const resultRes = await handleTaskQueueResultRequest(req, url, appState);
+      if (resultRes) return resultRes;
+
       const tasksRes = await handleTasksRequest(req, url, appState);
       if (tasksRes) return tasksRes;
     }
