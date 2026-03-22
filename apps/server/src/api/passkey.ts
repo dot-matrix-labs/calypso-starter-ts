@@ -74,9 +74,9 @@ export async function handlePasskeyRequest(
       const existingCreds = await sql`
         SELECT credential_id FROM passkey_credentials WHERE user_id = ${userId}
       `;
-      const excludeCredentials = existingCreds.map((row: { credential_id: string }) => ({
-        id: row.credential_id,
-      }));
+      const excludeCredentials = (existingCreds as unknown as { credential_id: string }[]).map(
+        (row) => ({ id: row.credential_id }),
+      );
 
       const options = await generateRegistrationOptions({
         rpName: RP_NAME,
@@ -183,7 +183,7 @@ export async function handlePasskeyRequest(
         const creds = await sql`
           SELECT credential_id FROM passkey_credentials WHERE user_id = ${userId}
         `;
-        allowCredentials = creds.map((row: { credential_id: string }) => ({
+        allowCredentials = (creds as unknown as { credential_id: string }[]).map((row) => ({
           id: row.credential_id,
         }));
       }
