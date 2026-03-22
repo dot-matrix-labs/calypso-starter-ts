@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.3.0",
+    "ajv": "^8.18.0",
     "core": "workspace:*",
     "db": "workspace:*",
     "rss-parser": "^3.13.0"

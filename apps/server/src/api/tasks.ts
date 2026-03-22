@@ -1,8 +1,10 @@
 import type { AppState } from '../index';
 import type { Task, TaskProperties } from 'core';
+import { createTaskSchema, patchTaskSchema } from 'core';
 import { getCorsHeaders, getAuthenticatedUser, parseCookies } from './auth';
 import { applyTaskPatchThroughBoundary } from '../policies/task-write-service';
 import { verifyCsrf } from '../auth/csrf';
+import { validate } from './validation';
 
 // Starter task note:
 // Task CRUD currently mutates entity rows directly. That is acceptable for the
@@ -64,7 +66,32 @@ export async function handleTasksRequest(
 
   // POST /api/tasks
   if (req.method === 'POST' && url.pathname === '/api/tasks') {
-    const body = await req.json();
+    const rawBody = await req.json();
+    const result = validate<{
+      name: string;
+      description?: string;
+      owner?: string;
+      priority?: TaskProperties['priority'];
+      status?: TaskProperties['status'];
+      estimateStart?: string | null;
+      estimatedDeliver?: string | null;
+      dependsOn?: string[];
+      tags?: string[];
+    }>(createTaskSchema, rawBody);
+
+    if (!result.valid) {
+      return json(
+        {
+          error: 'Validation failed',
+          details: result.errors.map((e) => ({
+            instancePath: e.instancePath,
+            message: e.message,
+          })),
+        },
+        400,
+      );
+    }
+
     const {
       name,
       description = '',
@@ -75,11 +102,7 @@ export async function handleTasksRequest(
       estimatedDeliver = null,
       dependsOn = [],
       tags = [],
-    } = body;
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return json({ error: 'name is required' }, 400);
-    }
+    } = result.data;
 
     const id = crypto.randomUUID();
     const properties: TaskProperties = {
@@ -106,7 +129,21 @@ export async function handleTasksRequest(
   // PATCH /api/tasks/:id — partial update (status, etc.)
   if (req.method === 'PATCH' && url.pathname.startsWith('/api/tasks/')) {
     const id = url.pathname.split('/')[3];
-    const body = await req.json();
+    const rawBody = await req.json();
+
+    const patchResult = validate<Partial<TaskProperties>>(patchTaskSchema, rawBody);
+    if (!patchResult.valid) {
+      return json(
+        {
+          error: 'Validation failed',
+          details: patchResult.errors.map((e) => ({
+            instancePath: e.instancePath,
+            message: e.message,
+          })),
+        },
+        400,
+      );
+    }
 
     const [existing] = await sql<{ properties: TaskProperties }[]>`
       SELECT properties FROM entities WHERE id = ${id} AND type = 'task'
@@ -116,7 +153,7 @@ export async function handleTasksRequest(
     const row = await applyTaskPatchThroughBoundary({
       taskId: id,
       current: existing.properties,
-      patch: body,
+      patch: patchResult.data,
       principal: {
         id: user.id,
         kind: 'human',

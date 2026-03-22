@@ -68,3 +68,64 @@ export interface GithubLinkProperties {
   status: 'open' | 'closed';
   url: string;
 }
+
+// ---------------------------------------------------------------------------
+// JSON Schemas for server-side validation and integration test fixtures
+// ---------------------------------------------------------------------------
+
+/** JSON Schema for creating a new task (POST /api/tasks body). */
+export const createTaskSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', minLength: 1 },
+    description: { type: 'string' },
+    owner: { type: 'string' },
+    priority: { type: 'string', enum: ['low', 'medium', 'high'] },
+    status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
+    estimateStart: { type: ['string', 'null'] },
+    estimatedDeliver: { type: ['string', 'null'] },
+    dependsOn: { type: 'array', items: { type: 'string' } },
+    tags: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['name'],
+  additionalProperties: false,
+} as const;
+
+/** JSON Schema for patching an existing task (PATCH /api/tasks/:id body). */
+export const patchTaskSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', minLength: 1 },
+    description: { type: 'string' },
+    owner: { type: 'string' },
+    priority: { type: 'string', enum: ['low', 'medium', 'high'] },
+    status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
+    estimateStart: { type: ['string', 'null'] },
+    estimatedDeliver: { type: ['string', 'null'] },
+    dependsOn: { type: 'array', items: { type: 'string' } },
+    tags: { type: 'array', items: { type: 'string' } },
+  },
+  additionalProperties: false,
+} as const;
+
+/** JSON Schema for user registration (POST /api/auth/register body). */
+export const registerUserSchema = {
+  type: 'object',
+  properties: {
+    username: { type: 'string', minLength: 1 },
+    password: { type: 'string', minLength: 6 },
+  },
+  required: ['username', 'password'],
+  additionalProperties: false,
+} as const;
+
+/** JSON Schema for user login (POST /api/auth/login body). */
+export const loginUserSchema = {
+  type: 'object',
+  properties: {
+    username: { type: 'string', minLength: 1 },
+    password: { type: 'string', minLength: 1 },
+  },
+  required: ['username', 'password'],
+  additionalProperties: false,
+} as const;

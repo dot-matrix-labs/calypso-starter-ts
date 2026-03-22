@@ -2,6 +2,8 @@ import type { AppState } from '../index';
 import { signJwt, verifyJwt } from '../auth/jwt';
 import { revokeToken } from 'db/revocation';
 import { generateCsrfToken, csrfCookieHeader, verifyCsrf } from '../auth/csrf';
+import { registerUserSchema, loginUserSchema } from 'core';
+import { validate } from './validation';
 
 // Starter auth note:
 // These routes are intentionally simple so the current app can register and log
@@ -83,13 +85,27 @@ export async function handleAuthRequest(
   // 1. POST /api/auth/register
   if (req.method === 'POST' && url.pathname === '/api/auth/register') {
     try {
-      const { username, password } = await req.json();
-      if (!username || !password || password.length < 6) {
-        return new Response(JSON.stringify({ error: 'Invalid username or password' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      const rawBody = await req.json();
+      const registerResult = validate<{ username: string; password: string }>(
+        registerUserSchema,
+        rawBody,
+      );
+      if (!registerResult.valid) {
+        return new Response(
+          JSON.stringify({
+            error: 'Validation failed',
+            details: registerResult.errors.map((e) => ({
+              instancePath: e.instancePath,
+              message: e.message,
+            })),
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
       }
+      const { username, password } = registerResult.data;
 
       // Check if user exists (checking JSONB property 'username' where type is 'user')
       const existingUser = await sql`
@@ -150,7 +166,27 @@ export async function handleAuthRequest(
   // 2. POST /api/auth/login
   if (req.method === 'POST' && url.pathname === '/api/auth/login') {
     try {
-      const { username, password } = await req.json();
+      const rawLoginBody = await req.json();
+      const loginResult = validate<{ username: string; password: string }>(
+        loginUserSchema,
+        rawLoginBody,
+      );
+      if (!loginResult.valid) {
+        return new Response(
+          JSON.stringify({
+            error: 'Validation failed',
+            details: loginResult.errors.map((e) => ({
+              instancePath: e.instancePath,
+              message: e.message,
+            })),
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+      const { username, password } = loginResult.data;
 
       // Retrieve User Entity
       const users = await sql`
