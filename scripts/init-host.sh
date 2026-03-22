@@ -516,6 +516,16 @@ spec:
                 secretKeyRef:
                   name: calypso-db-init-secret
                   key: ANALYTICS_W_PASSWORD
+            - name: AGENT_CODING_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-db-init-secret
+                  key: AGENT_CODING_PASSWORD
+            - name: AGENT_ANALYSIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-db-init-secret
+                  key: AGENT_ANALYSIS_PASSWORD
           resources:
             requests:
               cpu: '50m'
