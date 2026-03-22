@@ -11,6 +11,7 @@ const SERVER_ENTRY = 'apps/server/src/index.ts';
 let pg: PgContainer;
 let server: Subprocess;
 let authCookie = '';
+let csrfToken = '';
 
 beforeAll(async () => {
   pg = await startPostgres();
@@ -30,8 +31,19 @@ beforeAll(async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password: 'testpass123' }),
   });
-  const setCookie = res.headers.get('set-cookie') ?? '';
-  authCookie = setCookie.split(';')[0];
+  // Collect all Set-Cookie headers (auth session + CSRF token)
+  const setCookies = res.headers.getSetCookie
+    ? res.headers.getSetCookie()
+    : [res.headers.get('set-cookie') ?? ''];
+  const cookiePairs: string[] = [];
+  for (const raw of setCookies) {
+    const pair = raw.split(';')[0].trim();
+    if (pair) cookiePairs.push(pair);
+    if (pair.startsWith('__Host-csrf-token=')) {
+      csrfToken = pair.split('=').slice(1).join('=');
+    }
+  }
+  authCookie = cookiePairs.join('; ');
 }, 60_000);
 
 afterAll(async () => {
@@ -42,7 +54,11 @@ afterAll(async () => {
 test('PATCH /api/tasks/:id preserves current behavior through the task write boundary', async () => {
   const createRes = await fetch(`${BASE}/api/tasks`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: authCookie },
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: authCookie,
+      'X-CSRF-Token': csrfToken,
+    },
     body: JSON.stringify({ name: 'Patch me', owner: 'alice', priority: 'medium' }),
   });
   expect(createRes.status).toBe(201);
@@ -50,7 +66,11 @@ test('PATCH /api/tasks/:id preserves current behavior through the task write bou
 
   const patchRes = await fetch(`${BASE}/api/tasks/${created.id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', Cookie: authCookie },
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: authCookie,
+      'X-CSRF-Token': csrfToken,
+    },
     body: JSON.stringify({ status: 'in_progress', owner: 'bob' }),
   });
 

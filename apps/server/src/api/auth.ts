@@ -1,6 +1,7 @@
 import type { AppState } from '../index';
 import { signJwt, verifyJwt } from '../auth/jwt';
 import { revokeToken } from 'db/revocation';
+import { generateCsrfToken, csrfCookieHeader, verifyCsrf } from '../auth/csrf';
 
 // Starter auth note:
 // These routes are intentionally simple so the current app can register and log
@@ -45,7 +46,7 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-CSRF-Token',
   };
 }
 
@@ -60,6 +61,23 @@ export async function handleAuthRequest(
   // Preflight CORS
   if (req.method === 'OPTIONS' && url.pathname.startsWith('/api/auth')) {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // CSRF check for state-mutating auth routes (register, login, logout)
+  // Login and register are exempt because no authenticated session cookie
+  // exists yet — the CSRF token is issued as part of the response.
+  // Logout mutates server state, so it is checked.
+  const cookies = parseCookies(req.headers.get('Cookie'));
+  if (
+    url.pathname === '/api/auth/logout' ||
+    (req.method !== 'POST' &&
+      req.method !== 'GET' &&
+      req.method !== 'OPTIONS' &&
+      req.method !== 'HEAD' &&
+      url.pathname.startsWith('/api/auth'))
+  ) {
+    const csrfError = verifyCsrf(req, cookies);
+    if (csrfError) return csrfError;
   }
 
   // 1. POST /api/auth/register
@@ -103,17 +121,23 @@ export async function handleAuthRequest(
             `;
 
       const token = await signJwt({ id, username });
+      const csrfToken = generateCsrfToken();
 
-      return new Response(JSON.stringify({ user: { id, username } }), {
+      const res = new Response(JSON.stringify({ user: { id, username } }), {
         status: 201,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
           // Starter cookie settings are intentionally minimal. The blueprint
           // target is HTTP-only secure cookies with stricter session controls.
-          'Set-Cookie': `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800`,
         },
       });
+      res.headers.append(
+        'Set-Cookie',
+        `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800`,
+      );
+      res.headers.append('Set-Cookie', csrfCookieHeader(csrfToken));
+      return res;
     } catch (err) {
       console.error('REGISTER ERROR:', err);
       return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
@@ -153,15 +177,21 @@ export async function handleAuthRequest(
       }
 
       const token = await signJwt({ id: user.id, username: user.username });
+      const csrfToken = generateCsrfToken();
 
-      return new Response(JSON.stringify({ user: { id: user.id, username: user.username } }), {
+      const res = new Response(JSON.stringify({ user: { id: user.id, username: user.username } }), {
         status: 200,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
-          'Set-Cookie': `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800`,
         },
       });
+      res.headers.append(
+        'Set-Cookie',
+        `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800`,
+      );
+      res.headers.append('Set-Cookie', csrfCookieHeader(csrfToken));
+      return res;
     } catch (err) {
       console.error('LOGIN ERROR:', err);
       return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
@@ -215,14 +245,19 @@ export async function handleAuthRequest(
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    const res = new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
-        'Set-Cookie': 'calypso_auth=; HttpOnly; Path=/; Max-Age=0',
       },
     });
+    res.headers.append('Set-Cookie', 'calypso_auth=; HttpOnly; Path=/; Max-Age=0');
+    res.headers.append(
+      'Set-Cookie',
+      '__Host-csrf-token=; SameSite=Strict; Secure; Path=/; Max-Age=0',
+    );
+    return res;
   }
 
   return null;

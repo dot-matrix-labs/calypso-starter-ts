@@ -15,6 +15,7 @@ const SERVER_ENTRY = 'apps/server/src/index.ts';
 let pg: PgContainer;
 let server: Subprocess;
 let authCookie = '';
+let csrfToken = '';
 
 beforeAll(async () => {
   // 1. Start an isolated postgres container
@@ -31,15 +32,27 @@ beforeAll(async () => {
   // 3. Wait until the server is accepting requests
   await waitForServer(BASE);
 
-  // 4. Register a test user and capture the session cookie
+  // 4. Register a test user and capture the session cookie + CSRF token
   const username = `test_${Date.now()}`;
   const res = await fetch(`${BASE}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password: 'testpass123' }),
   });
-  const setCookie = res.headers.get('set-cookie') ?? '';
-  authCookie = setCookie.split(';')[0];
+  // Collect all Set-Cookie headers (auth session + CSRF token)
+  const setCookies = res.headers.getSetCookie
+    ? res.headers.getSetCookie()
+    : [res.headers.get('set-cookie') ?? ''];
+  const cookiePairs: string[] = [];
+  for (const raw of setCookies) {
+    const pair = raw.split(';')[0].trim();
+    if (pair) cookiePairs.push(pair);
+    // Extract CSRF token value
+    if (pair.startsWith('__Host-csrf-token=')) {
+      csrfToken = pair.split('=').slice(1).join('=');
+    }
+  }
+  authCookie = cookiePairs.join('; ');
 }, 60_000);
 
 afterAll(async () => {
@@ -61,7 +74,11 @@ test('GET /api/tasks returns 200 with an array', async () => {
 test('POST /api/tasks creates a task and returns 201', async () => {
   const res = await fetch(`${BASE}/api/tasks`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: authCookie },
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: authCookie,
+      'X-CSRF-Token': csrfToken,
+    },
     body: JSON.stringify({ name: 'Integration test task', priority: 'high' }),
   });
   expect(res.status).toBe(201);
@@ -75,10 +92,23 @@ test('POST /api/tasks creates a task and returns 201', async () => {
 test('POST /api/tasks returns 400 when name is missing', async () => {
   const res = await fetch(`${BASE}/api/tasks`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: authCookie },
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: authCookie,
+      'X-CSRF-Token': csrfToken,
+    },
     body: JSON.stringify({ priority: 'low' }),
   });
   expect(res.status).toBe(400);
+});
+
+test('POST /api/tasks returns 403 when CSRF token is missing', async () => {
+  const res = await fetch(`${BASE}/api/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: authCookie },
+    body: JSON.stringify({ name: 'CSRF test task' }),
+  });
+  expect(res.status).toBe(403);
 });
 
 test('GET /api/tasks returns 401 when unauthenticated', async () => {

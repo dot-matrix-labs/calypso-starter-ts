@@ -1,7 +1,8 @@
 import type { AppState } from '../index';
 import type { Task, TaskProperties } from 'core';
-import { getCorsHeaders, getAuthenticatedUser } from './auth';
+import { getCorsHeaders, getAuthenticatedUser, parseCookies } from './auth';
 import { applyTaskPatchThroughBoundary } from '../policies/task-write-service';
+import { verifyCsrf } from '../auth/csrf';
 
 // Starter task note:
 // Task CRUD currently mutates entity rows directly. That is acceptable for the
@@ -44,6 +45,11 @@ export async function handleTasksRequest(
 
   const user = await getAuthenticatedUser(req);
   if (!user) return json({ error: 'Unauthorized' }, 401);
+
+  // CSRF check for state-mutating methods
+  const cookies = parseCookies(req.headers.get('Cookie'));
+  const csrfError = verifyCsrf(req, cookies);
+  if (csrfError) return csrfError;
 
   // GET /api/tasks
   if (req.method === 'GET' && url.pathname === '/api/tasks') {
