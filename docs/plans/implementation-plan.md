@@ -83,6 +83,7 @@ Implement the one-way synchronization for public issue tracking.
 
 - [x] Add `docs/pwa-platform-limitations.md` covering platform feasibility matrix for Android Chrome and iOS, impossible features, partial-support caveats, workarounds, version requirements, and source links.
 - [x] Link `pwa-platform-limitations.md` from `docs/README.md`.
+- [x] Fix pre-push hook: unset GIT_DIR and related git env vars before running the test suite so studio tests pass when git invokes the hook during `git push`.
 
 ## Documentation Review
 

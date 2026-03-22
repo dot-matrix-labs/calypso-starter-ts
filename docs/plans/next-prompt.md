@@ -2,11 +2,11 @@
 
 ## Context
 
-The `docs/pwa-platform-limitations.md` reference document has been added. It
-covers the platform feasibility matrix for Android Chrome, iOS Safari, and iOS
-Home Screen web apps, including truly impossible features, partial-support
-caveats, workarounds, version requirements, and source links to WebKit, MDN,
-and web.dev. The document is linked from `docs/README.md`.
+The `docs/pwa-platform-limitations.md` reference document has been added and
+linked from `docs/README.md`. The pre-push hook has been fixed to unset git
+environment variables (GIT_DIR, GIT_WORK_TREE, etc.) before running the test
+suite, so studio integration tests no longer fail when git invokes the hook
+during `git push`.
 
 ## Next Action
 
