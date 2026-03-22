@@ -1,5 +1,7 @@
 import postgres from 'postgres';
 import { buildSslOptions } from './ssl';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 
 const DEFAULT_DATABASE_NAMES = {
   app: 'calypso_app',
@@ -308,14 +310,17 @@ async function configureAgentWorkerRoles(
       `GRANT CONNECT ON DATABASE ${quoteIdentifier(config.databases.app)} TO ${quoteIdentifier(roleName)}`,
     );
 
-    // USAGE on public schema + SELECT on the per-type view only
-    await appAdmin.unsafe(`
-GRANT USAGE ON SCHEMA public TO ${quoteIdentifier(roleName)};
-GRANT SELECT ON ${quoteIdentifier(viewName)} TO ${quoteIdentifier(roleName)};
-`);
+    // USAGE on public schema
+    await appAdmin.unsafe(`GRANT USAGE ON SCHEMA public TO ${quoteIdentifier(roleName)}`);
+
+    // USAGE on public schema + SELECT on the per-type view only.
+    // migrate() has already been called above, so the view is guaranteed to exist.
+    await appAdmin.unsafe(
+      `GRANT SELECT ON ${quoteIdentifier(viewName)} TO ${quoteIdentifier(roleName)}`,
+    );
 
     // RLS policy: role may only SELECT rows where agent_type matches its own type.
-    // DROP + CREATE is idempotent and avoids dollar-quoting in schema.sql.
+    // DROP + CREATE is idempotent.
     // Blueprint: WORKER-D-007 (per-agent-type-database-role), TQ-D-004 (per-type-filtered-views)
     await appAdmin.unsafe(`DROP POLICY IF EXISTS ${quoteIdentifier(policyName)} ON task_queue`);
     await appAdmin.unsafe(`
@@ -523,6 +528,55 @@ async function verifyInitRemote(
   }
 }
 
+/**
+ * Apply the app database schema (schema.sql) using the provided pool.
+ * Mirrors the migrate() function in packages/db/index.ts but avoids importing
+ * that module (which creates postgres pools at module-load time with env-var URLs
+ * that are not available in the db-init container).
+ */
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = '';
+  let inDollarQuote = false;
+  let i = 0;
+
+  while (i < sql.length) {
+    if (sql[i] === '$' && sql[i + 1] === '$') {
+      inDollarQuote = !inDollarQuote;
+      current += '$$';
+      i += 2;
+      continue;
+    }
+    if (!inDollarQuote && sql[i] === ';') {
+      const trimmed = current.trim();
+      if (trimmed.length > 0) {
+        statements.push(trimmed);
+      }
+      current = '';
+      i += 1;
+      continue;
+    }
+    current += sql[i];
+    i += 1;
+  }
+  const trailing = current.trim();
+  if (trailing.length > 0) {
+    statements.push(trailing);
+  }
+  return statements;
+}
+
+async function migrateAppSchema(pool: ReturnType<typeof makePool>): Promise<void> {
+  console.log('[init-remote] Applying app database schema...');
+  const schemaSql = readFileSync(fileURLToPath(new URL('./schema.sql', import.meta.url)), 'utf-8');
+  const cleanSql = schemaSql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const statements = splitSqlStatements(cleanSql).filter((s) => s.length > 0);
+  for (const statement of statements) {
+    await pool.unsafe(statement);
+  }
+  console.log('[init-remote] App schema applied.');
+}
+
 export async function runInitRemote(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const config = loadInitRemoteConfig(env);
   const admin = makePool(config.adminDatabaseUrl);
@@ -550,6 +604,11 @@ export async function runInitRemote(env: NodeJS.ProcessEnv = process.env): Promi
     await configureAppDatabase(appAdmin);
     await configureAuditDatabase(auditAdmin);
     await configureAnalyticsDatabase(analyticsAdmin);
+
+    // Apply the app database schema (idempotent — CREATE TABLE IF NOT EXISTS).
+    // This ensures task_queue and its views exist before we grant SELECT on them
+    // and create RLS policies. The admin connection has full DDL privileges.
+    await migrateAppSchema(appAdmin);
 
     // Provision agent_worker base role and per-type agent roles
     await ensureAgentBaseRole(admin);
