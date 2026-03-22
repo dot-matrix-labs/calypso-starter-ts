@@ -1,0 +1,33 @@
+name: PWA Device Helpers Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/web/src/components/pwa/**'
+      - 'apps/web/public/manifest.json'
+      - 'apps/web/public/sw.js'
+      - 'tests/helpers/pwa.ts'
+      - 'tests/pwa/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      - name: Install Dependencies
+        run: bun install
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+      - name: Run PWA tests
+        run: bunx playwright test --config tests/pwa/playwright.config.mts
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-playwright-report
+          path: playwright-report
