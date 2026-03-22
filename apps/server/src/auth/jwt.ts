@@ -1,3 +1,5 @@
+import { isRevoked } from 'db/revocation';
+
 const JWT_SECRET_KEY = process.env.JWT_SECRET || 'calypso-dev-secret-super-secure';
 const ENCODER = new TextEncoder();
 
@@ -41,13 +43,15 @@ async function getCryptoKey(): Promise<CryptoKey> {
 
 /**
  * Signs a payload generating a JWT token natively using Web Crypto.
+ * A `jti` (JWT ID) claim is added automatically for revocation tracking.
  */
 export async function signJwt(payload: object, expiresInHours = 24 * 7): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };
   const exp = Math.floor(Date.now() / 1000) + expiresInHours * 60 * 60;
+  const jti = crypto.randomUUID();
 
   const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify({ ...payload, exp }));
+  const encodedPayload = base64UrlEncode(JSON.stringify({ ...payload, exp, jti }));
 
   const dataToSign = ENCODER.encode(`${encodedHeader}.${encodedPayload}`);
   const key = await getCryptoKey();
@@ -59,7 +63,7 @@ export async function signJwt(payload: object, expiresInHours = 24 * 7): Promise
 }
 
 /**
- * Verifies and decodes a JWT token. Throws if invalid or expired.
+ * Verifies and decodes a JWT token. Throws if invalid, expired, or revoked.
  */
 export async function verifyJwt<T>(token: string): Promise<T> {
   const parts = token.split('.');
@@ -97,6 +101,10 @@ export async function verifyJwt<T>(token: string): Promise<T> {
 
   if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
     throw new Error('Token expired');
+  }
+
+  if (payload.jti && (await isRevoked(payload.jti))) {
+    throw new Error('Token revoked');
   }
 
   return payload as T;

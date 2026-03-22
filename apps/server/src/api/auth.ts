@@ -1,5 +1,6 @@
 import type { AppState } from '../index';
 import { signJwt, verifyJwt } from '../auth/jwt';
+import { revokeToken } from 'db/revocation';
 
 // Starter auth note:
 // These routes are intentionally simple so the current app can register and log
@@ -188,8 +189,32 @@ export async function handleAuthRequest(
 
   // 4. POST /api/auth/logout
   if (req.method === 'POST' && url.pathname === '/api/auth/logout') {
-    // TODO(calypso-blueprint): add revocation-store support so logout is not
-    // just cookie deletion in the browser.
+    const cookies = parseCookies(req.headers.get('Cookie'));
+    const token = cookies['calypso_auth'];
+
+    if (token) {
+      try {
+        // Decode without full verify so we can always revoke even if the token
+        // is already near expiry. We only need jti and exp from the payload.
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payloadStr = atob(
+            parts[1]
+              .replace(/-/g, '+')
+              .replace(/_/g, '/')
+              .padEnd(parts[1].length + ((4 - (parts[1].length % 4)) % 4), '='),
+          );
+          const payload = JSON.parse(payloadStr) as { jti?: string; exp?: number };
+          if (payload.jti && payload.exp) {
+            const expiresAt = new Date(payload.exp * 1000);
+            await revokeToken(payload.jti, expiresAt);
+          }
+        }
+      } catch {
+        // Best-effort: revocation failure should not block logout response.
+      }
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {

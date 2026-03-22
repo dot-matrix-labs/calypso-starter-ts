@@ -7,6 +7,7 @@
  */
 
 import { analyticsSql, auditSql, migrate, migrateAudit, sql } from 'db';
+import { cleanupExpiredRevocations, startRevocationCleanup } from 'db/revocation';
 import { handleAuthRequest } from './api/auth';
 import { handleTasksRequest } from './api/tasks';
 import { handleStudioRequest } from './api/studio';
@@ -23,6 +24,14 @@ try {
 } catch (err) {
   console.warn('[db] Audit schema migration skipped — audit database unavailable:', err);
 }
+
+// Purge any already-expired revocation rows left from a previous run, then
+// schedule the recurring 24-hour cleanup. The timer is unref'd so it does not
+// block process exit.
+await cleanupExpiredRevocations().catch((err) =>
+  console.error('[revocation] startup cleanup failed:', err),
+);
+startRevocationCleanup();
 
 export interface AppState {
   sql: typeof sql;

@@ -44,3 +44,9 @@ INSERT INTO entity_types (type, schema) VALUES
   ('channel',     '{}'),
   ('message',     '{}')
 ON CONFLICT (type) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+  jti TEXT PRIMARY KEY,
+  revoked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
+);

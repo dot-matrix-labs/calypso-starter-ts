@@ -5,7 +5,8 @@
   "types": "index.ts",
   "exports": {
     ".": "./index.ts",
-    "./pg-container": "./pg-container.ts"
+    "./pg-container": "./pg-container.ts",
+    "./revocation": "./revocation.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
