@@ -300,8 +300,9 @@ async function configureAgentWorkerRoles(
   appAdmin: ReturnType<typeof makePool>,
   config: InitRemoteConfig,
 ): Promise<void> {
-  // Enable RLS on task_queue. This requires table ownership (the admin user owns
-  // the table after migrateAppSchema runs). The statement is idempotent.
+  // Enable RLS on task_queue. app_rw owns the table (migrateAppSchema ran as
+  // app_rw); admin is a superuser so it can still enable RLS without being the
+  // owner. The statement is idempotent.
   await appAdmin.unsafe(`ALTER TABLE task_queue ENABLE ROW LEVEL SECURITY`);
 
   for (const agentType of AGENT_TYPES) {
@@ -609,10 +610,24 @@ export async function runInitRemote(env: NodeJS.ProcessEnv = process.env): Promi
     await configureAuditDatabase(auditAdmin);
     await configureAnalyticsDatabase(analyticsAdmin);
 
-    // Apply the app database schema (idempotent — CREATE TABLE IF NOT EXISTS).
-    // This ensures task_queue and its views exist before we grant SELECT on them
-    // and create RLS policies. The admin connection has full DDL privileges.
-    await migrateAppSchema(appAdmin);
+    // Apply the app database schema using the app_rw role so that app_rw owns
+    // the resulting tables. This is idempotent (CREATE TABLE IF NOT EXISTS) and
+    // ensures that the later migrate() call run by the server process (also as
+    // app_rw) can create indexes and triggers on its own tables without an
+    // ownership error.
+    const appRwUrl = (() => {
+      const u = new URL(config.adminDatabaseUrl);
+      u.username = ROLE_NAMES.app;
+      u.password = config.passwords.app;
+      u.pathname = `/${config.databases.app}`;
+      return u.toString();
+    })();
+    const appRw = makePool(appRwUrl);
+    try {
+      await migrateAppSchema(appRw);
+    } finally {
+      await appRw.end({ timeout: 5 });
+    }
 
     // Provision agent_worker base role and per-type agent roles
     await ensureAgentBaseRole(admin);
