@@ -4,14 +4,11 @@ import { join } from 'path';
 
 const REPO_ROOT = new URL('../../../../', import.meta.url).pathname;
 const CLONE_ROOT = join('/tmp', `calypso-studio-test-${Date.now()}`);
+const GIT_ENV = sanitizedGitEnv();
 
 function resolveStudioMainHash(cwd: string): string {
   for (const ref of ['origin/main', 'origin/master', 'main', 'master']) {
-    const result = Bun.spawnSync(['git', 'rev-parse', '--short', ref], {
-      cwd,
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
+    const result = spawnGitSync(['rev-parse', '--short', ref], cwd);
     if (result.exitCode === 0) {
       return (result.stdout ?? new Uint8Array()).toString().trim();
     }
@@ -21,18 +18,10 @@ function resolveStudioMainHash(cwd: string): string {
 }
 
 function cloneRepoRootWithWorkspaceChanges(): void {
-  const clone = Bun.spawnSync(['git', 'clone', REPO_ROOT, CLONE_ROOT], {
-    cwd: REPO_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  const clone = spawnGitSync(['clone', REPO_ROOT, CLONE_ROOT], REPO_ROOT);
   expect(clone.exitCode).toBe(0);
 
-  const diff = Bun.spawnSync(['git', 'diff', '--binary', 'HEAD'], {
-    cwd: REPO_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  const diff = spawnGitSync(['diff', '--binary', 'HEAD'], REPO_ROOT);
   expect(diff.exitCode).toBe(0);
   const patch = (diff.stdout ?? new Uint8Array()).toString();
   if (!patch.trim()) {
@@ -41,6 +30,7 @@ function cloneRepoRootWithWorkspaceChanges(): void {
 
   const apply = Bun.spawnSync(['git', 'apply', '--index'], {
     cwd: CLONE_ROOT,
+    env: GIT_ENV,
     stdin: diff.stdout,
     stdout: 'pipe',
     stderr: 'pipe',
@@ -55,33 +45,13 @@ afterEach(() => {
 test('bun run studio bootstraps an existing studio branch checkout and exits after bootstrap in test mode', async () => {
   cloneRepoRootWithWorkspaceChanges();
 
-  Bun.spawnSync(['git', 'config', 'user.name', 'Studio Start Test'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'config', 'user.email', 'studio-start-test@example.com'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'branch', '-f', 'main', 'HEAD'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'checkout', 'main'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  spawnGitSync(['config', 'user.name', 'Studio Start Test'], CLONE_ROOT);
+  spawnGitSync(['config', 'user.email', 'studio-start-test@example.com'], CLONE_ROOT);
+  spawnGitSync(['branch', '-f', 'main', 'HEAD'], CLONE_ROOT);
+  spawnGitSync(['checkout', 'main'], CLONE_ROOT);
   const mainHash = resolveStudioMainHash(CLONE_ROOT);
   const branchName = `studio/session-${mainHash}-a1b2`;
-  Bun.spawnSync(['git', 'checkout', '-b', branchName], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  spawnGitSync(['checkout', '-b', branchName], CLONE_ROOT);
 
   const studio = Bun.spawnSync(['bun', 'run', 'studio'], {
     cwd: CLONE_ROOT,
@@ -98,11 +68,7 @@ test('bun run studio bootstraps an existing studio branch checkout and exits aft
 
   expect(studio.exitCode).toBe(0);
 
-  const branch = Bun.spawnSync(['git', 'branch', '--show-current'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  const branch = spawnGitSync(['branch', '--show-current'], CLONE_ROOT);
   const checkedOutBranchName = (branch.stdout ?? new Uint8Array()).toString().trim();
 
   expect(checkedOutBranchName).toBe(branchName);
@@ -151,26 +117,10 @@ test('bun run studio bootstraps an existing studio branch checkout and exits aft
 test('bun run studio fails on a non-studio branch', () => {
   cloneRepoRootWithWorkspaceChanges();
 
-  Bun.spawnSync(['git', 'config', 'user.name', 'Studio Start Test'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'config', 'user.email', 'studio-start-test@example.com'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'branch', '-f', 'main', 'HEAD'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'checkout', 'main'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  spawnGitSync(['config', 'user.name', 'Studio Start Test'], CLONE_ROOT);
+  spawnGitSync(['config', 'user.email', 'studio-start-test@example.com'], CLONE_ROOT);
+  spawnGitSync(['branch', '-f', 'main', 'HEAD'], CLONE_ROOT);
+  spawnGitSync(['checkout', 'main'], CLONE_ROOT);
 
   const studio = Bun.spawnSync(['bun', 'run', 'studio'], {
     cwd: CLONE_ROOT,
@@ -191,3 +141,25 @@ test('bun run studio fails on a non-studio branch', () => {
   );
   expect(existsSync(join(CLONE_ROOT, '.studio'))).toBe(false);
 });
+
+function sanitizedGitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+  delete env.GIT_CONFIG;
+  delete env.GIT_DIR;
+  delete env.GIT_EXEC_PATH;
+  delete env.GIT_INDEX_FILE;
+  delete env.GIT_OBJECT_DIRECTORY;
+  delete env.GIT_PREFIX;
+  delete env.GIT_WORK_TREE;
+  return env;
+}
+
+function spawnGitSync(args: string[], cwd: string) {
+  return Bun.spawnSync(['git', ...args], {
+    cwd,
+    env: GIT_ENV,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+}
