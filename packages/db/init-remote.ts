@@ -302,6 +302,7 @@ async function configureAgentWorkerRoles(
   for (const agentType of AGENT_TYPES) {
     const roleName = agentRoleName(agentType);
     const viewName = agentViewName(agentType);
+    const policyName = `task_queue_${agentType}_read`;
 
     // CONNECT on the app database
     await admin.unsafe(
@@ -312,6 +313,18 @@ async function configureAgentWorkerRoles(
     await appAdmin.unsafe(`
 GRANT USAGE ON SCHEMA public TO ${quoteIdentifier(roleName)};
 GRANT SELECT ON ${quoteIdentifier(viewName)} TO ${quoteIdentifier(roleName)};
+`);
+
+    // RLS policy: role may only SELECT rows where agent_type matches its own type.
+    // DROP + CREATE is idempotent and avoids dollar-quoting in schema.sql.
+    // Blueprint: WORKER-D-007 (per-agent-type-database-role), TQ-D-004 (per-type-filtered-views)
+    await appAdmin.unsafe(`DROP POLICY IF EXISTS ${quoteIdentifier(policyName)} ON task_queue`);
+    await appAdmin.unsafe(`
+CREATE POLICY ${quoteIdentifier(policyName)}
+  ON task_queue
+  FOR SELECT
+  TO ${quoteIdentifier(roleName)}
+  USING (agent_type = '${escapeSqlLiteral(agentType)}')
 `);
   }
 }
