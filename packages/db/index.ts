@@ -1,6 +1,9 @@
 import postgres from 'postgres';
 import { join } from 'path';
 import { readFileSync } from 'fs';
+import { buildSslOptions } from './ssl';
+
+export { buildSslOptions } from './ssl';
 
 // Starter implementation note:
 // This package currently exposes a single connection pool bound to calypso_app.
@@ -22,6 +25,7 @@ export const sql = postgres(getDbUrl(), {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
+  ssl: buildSslOptions(),
   connection: { client_min_messages: 'warning' },
 });
 
