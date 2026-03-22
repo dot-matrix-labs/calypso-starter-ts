@@ -53,8 +53,8 @@ export async function applyTaskPatchThroughBoundary(
     action: request.transactionType,
     entity_type: 'task',
     entity_id: request.payload.taskId,
-    before: request.payload.current as Record<string, unknown>,
-    after: request.payload.next as Record<string, unknown>,
+    before: request.payload.current as unknown as Record<string, unknown>,
+    after: request.payload.next as unknown as Record<string, unknown>,
     ts: new Date().toISOString(),
   });
 

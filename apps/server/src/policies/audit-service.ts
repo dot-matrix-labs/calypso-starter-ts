@@ -31,15 +31,15 @@ export async function emitAuditEvent(event: AuditEventInput): Promise<AuditEvent
   // writers do not race on prev_hash selection.
   const result = await auditSql.begin(async (tx) => {
     // Lock the most recent row to prevent concurrent inserts racing on prev_hash.
-    const [latest] = await tx<{ hash: string }[]>`
+    const latestRows = (await tx`
       SELECT hash FROM audit_events ORDER BY ts DESC, id DESC LIMIT 1 FOR UPDATE
-    `;
+    `) as unknown as { hash: string }[];
 
-    const prevHash = latest?.hash ?? resolveGenesisHash();
+    const prevHash = latestRows[0]?.hash ?? resolveGenesisHash();
 
     const hash = await computeAuditHash(prevHash, event);
 
-    const [row] = await tx<AuditEventRow[]>`
+    const rows = (await tx`
       INSERT INTO audit_events (actor_id, action, entity_type, entity_id, before, after, ip, user_agent, ts, prev_hash, hash)
       VALUES (
         ${event.actor_id},
@@ -55,9 +55,9 @@ export async function emitAuditEvent(event: AuditEventInput): Promise<AuditEvent
         ${hash}
       )
       RETURNING id, actor_id, action, entity_type, entity_id, before, after, ip, user_agent, ts, prev_hash, hash
-    `;
+    `) as unknown as AuditEventRow[];
 
-    return row;
+    return rows[0];
   });
 
   return result;
