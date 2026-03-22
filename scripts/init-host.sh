@@ -578,9 +578,15 @@ echo ""
 echo "==> [8/8] Running db-init job and deploying application"
 
 echo "    Waiting for calypso-db-init job to complete..."
-kubectl wait --for=condition=complete job/calypso-db-init \
+if ! kubectl wait --for=condition=complete job/calypso-db-init \
   --namespace="${NAMESPACE}" \
-  --timeout=300s
+  --timeout=300s; then
+  echo "    ERROR: calypso-db-init job timed out or failed. Dumping pod logs:" >&2
+  kubectl get pods --namespace="${NAMESPACE}" --selector=app=calypso-db-init >&2 || true
+  kubectl logs --namespace="${NAMESPACE}" --selector=app=calypso-db-init --tail=100 >&2 || true
+  kubectl describe job/calypso-db-init --namespace="${NAMESPACE}" >&2 || true
+  exit 1
+fi
 
 echo "    calypso-db-init job completed."
 
