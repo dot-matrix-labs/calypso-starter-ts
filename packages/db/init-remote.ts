@@ -40,7 +40,6 @@ export function agentViewName(agentType: AgentType): string {
   return `task_queue_view_${agentType}`;
 }
 
-
 export interface InitRemoteConfig {
   adminDatabaseUrl: string;
   passwords: {
