@@ -111,3 +111,14 @@ managed_issue_branch_regex() {
 worktree_root() {
   printf '%s/.agents/worktrees\n' "$(repo_root)"
 }
+
+issue_payload() {
+  local issue_number="$1"
+  gh issue view "$issue_number" --repo "$(tasks_repo)" --json number,title,body,state,url
+}
+
+pr_payload() {
+  local pr_number="$1"
+  gh pr view "$pr_number" --repo "$(canonical_repo)" \
+    --json number,title,body,state,isDraft,mergedAt,url,headRefName,baseRefName
+}
