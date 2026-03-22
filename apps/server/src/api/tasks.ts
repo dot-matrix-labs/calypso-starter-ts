@@ -5,6 +5,7 @@ import { getCorsHeaders, getAuthenticatedUser, parseCookies } from './auth';
 import { applyTaskPatchThroughBoundary } from '../policies/task-write-service';
 import { verifyCsrf } from '../auth/csrf';
 import { validate } from './validation';
+import { broadcast } from '../websocket';
 
 // Starter task note:
 // Task CRUD currently mutates entity rows directly. That is acceptable for the
@@ -123,7 +124,9 @@ export async function handleTasksRequest(
       RETURNING id, properties, created_at
     `;
 
-    return json(rowToTask(row), 201);
+    const newTask = rowToTask(row);
+    broadcast('task.created', newTask);
+    return json(newTask, 201);
   }
 
   // PATCH /api/tasks/:id — partial update (status, etc.)
@@ -161,7 +164,24 @@ export async function handleTasksRequest(
       reason: 'task.patch',
     });
 
-    return json(rowToTask(row));
+    const updatedTask = rowToTask(row);
+    broadcast('task.updated', updatedTask);
+    return json(updatedTask);
+  }
+
+  // DELETE /api/tasks/:id
+  if (req.method === 'DELETE' && url.pathname.startsWith('/api/tasks/')) {
+    const id = url.pathname.split('/')[3];
+
+    const deleted = await sql<{ id: string }[]>`
+      DELETE FROM entities
+      WHERE id = ${id} AND type = 'task'
+      RETURNING id
+    `;
+    if (deleted.length === 0) return json({ error: 'Not found' }, 404);
+
+    broadcast('task.deleted', { id });
+    return json({ success: true });
   }
 
   return null;
