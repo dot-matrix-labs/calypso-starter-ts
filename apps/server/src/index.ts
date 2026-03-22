@@ -16,6 +16,8 @@ import { handleTaskQueueResultRequest } from './api/task-queue';
 import { handleStudioRequest } from './api/studio';
 import { handleAuditRequest } from './api/audit';
 import { extractTraceId, traceLog, log } from 'core';
+import { handleTasksQueueRequest } from './api/tasks-queue';
+import { startStaleClaimRecovery } from 'db/task-queue';
 
 // Starter behavior:
 // the server boot path auto-runs a local schema initializer for convenience.
@@ -36,6 +38,10 @@ await cleanupExpiredRevocations().catch((err) =>
   console.error('[revocation] startup cleanup failed:', err),
 );
 startRevocationCleanup();
+
+// Start background stale-claim recovery (TQ-D-003). Runs every 60 seconds and
+// resets expired claimed tasks to pending or promotes them to dead.
+startStaleClaimRecovery();
 
 export interface AppState {
   sql: typeof sql;
@@ -124,6 +130,11 @@ export default {
 
       const tasksRes = await handleTasksRequest(req, url, appState);
       if (tasksRes) return withTrace(tasksRes);
+    }
+
+    if (url.pathname.startsWith('/api/tasks-queue')) {
+      const tasksQueueRes = await handleTasksQueueRequest(req, url, appState);
+      if (tasksQueueRes) return tasksQueueRes;
     }
 
     if (url.pathname.startsWith('/api/audit')) {
