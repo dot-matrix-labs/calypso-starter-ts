@@ -40,12 +40,15 @@ describe('verifyReadOnlyRole', () => {
 });
 
 describe('assertReadOnlyRole', () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let exitSpy: any;
 
   beforeEach(() => {
-    exitSpy = vi.spyOn(process, 'exit').mockImplementation((_code) => {
-      throw new Error(`process.exit(${_code}) called`);
-    });
+    exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((_code: number | string | null | undefined) => {
+        throw new Error(`process.exit(${_code}) called`);
+      });
   });
 
   afterEach(() => {
