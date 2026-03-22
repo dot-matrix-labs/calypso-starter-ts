@@ -207,6 +207,11 @@ if kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" &>/dev/null
   APP_RW_PASSWORD="$(echo "${_existing_db_url}" | sed 's|.*://[^:]*:\([^@]*\)@.*|\1|')"
   AUDIT_W_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AUDIT_W_PASSWORD)"
   ANALYTICS_W_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets ANALYTICS_W_PASSWORD)"
+  AGENT_CODING_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_CODING_PASSWORD)"
+  AGENT_ANALYSIS_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_ANALYSIS_PASSWORD)"
+  # Fall back to generating agent passwords if they were not stored (upgrade path)
+  AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD:-$(openssl rand -hex 24)}"
+  AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD:-$(openssl rand -hex 24)}"
   JWT_SECRET="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets JWT_SECRET)"
   ENCRYPTION_MASTER_KEY="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets ENCRYPTION_MASTER_KEY)"
   if [[ "${DB_MODE}" == "local" ]]; then
@@ -219,6 +224,8 @@ else
   APP_RW_PASSWORD="$(openssl rand -hex 24)"
   AUDIT_W_PASSWORD="$(openssl rand -hex 24)"
   ANALYTICS_W_PASSWORD="$(openssl rand -hex 24)"
+  AGENT_CODING_PASSWORD="$(openssl rand -hex 24)"
+  AGENT_ANALYSIS_PASSWORD="$(openssl rand -hex 24)"
   if [[ "${DB_MODE}" == "local" ]]; then
     POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
   fi
@@ -312,6 +319,8 @@ DB_SECRET_ARGS=(
   --from-literal=APP_RW_PASSWORD="${APP_RW_PASSWORD}"
   --from-literal=AUDIT_W_PASSWORD="${AUDIT_W_PASSWORD}"
   --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}"
+  --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}"
+  --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
 )
 if [[ "${DB_MODE}" == "local" ]]; then
   DB_SECRET_ARGS+=(--from-literal=POSTGRES_USER="postgres")
@@ -328,6 +337,8 @@ DB_INIT_SECRET_ARGS=(
   --from-literal=APP_RW_PASSWORD="${APP_RW_PASSWORD}"
   --from-literal=AUDIT_W_PASSWORD="${AUDIT_W_PASSWORD}"
   --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}"
+  --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}"
+  --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
 )
 if [[ -n "${REMOTE_PG_CA_CERT:-}" ]]; then
   DB_INIT_SECRET_ARGS+=(--from-literal=DB_CA_CERT="${REMOTE_PG_CA_CERT}")
