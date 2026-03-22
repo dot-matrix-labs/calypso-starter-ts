@@ -544,6 +544,7 @@ if command -v ufw &>/dev/null; then
     ufw allow 31415/tcp  comment "App NodePort"  2>/dev/null
     ufw allow 8472/udp   comment "Flannel VXLAN" 2>/dev/null
     ufw --force enable 2>/dev/null
+    true  # ensure subshell exits with 0
   )
   echo "    Firewall configured."
 else
