@@ -2,11 +2,12 @@ name: Container Nightly Sanity
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   build-and-health-check:
@@ -55,13 +56,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Initialize databases
-        run: psql -f packages/db/init.sql
+        run: bun run packages/db/init-remote.ts
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: app_rw
-          PGPASSWORD: app_rw_password
-          PGDATABASE: calypso_app
+          ADMIN_DATABASE_URL: postgres://app_rw:app_rw_password@localhost:5432/calypso_app
+          DB_PASSWORD: app_rw_password
+          AUDIT_W_PASSWORD: audit_w_password
+          ANALYTICS_W_PASSWORD: analytics_w_password
 
       - name: Start app container
         run: |
@@ -79,18 +79,66 @@ jobs:
       - name: Wait for health check
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:31415/health; then
+            if curl -sf http://localhost:31415/healthz; then
               echo ""
               echo "Container is healthy"
               exit 0
             fi
             echo "Waiting... ($i/30)"
-            sleep 2
+            sleep 1
           done
           echo "Health check timed out — container logs:"
           docker logs calypso
           exit 1
 
+      - name: Smoke test -- register, login, list tasks
+        run: |
+          BASE=http://localhost:31415
+
+          # Register a smoke-test user
+          REGISTER=$(curl -sf -X POST "$BASE/api/auth/register" \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"nightly_smoke","password":"smoke-pass-123"}')
+          echo "Register response: $REGISTER"
+
+          # Login and capture the auth cookie
+          LOGIN_RESPONSE=$(curl -sf -c /tmp/smoke_cookies.txt -X POST "$BASE/api/auth/login" \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"nightly_smoke","password":"smoke-pass-123"}')
+          echo "Login response: $LOGIN_RESPONSE"
+
+          # List tasks using the auth cookie
+          TASKS=$(curl -sf -b /tmp/smoke_cookies.txt "$BASE/api/tasks")
+          echo "Tasks response: $TASKS"
+
       - name: Stop and remove container
         if: always()
         run: docker rm -f calypso || true
+
+      - name: Create failure issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          LABEL="nightly-failure"
+          RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+
+          # Create label if it does not exist
+          gh label create "$LABEL" --color "d93f0b" --description "Nightly container sanity failure" \
+            --repo "$REPO" 2>/dev/null || true
+
+          # Check for an existing open issue with this label
+          EXISTING=$(gh issue list --repo "$REPO" --label "$LABEL" --state open --json number --jq '.[0].number')
+
+          if [ -n "$EXISTING" ]; then
+            echo "Existing open nightly-failure issue #$EXISTING -- skipping creation"
+          else
+            gh issue create \
+              --repo "$REPO" \
+              --title "nightly: container sanity check failed" \
+              --label "$LABEL" \
+              --body "The nightly container sanity workflow failed. Failed run: ${RUN_URL} -- Check the run logs for details. Close this issue once the failure is resolved."
+          fi
