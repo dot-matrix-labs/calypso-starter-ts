@@ -60,6 +60,51 @@ export interface MigrateAuditOptions {
 }
 
 /**
+ * Split a SQL string into individual statements on top-level semicolons,
+ * respecting dollar-quoted blocks ($$...$$) so PL/pgSQL function bodies
+ * that contain semicolons are never split mid-body.
+ *
+ * This is intentionally minimal: it handles the common `$$` tag only.
+ * Named dollar tags (e.g. $body$) are not needed for our schema.
+ */
+export function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = '';
+  let inDollarQuote = false;
+  let i = 0;
+
+  while (i < sql.length) {
+    // Check for $$ delimiter
+    if (sql[i] === '$' && sql[i + 1] === '$') {
+      inDollarQuote = !inDollarQuote;
+      current += '$$';
+      i += 2;
+      continue;
+    }
+
+    if (!inDollarQuote && sql[i] === ';') {
+      const trimmed = current.trim();
+      if (trimmed.length > 0) {
+        statements.push(trimmed);
+      }
+      current = '';
+      i += 1;
+      continue;
+    }
+
+    current += sql[i];
+    i += 1;
+  }
+
+  const trailing = current.trim();
+  if (trailing.length > 0) {
+    statements.push(trailing);
+  }
+
+  return statements;
+}
+
+/**
  * Initializes the database tables by executing the native raw SQL schema.
  * This function should be called at server startup to ensure tables exist.
  *
@@ -83,15 +128,14 @@ export async function migrate(options: MigrateOptions = {}) {
         });
 
   try {
-    // Remove comments and split by semicolon
+    // Remove single-line and block comments, then split by top-level semicolons.
+    // Dollar-quoted blocks ($$...$$) are preserved intact so PL/pgSQL function
+    // bodies are not split mid-body.
     const cleanSql = schemaSql
       .replace(/--.*$/gm, '') // Remove single-line comments
       .replace(/\/\*[\s\S]*?\*\//g, ''); // Remove multi-line comments
 
-    const statements = cleanSql
-      .split(';')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const statements = splitSqlStatements(cleanSql).filter((s) => s.length > 0);
 
     // Execute sequentially
     for (const statement of statements) {
