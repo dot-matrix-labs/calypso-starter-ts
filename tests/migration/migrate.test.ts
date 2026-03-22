@@ -5,6 +5,8 @@ import { startPostgres, type PgContainer } from '../../packages/db/pg-container'
 const EXPECTED_TABLES = [
   'entities',
   'entity_types',
+  'passkey_challenges',
+  'passkey_credentials',
   'relations',
   'revoked_tokens',
   'task_queue',

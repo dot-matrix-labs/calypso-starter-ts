@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { PasskeyLoginButton } from './PasskeyButton';
 
 export const Login: React.FC = () => {
   const { setUser } = useAuth();
@@ -88,6 +89,20 @@ export const Login: React.FC = () => {
             {loading ? 'Authenticating...' : isRegister ? 'Create Account' : 'Sign In'}
           </button>
         </form>
+
+        {!isRegister && (
+          <>
+            <div className="my-5 flex items-center gap-3">
+              <div className="flex-1 border-t border-gray-200" />
+              <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">or</span>
+              <div className="flex-1 border-t border-gray-200" />
+            </div>
+            <PasskeyLoginButton
+              onSuccess={(user) => setUser(user)}
+              onError={(msg) => setError(msg)}
+            />
+          </>
+        )}
 
         <div className="mt-6 text-center text-sm">
           <button
