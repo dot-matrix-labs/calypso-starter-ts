@@ -192,20 +192,44 @@ fi
 echo ""
 echo "==> [4/8] Generating secrets"
 
-JWT_SECRET="$(openssl rand -hex 64)"
-ENCRYPTION_MASTER_KEY="$(openssl rand -hex 32)"
+# On repeated runs, reuse existing role passwords from calypso-api-secrets so
+# the application connections remain valid (postgres roles keep the same password).
+_decode_secret_key() {
+  local namespace="$1" secret="$2" key="$3"
+  kubectl get secret "${secret}" --namespace="${namespace}" \
+    -o jsonpath="{.data.${key}}" 2>/dev/null | base64 -d 2>/dev/null || true
+}
 
-APP_RW_PASSWORD="$(openssl rand -hex 24)"
-AUDIT_W_PASSWORD="$(openssl rand -hex 24)"
-ANALYTICS_W_PASSWORD="$(openssl rand -hex 24)"
+if kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" &>/dev/null 2>&1; then
+  echo "    Found existing calypso-api-secrets — reusing role passwords (idempotent run)."
+  _existing_db_url="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets DATABASE_URL)"
+  # Extract app_rw password from the existing DATABASE_URL (postgres://user:PASS@host/db)
+  APP_RW_PASSWORD="$(echo "${_existing_db_url}" | sed 's|.*://[^:]*:\([^@]*\)@.*|\1|')"
+  AUDIT_W_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AUDIT_W_PASSWORD)"
+  ANALYTICS_W_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets ANALYTICS_W_PASSWORD)"
+  JWT_SECRET="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets JWT_SECRET)"
+  ENCRYPTION_MASTER_KEY="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets ENCRYPTION_MASTER_KEY)"
+  if [[ "${DB_MODE}" == "local" ]]; then
+    POSTGRES_SUPERUSER_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets POSTGRES_PASSWORD)"
+  fi
+else
+  echo "    Generating new secrets."
+  JWT_SECRET="$(openssl rand -hex 64)"
+  ENCRYPTION_MASTER_KEY="$(openssl rand -hex 32)"
+  APP_RW_PASSWORD="$(openssl rand -hex 24)"
+  AUDIT_W_PASSWORD="$(openssl rand -hex 24)"
+  ANALYTICS_W_PASSWORD="$(openssl rand -hex 24)"
+  if [[ "${DB_MODE}" == "local" ]]; then
+    POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
+  fi
+fi
 
 if [[ "${DB_MODE}" == "local" ]]; then
-  POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
   PG_HOST="postgres"
   PG_PORT="5432"
   PG_ADMIN_DB="calypso_app"
   PG_ADMIN_USER="postgres"
-  PG_ADMIN_PASSWORD="${POSTGRES_SUPERUSER_PASSWORD}"
+  PG_ADMIN_PASSWORD="${POSTGRES_SUPERUSER_PASSWORD:-}"
   PG_SSL=""
 else
   PG_HOST="${REMOTE_PG_HOST}"
@@ -235,7 +259,7 @@ else
   ADMIN_DATABASE_URL="postgres://${PG_ADMIN_USER}:${PG_ADMIN_PASSWORD}@${PG_HOST}:${PG_PORT}/${PG_ADMIN_DB}${SSL_SUFFIX}"
 fi
 
-echo "    Secrets generated."
+echo "    Secrets ready."
 
 # ── 5. Kubernetes namespace and secrets ───────────────────────────────────────
 
