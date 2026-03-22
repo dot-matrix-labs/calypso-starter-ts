@@ -1,23 +1,35 @@
-import {
-  devices,
-  type BrowserContextOptions,
-  type DeviceDescriptor,
-  type Page,
-} from '@playwright/test';
+import { devices, type BrowserContextOptions, type Page } from '@playwright/test';
 
-export type PwaDevicePreset = DeviceDescriptor & {
+type PlaywrightDevice = (typeof devices)[keyof typeof devices];
+
+export type PwaDevicePreset = PlaywrightDevice & {
   standalone?: boolean;
 };
 
-type PwaState = {
-  calls?: number;
-  promptCalls?: number;
-  registeredPaths?: string[];
-  lastEstimate?: {
-    usage: number;
-    quota: number;
+type PwaWindow = Window & {
+  __pwaBeforeInstallPrompt?: {
+    promptCalls?: number;
   };
-  lastConstraints?: MediaStreamConstraints;
+  __pwaGetUserMedia?: {
+    calls?: number;
+    lastConstraints?: MediaStreamConstraints;
+  };
+  __pwaMediaRecorder?: {
+    calls?: number;
+  };
+  __pwaNotification?: {
+    calls?: number;
+  };
+  __pwaServiceWorker?: {
+    registeredPaths?: string[];
+  };
+  __pwaStorageManager?: {
+    calls?: number;
+    lastEstimate?: {
+      usage: number;
+      quota: number;
+    };
+  };
 };
 
 const ANDROID_DEVICE = devices['Pixel 7'];
@@ -46,8 +58,8 @@ export const desktopChrome: PwaDevicePreset = {
 };
 
 export function toBrowserContextOptions(preset: PwaDevicePreset): BrowserContextOptions {
-  const device = { ...preset };
-  delete device.standalone;
+  const { standalone, ...device } = preset;
+  void standalone;
   return device;
 }
 
@@ -79,7 +91,7 @@ export async function applyStandaloneDisplayMode(page: Page, preset: PwaDevicePr
           removeListener: (listener: () => void) => {
             listeners.delete(listener);
           },
-        } as MediaQueryList;
+        } as unknown as MediaQueryList;
       }
 
       return originalMatchMedia(query);
@@ -89,12 +101,12 @@ export async function applyStandaloneDisplayMode(page: Page, preset: PwaDevicePr
 
 export async function stubBeforeInstallPrompt(page: Page) {
   await page.evaluate(() => {
-    const global = window as Window & Record<string, PwaState>;
+    const global = window as PwaWindow;
     global.__pwaBeforeInstallPrompt = {
       promptCalls: 0,
     };
 
-    const event = new Event('beforeinstallprompt', { cancelable: true }) as Event & {
+    const event = new Event('beforeinstallprompt', { cancelable: true }) as unknown as Event & {
       prompt: () => Promise<void>;
       userChoice: Promise<{ outcome: 'accepted'; platform: 'web' }>;
     };
@@ -116,11 +128,7 @@ export async function stubBeforeInstallPrompt(page: Page) {
 
   return {
     wasPromptCalled: async () =>
-      page.evaluate(() =>
-        Boolean(
-          (window as Window & Record<string, PwaState>).__pwaBeforeInstallPrompt?.promptCalls,
-        ),
-      ),
+      page.evaluate(() => Boolean((window as PwaWindow).__pwaBeforeInstallPrompt?.promptCalls)),
   };
 }
 
@@ -129,7 +137,7 @@ export async function stubGetUserMedia(
   options: { video?: boolean; audio?: boolean; deny?: boolean } = {},
 ) {
   await page.evaluate(({ video = true, audio = false, deny = false }) => {
-    const global = window as Window & Record<string, PwaState>;
+    const global = window as PwaWindow;
     global.__pwaGetUserMedia = {
       calls: 0,
     };
@@ -155,7 +163,7 @@ export async function stubGetUserMedia(
         onended: null,
         onmute: null,
         onunmute: null,
-      }) as MediaStreamTrack;
+      }) as unknown as MediaStreamTrack;
 
     const makeStream = () => {
       const tracks = [
@@ -173,10 +181,10 @@ export async function stubGetUserMedia(
         addTrack: () => undefined,
         removeTrack: () => undefined,
         clone: () => makeStream(),
-      } as MediaStream;
+      } as unknown as MediaStream;
     };
 
-    const mediaDevices = navigator.mediaDevices ?? {};
+    const mediaDevices = navigator.mediaDevices ?? ({} as MediaDevices);
     Object.defineProperty(mediaDevices, 'getUserMedia', {
       configurable: true,
       value: async (constraints: MediaStreamConstraints) => {
@@ -197,26 +205,22 @@ export async function stubGetUserMedia(
 
   return {
     wasRequested: async () =>
-      page.evaluate(() =>
-        Boolean((window as Window & Record<string, PwaState>).__pwaGetUserMedia?.calls),
-      ),
+      page.evaluate(() => Boolean((window as PwaWindow).__pwaGetUserMedia?.calls)),
     lastConstraints: async () =>
-      page.evaluate(
-        () =>
-          (window as Window & Record<string, PwaState>).__pwaGetUserMedia?.lastConstraints ?? null,
-      ),
+      page.evaluate(() => (window as PwaWindow).__pwaGetUserMedia?.lastConstraints ?? null),
   };
 }
 
 export async function stubMediaRecorder(page: Page) {
   await page.evaluate(() => {
-    const global = window as Window & Record<string, PwaState>;
+    const global = window as PwaWindow;
     global.__pwaMediaRecorder = {
       calls: 0,
     };
 
     class MockMediaRecorder {
-      static isTypeSupported() {
+      static isTypeSupported(_type: string) {
+        void _type;
         return true;
       }
 
@@ -269,15 +273,13 @@ export async function stubMediaRecorder(page: Page) {
 
   return {
     wasStarted: async () =>
-      page.evaluate(() =>
-        Boolean((window as Window & Record<string, PwaState>).__pwaMediaRecorder?.calls),
-      ),
+      page.evaluate(() => Boolean((window as PwaWindow).__pwaMediaRecorder?.calls)),
   };
 }
 
 export async function stubNotification(page: Page, permission: NotificationPermission) {
   await page.evaluate((permission) => {
-    const global = window as Window & Record<string, PwaState>;
+    const global = window as PwaWindow;
     global.__pwaNotification = {
       calls: 0,
     };
@@ -309,15 +311,13 @@ export async function stubNotification(page: Page, permission: NotificationPermi
 
   return {
     wasNotified: async () =>
-      page.evaluate(() =>
-        Boolean((window as Window & Record<string, PwaState>).__pwaNotification?.calls),
-      ),
+      page.evaluate(() => Boolean((window as PwaWindow).__pwaNotification?.calls)),
   };
 }
 
 export async function stubServiceWorker(page: Page) {
   await page.evaluate(() => {
-    const global = window as Window & Record<string, PwaState>;
+    const global = window as PwaWindow;
     global.__pwaServiceWorker = {
       registeredPaths: [],
     };
@@ -330,7 +330,7 @@ export async function stubServiceWorker(page: Page) {
       onupdatefound: null,
       update: async () => undefined,
       unregister: async () => true,
-    } as ServiceWorkerRegistration;
+    } as unknown as ServiceWorkerRegistration;
 
     const serviceWorker = {
       register: async (path: string) => {
@@ -344,7 +344,7 @@ export async function stubServiceWorker(page: Page) {
       removeEventListener: () => undefined,
       dispatchEvent: () => false,
       getRegistrations: async () => [registration],
-    } as ServiceWorkerContainer;
+    } as unknown as ServiceWorkerContainer;
 
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
@@ -354,10 +354,7 @@ export async function stubServiceWorker(page: Page) {
 
   return {
     registeredPaths: async () =>
-      page.evaluate(
-        () =>
-          (window as Window & Record<string, PwaState>).__pwaServiceWorker?.registeredPaths ?? [],
-      ),
+      page.evaluate(() => (window as PwaWindow).__pwaServiceWorker?.registeredPaths ?? []),
   };
 }
 
@@ -369,7 +366,7 @@ export async function stubStorageManager(
 
   await page.evaluate(
     ({ usage, quota }) => {
-      const global = window as Window & Record<string, PwaState>;
+      const global = window as PwaWindow;
       global.__pwaStorageManager = {
         calls: 0,
         lastEstimate: { usage, quota },
@@ -395,13 +392,8 @@ export async function stubStorageManager(
 
   return {
     wasEstimated: async () =>
-      page.evaluate(() =>
-        Boolean((window as Window & Record<string, PwaState>).__pwaStorageManager?.calls),
-      ),
+      page.evaluate(() => Boolean((window as PwaWindow).__pwaStorageManager?.calls)),
     lastEstimate: async () =>
-      page.evaluate(
-        () =>
-          (window as Window & Record<string, PwaState>).__pwaStorageManager?.lastEstimate ?? null,
-      ),
+      page.evaluate(() => (window as PwaWindow).__pwaStorageManager?.lastEstimate ?? null),
   };
 }
