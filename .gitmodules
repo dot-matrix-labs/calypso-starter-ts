@@ -1,3 +1,6 @@
 [submodule "calypso-blueprint"]
 	path = calypso-blueprint
 	url = https://github.com/dot-matrix-labs/calypso-blueprint.git
+[submodule ".agents"]
+	path = .agents
+	url = https://github.com/dot-matrix-labs/calypso-agents.git
