@@ -10,19 +10,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── Pre-flight: skip branch jobs when prerequisite files are missing ─────
+  # ── Pre-flight: check prerequisite files and release availability ─────────
   preflight:
-    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     outputs:
       has-dockerfile: ${{ steps.check.outputs.has-dockerfile }}
       has-init-host: ${{ steps.check.outputs.has-init-host }}
+      has-release: ${{ steps.check.outputs.has-release }}
+      release-tag: ${{ steps.check.outputs.release-tag }}
     steps:
       - uses: actions/checkout@v4
       - id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "has-dockerfile=$( [ -f Dockerfile ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
           echo "has-init-host=$( [ -f scripts/init-host.sh ] && echo true || echo false )" >> "$GITHUB_OUTPUT"
+          RELEASE_TAG=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName 2>/dev/null || true)
+          if [[ -n "${RELEASE_TAG}" ]]; then
+            echo "has-release=true" >> "$GITHUB_OUTPUT"
+            echo "release-tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-release=false" >> "$GITHUB_OUTPUT"
+            echo "release-tag=" >> "$GITHUB_OUTPUT"
+          fi
 
   # ── Branch integration test — local postgres ─────────────────────────────
   # Builds the container from the current branch source, imports it directly
@@ -354,11 +365,16 @@ jobs:
   # Pulls the latest published GHCR tag and runs init-host.sh with it.
   # Intentional: tests operational readiness of the released image, not the
   # branch. Runs nightly, on workflow_dispatch, and on pushes to main.
+  # Skipped entirely when no GitHub Release exists yet.
   release-local-mode:
+    needs: preflight
     if: >
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.ref == 'refs/heads/main'
+      needs.preflight.outputs.has-release == 'true' &&
+      (
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        github.ref == 'refs/heads/main'
+      )
     runs-on: ubuntu-latest
     env:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
@@ -374,20 +390,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Get latest release tag
-        id: release
-        run: |
-          TAG=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Run init-host.sh (local mode, latest release)
         run: sudo -E bash scripts/init-host.sh demo
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
           MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
-          CALYPSO_IMAGE_TAG: ${{ steps.release.outputs.tag }}
+          CALYPSO_IMAGE_TAG: ${{ needs.preflight.outputs.release-tag }}
 
       - name: Verify calypso-db-init-secret deleted
         run: |
@@ -495,11 +503,16 @@ jobs:
 
   # ── Release smoke test — remote postgres mock ─────────────────────────────
   # Same as release-local-mode but uses an external postgres container.
+  # Skipped entirely when no GitHub Release exists yet.
   release-remote-mode:
+    needs: preflight
     if: >
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.ref == 'refs/heads/main'
+      needs.preflight.outputs.has-release == 'true' &&
+      (
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch' ||
+        github.ref == 'refs/heads/main'
+      )
     runs-on: ubuntu-latest
     env:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
@@ -514,14 +527,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
-
-      - name: Get latest release tag
-        id: release
-        run: |
-          TAG=$(gh release view --repo ${{ github.repository }} --json tagName -q .tagName)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Uses the same postgres:16-alpine image as test-pg.ts so the remote-mode
       # simulation always targets the same DB engine version as the unit/integration
@@ -547,7 +552,7 @@ jobs:
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
           MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
-          CALYPSO_IMAGE_TAG: ${{ steps.release.outputs.tag }}
+          CALYPSO_IMAGE_TAG: ${{ needs.preflight.outputs.release-tag }}
           REMOTE_PG_HOST: 172.17.0.1
           REMOTE_PG_PORT: '5432'
           REMOTE_PG_ADMIN_DB: postgres
@@ -625,7 +630,7 @@ jobs:
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
           MNEMONIC: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
-          CALYPSO_IMAGE_TAG: ${{ steps.release.outputs.tag }}
+          CALYPSO_IMAGE_TAG: ${{ needs.preflight.outputs.release-tag }}
           REMOTE_PG_HOST: 172.17.0.1
           REMOTE_PG_PORT: '5432'
           REMOTE_PG_ADMIN_DB: postgres
