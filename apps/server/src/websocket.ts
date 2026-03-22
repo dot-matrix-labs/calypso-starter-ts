@@ -25,9 +25,11 @@ export const websocketHandler = {
   close(ws: ServerWebSocket<unknown>): void {
     clients.delete(ws);
   },
-  // Required by the Bun WebSocket handler interface even if unused.
-  message(_ws: ServerWebSocket<unknown>, _message: string | Buffer): void {
-    // Clients do not send messages in this protocol.
+  // Required by the Bun WebSocket handler interface.
+  // Clients do not send messages in this protocol; incoming messages are dropped.
+  message(ws: ServerWebSocket<unknown>, message: string | Buffer): void {
+    void ws;
+    void message;
   },
 };
 
