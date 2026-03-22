@@ -79,6 +79,11 @@ Implement the one-way synchronization for public issue tracking.
 - [ ] **Issue Mirroring:** When a new issue is detected, translate it into the Calypso `Task` schema and insert it into the database as a read-only item.
 - [ ] **State Updates:** Listen for "Issue Closed" events from GitHub to update the corresponding Calypso task status automatically.
 
+## PWA Platform Documentation
+
+- [x] Add `docs/pwa-platform-limitations.md` covering platform feasibility matrix for Android Chrome and iOS, impossible features, partial-support caveats, workarounds, version requirements, and source links.
+- [x] Link `pwa-platform-limitations.md` from `docs/README.md`.
+
 ## Documentation Review
 
 - [x] Review v3 blueprint docs against prior revisions and add top-of-file editorial recommendations
