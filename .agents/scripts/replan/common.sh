@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../auto/common.sh"
 
 find_plan_issue() {
-  gh issue list --repo "$(tasks_repo)" --state open --json number,title,url \
+  gh issue list --repo "$(tasks_repo)" --state open --limit 200 --json number,title,url \
     --jq 'map(select(.title == "Plan")) | .[0]'
 }
 
