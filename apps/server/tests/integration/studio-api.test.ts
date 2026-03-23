@@ -12,6 +12,7 @@ const CLONE_ROOT = join('/tmp', `calypso-studio-api-${Date.now()}`);
 const SERVER_ENTRY = join(REPO_ROOT, 'apps/server/src/index.ts');
 const CLAUDE_STUB_DIR = join(REPO_ROOT, 'tests', 'fixtures');
 const CLAUDE_LOG_PATH = join(CLONE_ROOT, 'tests', 'fixtures', 'claude-integration.log');
+const GIT_ENV = sanitizedGitEnv();
 
 let pg: PgContainer;
 let server: Subprocess;
@@ -21,42 +22,18 @@ let sessionDir = '';
 let changesPath = '';
 
 beforeAll(async () => {
-  const clone = Bun.spawnSync(['git', 'clone', REPO_ROOT, CLONE_ROOT], {
-    cwd: REPO_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  const clone = spawnGitSync(['clone', REPO_ROOT, CLONE_ROOT], REPO_ROOT);
   expect(clone.exitCode).toBe(0);
 
-  Bun.spawnSync(['git', 'config', 'user.name', 'Studio API Test'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'config', 'user.email', 'studio-api-test@example.com'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  Bun.spawnSync(['git', 'branch', '-f', 'main', 'HEAD'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  spawnGitSync(['config', 'user.name', 'Studio API Test'], CLONE_ROOT);
+  spawnGitSync(['config', 'user.email', 'studio-api-test@example.com'], CLONE_ROOT);
+  spawnGitSync(['branch', '-f', 'main', 'HEAD'], CLONE_ROOT);
 
-  const mainHash = Bun.spawnSync(['git', 'rev-parse', '--short', 'main'], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  const mainHash = spawnGitSync(['rev-parse', '--short', 'main'], CLONE_ROOT);
   expect(mainHash.exitCode).toBe(0);
 
   studioBranch = `studio/session-${(mainHash.stdout ?? new Uint8Array()).toString().trim()}-itest`;
-  Bun.spawnSync(['git', 'checkout', '-b', studioBranch], {
-    cwd: CLONE_ROOT,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
+  spawnGitSync(['checkout', '-b', studioBranch], CLONE_ROOT);
 
   studioFilePath = join(CLONE_ROOT, '.studio');
   sessionDir = join(CLONE_ROOT, 'docs', 'studio-sessions', studioBranch);
@@ -251,6 +228,28 @@ function writeStudioFile() {
 function cleanupStudioArtifacts() {
   rmSync(studioFilePath, { force: true });
   rmSync(sessionDir, { recursive: true, force: true });
+}
+
+function sanitizedGitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+  delete env.GIT_CONFIG;
+  delete env.GIT_DIR;
+  delete env.GIT_EXEC_PATH;
+  delete env.GIT_INDEX_FILE;
+  delete env.GIT_OBJECT_DIRECTORY;
+  delete env.GIT_PREFIX;
+  delete env.GIT_WORK_TREE;
+  return env;
+}
+
+function spawnGitSync(args: string[], cwd: string) {
+  return Bun.spawnSync(['git', ...args], {
+    cwd,
+    env: GIT_ENV,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
 }
 
 async function waitForServer(base: string): Promise<void> {

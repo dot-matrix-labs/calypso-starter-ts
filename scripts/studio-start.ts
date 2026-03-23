@@ -18,9 +18,32 @@ const STUDIO_API_PORT = Number(process.env.STUDIO_API_PORT ?? 31415);
 const STUDIO_PORT = Number(process.env.STUDIO_PORT ?? 5174);
 const EXIT_AFTER_BOOTSTRAP = process.env.STUDIO_EXIT_AFTER_BOOTSTRAP === '1';
 const SKIP_PUSH = process.env.STUDIO_SKIP_PUSH === '1';
+const GIT_ENV_BLOCKLIST = [
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_CONFIG',
+  'GIT_DIR',
+  'GIT_EXEC_PATH',
+  'GIT_INDEX_FILE',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_PREFIX',
+  'GIT_WORK_TREE',
+] as const;
+
+function gitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const key of GIT_ENV_BLOCKLIST) {
+    delete env[key];
+  }
+  return env;
+}
 
 function run(cmd: string[], opts: { allowFailure?: boolean } = {}) {
-  const proc = Bun.spawnSync(cmd, { cwd: REPO_ROOT, stdout: 'pipe', stderr: 'pipe' });
+  const proc = Bun.spawnSync(cmd, {
+    cwd: REPO_ROOT,
+    env: gitEnv(),
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
   if (proc.exitCode !== 0 && !opts.allowFailure) {
     const err = new TextDecoder().decode(proc.stderr);
     const out = new TextDecoder().decode(proc.stdout);
@@ -31,7 +54,12 @@ function run(cmd: string[], opts: { allowFailure?: boolean } = {}) {
 }
 
 function tryRun(cmd: string[]): string | null {
-  const proc = Bun.spawnSync(cmd, { cwd: REPO_ROOT, stdout: 'pipe', stderr: 'pipe' });
+  const proc = Bun.spawnSync(cmd, {
+    cwd: REPO_ROOT,
+    env: gitEnv(),
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
   if (proc.exitCode !== 0) return null;
   return new TextDecoder().decode(proc.stdout).trim();
 }
