@@ -1,0 +1,187 @@
+# deploy.yml — GitOps deploy workflow for Calypso
+#
+# Deployment is always an explicit human action via workflow_dispatch.
+# Release (release.yml) and deploy are separate concerns:
+#   - release.yml builds and pushes the container image on a version tag
+#   - deploy.yml applies a chosen image tag to an environment
+#
+# Production deploys require reviewer approval via GitHub Environment protection.
+# Operators can deploy an older tag or re-deploy (rollback) without a new release.
+#
+# See docs/host-init-script.md for the full deployment runbook, including
+# GitHub Environment setup, SSH tunnel troubleshooting, and secret configuration.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Image tag to deploy (e.g. v1.2.3 or sha-abc1234)'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - demo
+          - prod
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      # ── 1. Validate image tag format ────────────────────────────────────────
+      - name: Validate image tag
+        run: |
+          if [[ ! "${{ inputs.image-tag }}" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+|sha-[a-f0-9]{7,40})$ ]]; then
+            echo "::error::Invalid image tag format: ${{ inputs.image-tag }}"
+            echo "::error::Expected semver (v1.2.3) or sha- prefix (sha-abc1234)"
+            exit 1
+          fi
+          echo "Image tag validated: ${{ inputs.image-tag }}"
+
+      # ── 2. Checkout repository (deploy.sh lives here) ───────────────────────
+      - uses: actions/checkout@v4
+
+      # ── 3. Install kubectl ──────────────────────────────────────────────────
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      # ── 4. Write SSH key and known_hosts ────────────────────────────────────
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      # ── 5. Open SSH tunnel to k3s API (background, with health check) ───────
+      - name: Open SSH tunnel to k3s API
+        run: |
+          ssh -f -N -L 6443:localhost:6443 \
+            -i ~/.ssh/deploy_key \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=3 \
+            -o ExitOnForwardFailure=yes \
+            -o StrictHostKeyChecking=yes \
+            superfield@${{ secrets.DEPLOY_HOST }}
+          for i in $(seq 1 10); do
+            if nc -z localhost 6443 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if ! nc -z localhost 6443 2>/dev/null; then
+            echo "::error::SSH tunnel to k3s API failed to open"
+            exit 1
+          fi
+          echo "SSH tunnel to k3s API is ready on localhost:6443"
+
+      # ── 6. Generate short-lived ServiceAccount token (1h TTL) ───────────────
+      - name: Generate deploy token
+        run: |
+          TOKEN=$(ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            superfield@${{ secrets.DEPLOY_HOST }} \
+            "kubectl create token ${{ secrets.DEPLOY_SA_NAME }} \
+              --namespace ${{ secrets.DEPLOY_NAMESPACE }} \
+              --duration=1h")
+          echo "::add-mask::${TOKEN}"
+          echo "DEPLOY_TOKEN=${TOKEN}" >> $GITHUB_ENV
+
+      # ── 7. Write temporary kubeconfig with TLS verification ─────────────────
+      - name: Write kubeconfig
+        run: |
+          CA_DATA=$(echo "${{ secrets.K3S_CA_CERT }}" | base64 -w0)
+          cat > /tmp/kubeconfig <<KUBEEOF
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - cluster:
+                server: https://localhost:6443
+                certificate-authority-data: ${CA_DATA}
+              name: k3s
+          contexts:
+            - context:
+                cluster: k3s
+                namespace: ${{ secrets.DEPLOY_NAMESPACE }}
+                user: deployer
+              name: deploy
+          current-context: deploy
+          users:
+            - name: deployer
+              user:
+                token: ${{ env.DEPLOY_TOKEN }}
+          KUBEEOF
+          chmod 600 /tmp/kubeconfig
+
+      # ── 8. Create GitHub deployment event (pending) ─────────────────────────
+      - name: Create deployment event
+        id: deployment
+        run: |
+          DEPLOY_ID=$(gh api repos/${{ github.repository }}/deployments \
+            -f ref="${{ github.sha }}" \
+            -f environment="${{ inputs.environment }}" \
+            -f description="Deploy ${{ inputs.image-tag }} by ${{ github.actor }}" \
+            -f auto_merge=false \
+            --jq .id)
+          echo "deploy_id=${DEPLOY_ID}" >> $GITHUB_OUTPUT
+          echo "Created GitHub deployment event ID: ${DEPLOY_ID}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 9. Run deploy.sh ────────────────────────────────────────────────────
+      - name: Deploy
+        run: |
+          export KUBECONFIG=/tmp/kubeconfig
+          ./deploy.sh "${{ inputs.image-tag }}"
+
+      # ── 10. Annotate Kubernetes deployment ──────────────────────────────────
+      - name: Annotate k8s deployment
+        if: success()
+        run: |
+          export KUBECONFIG=/tmp/kubeconfig
+          kubectl annotate deployment/calypso-app \
+            --namespace ${{ secrets.DEPLOY_NAMESPACE }} \
+            --overwrite \
+            deploy.calypso/actor="${{ github.actor }}" \
+            deploy.calypso/run-id="${{ github.run_id }}" \
+            deploy.calypso/image-tag="${{ inputs.image-tag }}" \
+            deploy.calypso/timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      # ── 11. Update GitHub deployment status ─────────────────────────────────
+      - name: Mark deployment success
+        if: success()
+        run: |
+          gh api repos/${{ github.repository }}/deployments/${{ steps.deployment.outputs.deploy_id }}/statuses \
+            -f state=success \
+            -f description="Deployed ${{ inputs.image-tag }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Mark deployment failure
+        if: failure()
+        run: |
+          gh api repos/${{ github.repository }}/deployments/${{ steps.deployment.outputs.deploy_id }}/statuses \
+            -f state=failure \
+            -f description="Failed to deploy ${{ inputs.image-tag }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 12. Cleanup (always runs) ────────────────────────────────────────────
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f /tmp/kubeconfig ~/.ssh/deploy_key
+          pkill -f 'ssh.*-L 6443:localhost:6443' || true
+          echo "Cleanup complete."

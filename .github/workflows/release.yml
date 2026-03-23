@@ -1,3 +1,18 @@
+# release.yml — Build and push the Calypso container image on a version tag.
+#
+# Release and deploy are intentionally separate concerns:
+#   - release.yml produces the container image artifact (tags: v*)
+#   - deploy.yml applies the image to an environment (workflow_dispatch)
+#
+# This workflow does NOT automatically trigger a deployment. After a successful
+# release, the operator manually triggers .github/workflows/deploy.yml with the
+# desired image tag and target environment. This allows:
+#   - Production deploys to require reviewer approval (GitHub Environment rules)
+#   - Rollback to an earlier image tag without creating a new release
+#   - Re-deployment of the same tag for config-only changes
+#
+# See docs/host-init-script.md for the full deployment runbook.
+
 name: Release
 
 on:
