@@ -34,15 +34,17 @@ if [[ $# -ne 1 ]]; then
 fi
 
 IMAGE_TAG="$1"
-IMAGE_REPO="${IMAGE_REPO:-ghcr.io/<owner>/calypso-starter-ts}"
+IMAGE_REPO="${IMAGE_REPO:-ghcr.io/dot-matrix-labs/calypso-starter-ts}"
 IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
 
 # Health gate settings
 HEALTH_MAX_RETRIES="${HEALTH_MAX_RETRIES:-30}"
 HEALTH_RETRY_INTERVAL="${HEALTH_RETRY_INTERVAL:-2}"
 
-# API health check URL — defaults to in-cluster service address
-API_HEALTHZ_URL="${API_URL:-http://calypso-api}/healthz"
+# API health check URL — must be reachable from the runner.
+# Default assumes the app NodePort (31415) is reachable at the deploy host.
+# Override with API_URL=https://your-domain if a public hostname is available.
+API_HEALTHZ_URL="${API_URL:-http://${DEPLOY_HOST:-localhost}:31415}/healthz"
 
 # Worker deployment names — e.g. "analytics ingestion" → worker-analytics, worker-ingestion
 WORKER_TYPES="${WORKER_TYPES:-}"
@@ -60,20 +62,67 @@ die() {
   exit 1
 }
 
-# wait_for_db_health — polls DATABASE_URL with SELECT 1 up to HEALTH_MAX_RETRIES times.
-wait_for_db_health() {
-  local attempt=0
-  log "Waiting for database health (up to $((HEALTH_MAX_RETRIES * HEALTH_RETRY_INTERVAL))s)..."
-  while [[ $attempt -lt $HEALTH_MAX_RETRIES ]]; do
-    if psql "${DATABASE_URL}" -c "SELECT 1" --no-align --tuples-only --quiet 2>/dev/null | grep -q "^1$"; then
-      log "Database is healthy."
-      return 0
-    fi
-    attempt=$((attempt + 1))
-    log "  DB not ready (attempt ${attempt}/${HEALTH_MAX_RETRIES}), retrying in ${HEALTH_RETRY_INTERVAL}s..."
-    sleep "${HEALTH_RETRY_INTERVAL}"
-  done
-  return 1
+# run_migration_job — creates a k8s Job that runs bun run packages/db/migrate.ts
+# inside the app image (which has bun), waits for completion, then deletes the job.
+# The DB is only reachable inside the cluster, so migrations must run there.
+run_migration_job() {
+  local image="$1"
+  local namespace="${DEPLOY_NAMESPACE:-calypso-demo}"
+  local job_name="calypso-migrate-$(date +%s)"
+
+  log "Creating migration Job ${job_name} in namespace ${namespace}..."
+  kubectl apply -f - <<MANIFEST
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${job_name}
+  namespace: ${namespace}
+  labels:
+    app: calypso-migrate
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: calypso-migrate
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: migrate
+          image: ${image}
+          command: ["bun", "run", "packages/db/migrate.ts"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-api-secrets
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+MANIFEST
+
+  log "Waiting for migration Job to complete (up to $((HEALTH_MAX_RETRIES * HEALTH_RETRY_INTERVAL))s)..."
+  if ! kubectl wait "job/${job_name}" \
+      --namespace="${namespace}" \
+      --for=condition=complete \
+      --timeout="${HEALTH_MAX_RETRIES}s"; then
+    log "Migration Job failed — fetching logs..."
+    kubectl logs --namespace="${namespace}" \
+      --selector="app=calypso-migrate" --tail=100 || true
+    kubectl delete job "${job_name}" --namespace="${namespace}" --ignore-not-found || true
+    return 1
+  fi
+
+  log "Migration Job completed successfully."
+  kubectl delete job "${job_name}" --namespace="${namespace}" --ignore-not-found || true
 }
 
 # wait_for_healthz <url> — polls the given URL until it returns {"status":"ok"}.
@@ -108,18 +157,8 @@ wait_for_pod_ready() {
 
 log "=== Phase 1: DB migrations ==="
 
-if [[ -z "${DATABASE_URL:-}" ]]; then
-  die "DATABASE_URL is not set — cannot run migrations."
-fi
-
-log "Running database migrations..."
-if ! bun run packages/db/migrate.ts; then
-  die "Migration failed — aborting rollout."
-fi
-
-log "Verifying database health after migration..."
-if ! wait_for_db_health; then
-  die "Database did not become healthy after migration — aborting rollout."
+if ! run_migration_job "${IMAGE}"; then
+  die "Migration Job failed — aborting rollout."
 fi
 
 log "Phase 1 complete."

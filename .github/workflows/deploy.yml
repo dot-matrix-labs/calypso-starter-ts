@@ -144,6 +144,8 @@ jobs:
       - name: Deploy
         run: |
           export KUBECONFIG=/tmp/kubeconfig
+          export DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}
+          export DEPLOY_NAMESPACE=${{ secrets.DEPLOY_NAMESPACE }}
           ./deploy.sh "${{ inputs.image-tag }}"
 
       # ── 10. Annotate Kubernetes deployment ──────────────────────────────────

@@ -9,25 +9,27 @@
 #   <env>               Deployment environment label (e.g. "demo", "prod")
 #                       Kubernetes namespace will be "calypso-<env>"
 #
-# Required (one of):
+# Optional:
 #   --admin-key <file>  Path to a public key file to install in superfield's
 #                       authorized_keys. May be specified multiple times for
-#                       multiple admin keys. At least one key is required.
+#                       multiple admin keys. If omitted, a deploy keypair is
+#                       derived deterministically from the mnemonic + env label
+#                       (requires python3-cryptography on the local machine).
 #   SUPERFIELD_ADMIN_PUBKEY
 #                       Env var fallback — triggers a warning preferring
 #                       --admin-key file input.
 #
 # Options:
-#   --keep-root-ssh     Skip root SSH lockdown after bootstrap (prints warning).
-#                       Default: root login is disabled after bootstrap.
+#   --root-key <file>   Path to a private key file to use for the initial
+#                       root SSH connection. Optional; defaults to system's
+#                       configured SSH key.
 #   --revoke-key <file> Remove matching key from remote authorized_keys.
 #                       Refuses to revoke the last remaining key.
 #   --dry-run           Print planned operations without executing them.
 #   --help              Show this usage message.
 #
 # Environment variables (application credentials — passed to k8s secrets):
-#   CALYPSO_IMAGE_TAG   — image tag to deploy (e.g. "v1.2.3" or "sha-abc1234")
-#   GITHUB_PAT          — GitHub PAT for pulling from GHCR
+#   GITHUB_PAT          — GitHub PAT for pulling from GHCR (if using local DB)
 #
 # Optional env vars (remote postgres mode):
 #   REMOTE_PG_HOST          — hostname of the managed postgres instance
@@ -38,9 +40,10 @@
 #   REMOTE_PG_SSL           — SSL mode: disable | require | verify-full (default: require)
 #   REMOTE_PG_CA_CERT       — CA certificate PEM content (optional, for verify-full)
 #
-# Superuser credential (provide one):
-#   MNEMONIC            — BIP-39 mnemonic phrase
-#   SUPERUSER_PASSWORD  — password for superuser account (alternative to MNEMONIC)
+# Superuser Mnemonic:
+#   The script will interactively prompt for the superuser's BIP-39 mnemonic.
+#   For non-interactive use (e.g., in CI), you can provide the MNEMONIC
+#   environment variable as an override.
 #
 # Optional API keys:
 #   SUBSTACK_API_KEY
@@ -52,22 +55,19 @@
 #   1   — argument or precondition error (no admin key, invalid key type, etc.)
 #   2   — SSH connectivity failure
 #   3   — provisioning phase failed (bootstrap, k3s install, k8s apply, etc.)
-#   4   — post-provisioning health check failed
 #
 # Provisioning phases (run entirely over SSH from local machine):
 #   1.  Root bootstrap: create superfield account (locked, no sudo), install
 #       admin SSH key(s) with type/strength validation, harden sshd globally.
 #   2.  CIS Benchmark Level 1 host hardening: disable unused services,
 #       kernel sysctl security parameters, enable unattended-upgrades.
-#   3.  Root SSH lockdown: PermitRootLogin no, root authorized_keys removed
+#   3.  Disable Root Password Login: sets PermitRootLogin to prohibit-password.
 #       (opt-out via --keep-root-ssh with mandatory warning).
 #   4.  k3s install as systemd service with User=superfield; API bound to
 #       localhost only; all data under /home/superfield.
-#   5.  Kubernetes namespace, secrets, and ServiceAccount with minimal RBAC
-#       (patch on deployments in namespace only).
-#   6.  Application secrets and k8s manifests applied via superfield SSH.
-#   7.  Health check: polls /healthz until app responds.
-#   8.  Bootstrap summary: prints required GitHub Actions secrets and exact
+#   5.  Kubernetes namespace, ServiceAccount with minimal RBAC for deployer.
+#   6.  Application secrets applied via superfield SSH.
+#   7.  Bootstrap summary: prints required GitHub Actions secrets and exact
 #       `gh secret set --env <env>` commands for the operator.
 #
 # Key type enforcement:
@@ -96,10 +96,6 @@ set -euo pipefail
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-
 # ── Argument parsing ──────────────────────────────────────────────────────────
 
 _usage() {
@@ -108,10 +104,10 @@ _usage() {
   exit "${1:-0}"
 }
 
-KEEP_ROOT_SSH=false
 DRY_RUN=false
 ADMIN_KEYS=()
 REVOKE_KEY=""
+ROOT_KEY_PATH=""
 POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
@@ -119,8 +115,16 @@ while [[ $# -gt 0 ]]; do
     --help|-h)
       _usage 0
       ;;
-    --keep-root-ssh)
-      KEEP_ROOT_SSH=true
+    --root-key)
+      if [[ -z "${2:-}" ]]; then
+        echo "error: --root-key requires a file argument" >&2
+        exit 1
+      fi
+      ROOT_KEY_PATH="$2"
+      shift 2
+      ;;
+    --root-key=*)
+      ROOT_KEY_PATH="${1#--root-key=}"
       shift
       ;;
     --dry-run)
@@ -637,11 +641,8 @@ EOF
       fi
       ufw default deny incoming 2>/dev/null
       ufw default allow outgoing 2>/dev/null
-      ufw allow 22/tcp     comment "SSH"   2>/dev/null
-      ufw allow 6443/tcp   comment "K8s API (legacy mode only)"  2>/dev/null
-      ufw allow 10250/tcp  comment "kubelet"  2>/dev/null
-      ufw allow 31415/tcp  comment "App NodePort"  2>/dev/null
-      ufw allow 8472/udp   comment "Flannel VXLAN" 2>/dev/null
+      ufw allow 22/tcp    comment "SSH"          2>/dev/null
+      ufw allow 31415/tcp comment "App NodePort" 2>/dev/null
       ufw --force enable 2>/dev/null
       true
     )
@@ -916,16 +917,11 @@ if [[ "${DRY_RUN}" == "true" ]]; then
   echo "    1. SSH as root@${HOST}: create superfield account, lock, install admin key(s)"
   echo "    2. Harden sshd: PasswordAuthentication no, MaxAuthTries 3, LoginGraceTime 30, AllowUsers superfield"
   echo "    3. CIS Benchmark Level 1: disable unused services, kernel sysctl, unattended-upgrades"
-  if [[ "${KEEP_ROOT_SSH}" == "true" ]]; then
-    echo "    4. [WARNING] Skipping root SSH lockdown (--keep-root-ssh passed)"
-  else
-    echo "    4. Disable root SSH login: PermitRootLogin no, remove root authorized_keys"
-  fi
-  echo "    5. Install k3s as systemd service (User=superfield), API bound to localhost:6443"
+  echo "    4. Disable root password login: PermitRootLogin prohibit-password (key-based root SSH remains available)"
+  echo "    5. Install k3s as root system service (port 6443 blocked externally by ufw); kubeconfig shared to /home/superfield/.kube/config"
   echo "    6. Create Kubernetes ServiceAccount ${SA_NAME} with RBAC (patch on deployments in ${NAMESPACE})"
-  echo "    7. Apply k8s manifests and application secrets via superfield@${HOST}"
-  echo "    8. Poll /healthz until app responds"
-  echo "    9. Print GitHub Actions secrets summary with 'gh secret set --env ${ENV_LABEL}' commands"
+  echo "    7. Apply k8s secrets and postgres StatefulSet (local DB mode) via superfield@${HOST}"
+  echo "    8. Print GitHub Actions secrets summary with 'gh secret set --env ${ENV_LABEL}' commands"
   echo ""
   echo "==> DRY RUN complete — no changes made."
   exit 0
@@ -947,7 +943,7 @@ if [[ -n "${REVOKE_KEY}" ]]; then
   REVOKE_PUBKEY_CONTENT="$(cat "${REVOKE_KEY}")"
   REVOKE_KEY_BLOB="$(echo "${REVOKE_PUBKEY_CONTENT}" | awk '{print $1 " " $2}')"
 
-  ssh -o StrictHostKeyChecking=accept-new "superfield@${HOST}" bash <<REMOTESCRIPT
+  ssh -i "${ADMIN_KEYS[0]%%.pub}" -o StrictHostKeyChecking=accept-new "superfield@${HOST}" bash <<REMOTESCRIPT
 set -euo pipefail
 AK_FILE="/home/superfield/.ssh/authorized_keys"
 if [[ ! -f "\${AK_FILE}" ]]; then
@@ -982,17 +978,39 @@ fi
 # ── SSH helpers ───────────────────────────────────────────────────────────────
 
 _ssh_root() {
-  ssh -o StrictHostKeyChecking=accept-new "root@${HOST}" "$@"
+  local ssh_opts=("-o" "StrictHostKeyChecking=accept-new")
+  if [[ -n "${ROOT_KEY_PATH:-}" ]]; then
+    ssh_opts+=("-i" "${ROOT_KEY_PATH}")
+  fi
+  ssh "${ssh_opts[@]}" "root@${HOST}" "$@"
 }
 
 _ssh_superfield() {
-  ssh -i "${ADMIN_KEYS[0]}" -o StrictHostKeyChecking=accept-new "superfield@${HOST}" "$@"
+  # ADMIN_KEYS holds public key paths; strip .pub to derive the private key path.
+  ssh -i "${ADMIN_KEYS[0]%%.pub}" -o StrictHostKeyChecking=accept-new "superfield@${HOST}" "$@"
+}
+
+_confirm_step() {
+  # Only prompt if in an interactive terminal
+  if [ -t 0 ]; then
+    read -rp "    -> Proceed with this step? (y/N) " confirm
+    case "${confirm}" in
+      [yY][eE][sS]|[yY])
+        # Continue
+        ;;
+      *)
+        echo "Aborting." >&2
+        exit 1
+        ;;
+    esac
+  fi
 }
 
 # ── Phase 0: SSH connectivity check ──────────────────────────────────────────
 
 echo ""
-echo "==> [0/8] Verifying SSH connectivity to root@${HOST}"
+echo "==> [0/7] Verifying SSH connectivity to root@${HOST}"
+_confirm_step
 if ! _ssh_root "echo 'SSH OK'" 2>/dev/null; then
   echo "error: cannot SSH as root to ${HOST}" >&2
   echo "       Ensure SSH key auth is configured for root@${HOST}" >&2
@@ -1003,7 +1021,8 @@ echo "    SSH connectivity OK."
 # ── Phase 1: Root bootstrap ───────────────────────────────────────────────────
 
 echo ""
-echo "==> [1/8] Root bootstrap: create superfield account and install admin key(s)"
+echo "==> [1/7] Root bootstrap: create superfield account and install admin key(s)"
+_confirm_step
 
 # Collect all public key contents into one variable
 ALL_PUBKEYS=""
@@ -1070,13 +1089,14 @@ _set_sshd() {
   fi
 }
 
+_set_sshd PubkeyAuthentication yes
 _set_sshd PasswordAuthentication no
 _set_sshd MaxAuthTries 3
 _set_sshd LoginGraceTime 30
-_set_sshd AllowUsers superfield
+_set_sshd AllowUsers "superfield root"
 
 systemctl reload sshd 2>/dev/null || systemctl reload ssh 2>/dev/null || true
-echo "    sshd hardened: PasswordAuthentication=no MaxAuthTries=3 LoginGraceTime=30 AllowUsers=superfield"
+echo "    sshd hardened: PubkeyAuthentication=yes PasswordAuthentication=no MaxAuthTries=3 LoginGraceTime=30 AllowUsers='superfield root'"
 REMOTESCRIPT
 
 echo "    Root bootstrap complete."
@@ -1084,7 +1104,8 @@ echo "    Root bootstrap complete."
 # ── Phase 2: CIS Benchmark Level 1 host hardening ────────────────────────────
 
 echo ""
-echo "==> [2/8] CIS Benchmark Level 1 host hardening"
+echo "==> [2/7] CIS Benchmark Level 1 host hardening"
+_confirm_step
 
 _ssh_root bash <<'REMOTESCRIPT'
 set -euo pipefail
@@ -1115,6 +1136,8 @@ net.ipv4.conf.all.log_martians = 1
 net.ipv4.conf.default.log_martians = 1
 fs.suid_dumpable = 0
 kernel.core_uses_pid = 1
+# Required for k3s on Ubuntu 24.04+ (AppArmor restricts user namespaces by default)
+kernel.apparmor_restrict_unprivileged_userns = 0
 SYSCTL
 sysctl -p "${SYSCTL_CONF}" 2>/dev/null || sysctl --system 2>/dev/null || true
 echo "    Kernel sysctl parameters applied."
@@ -1134,16 +1157,10 @@ echo "    CIS hardening complete."
 # ── Phase 3: Root SSH lockdown ────────────────────────────────────────────────
 
 echo ""
-echo "==> [3/8] Root SSH lockdown"
+echo "==> [3/7] Disable Root Password Login"
+_confirm_step
 
-if [[ "${KEEP_ROOT_SSH}" == "true" ]]; then
-  echo ""
-  echo "    WARNING: --keep-root-ssh passed."
-  echo "    Root SSH login will NOT be disabled."
-  echo "    This is a security risk. Only use for staging/emergency access."
-  echo ""
-else
-  _ssh_root bash <<'REMOTESCRIPT'
+_ssh_root bash <<'REMOTESCRIPT'
 set -euo pipefail
 SSHD_CONFIG="/etc/ssh/sshd_config"
 
@@ -1156,94 +1173,78 @@ _set_sshd() {
   fi
 }
 
-_set_sshd PermitRootLogin no
+_set_sshd PermitRootLogin prohibit-password
 systemctl reload sshd 2>/dev/null || systemctl reload ssh 2>/dev/null || true
-echo "    PermitRootLogin set to no."
-
-if [[ -f /root/.ssh/authorized_keys ]]; then
-  rm -f /root/.ssh/authorized_keys
-  echo "    root authorized_keys removed."
-else
-  echo "    root authorized_keys not found — nothing to remove."
-fi
+echo "    PermitRootLogin set to prohibit-password (key-based root SSH remains available)."
 REMOTESCRIPT
 
-  echo "    Root SSH login disabled."
-fi
+echo "    Root password login disabled."
 
-# ── Phase 4: k3s installation (User=superfield) ───────────────────────────────
+# ── Phase 4: k3s installation (root system service, kubeconfig shared to superfield) ──
 
 echo ""
-echo "==> [4/8] Installing k3s (User=superfield, API bound to localhost only)"
+echo "==> [4/7] Installing k3s (root system service, API localhost-only)"
+_confirm_step
 
 _ssh_root bash <<'REMOTESCRIPT'
 set -euo pipefail
 
-# Check if k3s is already running as superfield
-K3S_USER=$(systemctl show k3s --property=User --value 2>/dev/null || echo "")
-if [[ "${K3S_USER}" == "superfield" ]] && systemctl is-active --quiet k3s 2>/dev/null; then
-  echo "    k3s already running as superfield — skipping install."
-  exit 0
+# Ubuntu 24.04+ restricts unprivileged user namespaces via AppArmor by default,
+# which blocks k3s from forking its child process. Phase 2 wrote this setting to
+# the sysctl conf; apply it immediately in case a reboot hasn't occurred.
+if [[ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]]; then
+  sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 2>/dev/null || true
+  echo "    apparmor_restrict_unprivileged_userns=0 applied."
 fi
 
-# Install k3s binary if not present
-if ! command -v k3s &>/dev/null; then
-  curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
+# Remove any stale service drop-in that may set User=superfield from a prior
+# rootless install attempt; k3s-uninstall.sh does not clean this directory.
+if [[ -d /etc/systemd/system/k3s.service.d ]]; then
+  rm -rf /etc/systemd/system/k3s.service.d
+  systemctl daemon-reload 2>/dev/null || true
+  echo "    Removed stale k3s service drop-in overrides."
 fi
 
-# Stop k3s before reconfiguring
-systemctl stop k3s 2>/dev/null || true
+# Install k3s if not already running and healthy
+if systemctl is-active --quiet k3s 2>/dev/null && k3s kubectl get nodes &>/dev/null 2>&1; then
+  echo "    k3s already running and healthy — skipping reinstall."
+else
+  systemctl stop k3s 2>/dev/null || true
 
-# Prepare superfield home directories
-mkdir -p /home/superfield/.kube /home/superfield/.local/share/k3s
-chown -R superfield:superfield /home/superfield/.kube /home/superfield/.local
+  echo "    Installing k3s as root system service..."
+  # Do NOT use --bind-address 127.0.0.1: the embedded k3s agent connects back to
+  # the server using the node's external IP. Binding only to loopback prevents
+  # the agent from reaching the API, breaking flannel and all kube-system pods.
+  # External access to port 6443 is blocked by ufw instead.
+  curl -sfL https://get.k3s.io | \
+    INSTALL_K3S_EXEC="--disable traefik --https-listen-port 6443 --write-kubeconfig-mode 600" \
+    sh -
 
-# Write k3s config: localhost-only API, superfield ownership
-mkdir -p /etc/rancher/k3s
-cat > /etc/rancher/k3s/config.yaml <<K3SCONFIG
-disable: traefik
-bind-address: 127.0.0.1
-https-listen-port: 6443
-write-kubeconfig: /home/superfield/.kube/config
-write-kubeconfig-mode: "600"
-data-dir: /home/superfield/.local/share/k3s
-K3SCONFIG
+  echo "    Waiting for k3s to be ready..."
+  for i in $(seq 1 30); do
+    if k3s kubectl get nodes &>/dev/null 2>&1; then
+      echo "    k3s ready after ${i} attempt(s)."
+      break
+    fi
+    sleep 2
+  done
 
-# Create systemd override for User=superfield
-mkdir -p /etc/systemd/system/k3s.service.d
-cat > /etc/systemd/system/k3s.service.d/superfield.conf <<OVERRIDE
-[Service]
-User=superfield
-Group=superfield
-OVERRIDE
-
-systemctl daemon-reload
-systemctl enable --now k3s
-
-# Wait for k3s to be ready (up to 60s)
-echo "    Waiting for k3s to become ready..."
-for i in $(seq 1 30); do
-  if KUBECONFIG=/home/superfield/.kube/config kubectl get nodes &>/dev/null 2>&1; then
-    echo "    k3s ready after ${i} attempts."
-    break
+  if ! k3s kubectl get nodes &>/dev/null 2>&1; then
+    echo "error: k3s did not become ready in time" >&2
+    journalctl -u k3s --no-pager -n 50 >&2 || true
+    exit 3
   fi
-  sleep 2
-done
-
-if ! KUBECONFIG=/home/superfield/.kube/config kubectl get nodes &>/dev/null 2>&1; then
-  echo "error: k3s did not become ready in time" >&2
-  journalctl -u k3s --no-pager -n 50 >&2 || true
-  exit 3
 fi
 
-# Ensure superfield owns the kubeconfig
-chown superfield:superfield /home/superfield/.kube/config 2>/dev/null || true
-chmod 600 /home/superfield/.kube/config 2>/dev/null || true
+# Share kubeconfig with superfield (always refresh on re-run — idempotent)
+SUPERFIELD_KUBE_DIR="/home/superfield/.kube"
+mkdir -p "${SUPERFIELD_KUBE_DIR}"
+cp /etc/rancher/k3s/k3s.yaml "${SUPERFIELD_KUBE_DIR}/config"
+chown -R superfield:superfield "${SUPERFIELD_KUBE_DIR}"
+chmod 600 "${SUPERFIELD_KUBE_DIR}/config"
+echo "    kubeconfig shared to /home/superfield/.kube/config."
 
-echo "    k3s installed and running as superfield."
-echo "    API bound to 127.0.0.1:6443."
-
-# Configure ufw: SSH and app ports only — do NOT open 6443
+# Configure ufw: SSH and app ports only — do NOT expose 6443 externally
 if command -v ufw &>/dev/null; then
   (
     set +e
@@ -1254,23 +1255,26 @@ if command -v ufw &>/dev/null; then
     fi
     ufw default deny incoming 2>/dev/null
     ufw default allow outgoing 2>/dev/null
-    ufw allow 22/tcp    comment "SSH"           2>/dev/null
-    ufw allow 31415/tcp comment "App NodePort"  2>/dev/null
-    ufw allow 8472/udp  comment "Flannel VXLAN" 2>/dev/null
-    ufw allow 10250/tcp comment "kubelet"       2>/dev/null
+    ufw allow 22/tcp    comment "SSH"          2>/dev/null
+    ufw allow 31415/tcp comment "App NodePort" 2>/dev/null
+    # 6443 (k3s API), 10250 (kubelet), 8472/udp (flannel VXLAN) are intentionally
+    # NOT opened: all cluster-internal traffic stays on loopback/CNI interfaces.
     ufw --force enable 2>/dev/null
     true
   )
-  echo "    Firewall configured (port 6443 NOT exposed to 0.0.0.0)."
+  echo "    Firewall configured: SSH and app port only. Cluster ports blocked externally."
 fi
-REMOTESCRIPT
 
 echo "    k3s phase complete."
+REMOTESCRIPT
+
+echo "    k3s installation phase complete."
 
 # ── Phase 5: Kubernetes ServiceAccount and RBAC ───────────────────────────────
 
 echo ""
-echo "==> [5/8] Creating Kubernetes namespace, ServiceAccount, and RBAC"
+echo "==> [5/7] Creating Kubernetes namespace, ServiceAccount, and RBAC"
+_confirm_step
 
 _ssh_superfield bash <<REMOTESCRIPT
 set -euo pipefail
@@ -1293,7 +1297,13 @@ metadata:
 rules:
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    verbs: ["patch"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -1317,11 +1327,28 @@ echo "    ServiceAccount and RBAC complete."
 
 # ── Phase 6: Application secrets and manifests ────────────────────────────────
 
-echo ""
-echo "==> [6/8] Applying application secrets and Kubernetes manifests"
+# ── Superuser Mnemonic Collection ─────────────────────────────────────────────
+if [[ -z "${MNEMONIC:-}" ]]; then
+  if [ -t 0 ]; then # Interactive terminal
+    echo ""
+    echo "==> Collecting superuser mnemonic"
+    read -rsp "    Enter superuser BIP-39 mnemonic: " MNEMONIC
+    echo ""
+  else # Non-interactive
+    echo "error: running in non-interactive mode, but no superuser mnemonic provided." >&2
+    echo "       Please set the MNEMONIC environment variable." >&2
+    exit 1
+  fi
+fi
 
-: "${CALYPSO_IMAGE_TAG:?CALYPSO_IMAGE_TAG is required}"
-IMAGE="${REPO}:${CALYPSO_IMAGE_TAG}"
+if [[ -z "${MNEMONIC:-}" ]]; then
+  echo "error: no superuser mnemonic provided. Aborting." >&2
+  exit 1
+fi
+
+echo ""
+echo "==> [6/7] Applying application secrets"
+_confirm_step
 
 # Determine DB mode
 if [[ -n "${REMOTE_PG_HOST:-}" ]]; then
@@ -1330,67 +1357,51 @@ else
   DB_MODE="local"
 fi
 
-# Check for existing secrets to support idempotent runs
-EXISTING_SECRETS=$(_ssh_superfield bash <<SSHDECODE
+# Recover existing passwords in a single SSH round-trip (idempotent runs).
+# All values are hex-only or base64-safe; key=value lines are unambiguous.
+SECRETS_DUMP=$(_ssh_superfield bash <<SSHDECODE
+set -euo pipefail
 export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" &>/dev/null 2>&1 && echo "yes" || echo "no"
+if ! kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" &>/dev/null 2>&1; then
+  printf 'exists=no\n'; exit 0
+fi
+printf 'exists=yes\n'
+printf 'APP_RW_PASSWORD=%s\n' "\$(kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.DATABASE_URL}' | base64 -d | sed 's|.*://[^:]*:\([^@]*\)@.*|\1|')"
+printf 'JWT_SECRET=%s\n' "\$(kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.JWT_SECRET}' | base64 -d)"
+printf 'ENCRYPTION_MASTER_KEY=%s\n' "\$(kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.ENCRYPTION_MASTER_KEY}' | base64 -d)"
+printf 'AUDIT_W_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.AUDIT_W_PASSWORD}' | base64 -d)"
+printf 'ANALYTICS_W_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.ANALYTICS_W_PASSWORD}' | base64 -d)"
+printf 'AGENT_CODING_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.AGENT_CODING_PASSWORD}' | base64 -d)"
+printf 'AGENT_ANALYSIS_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.AGENT_ANALYSIS_PASSWORD}' | base64 -d)"
+printf 'POSTGRES_SUPERUSER_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.POSTGRES_PASSWORD}' 2>/dev/null | base64 -d 2>/dev/null || true)"
 SSHDECODE
 )
 
-if [[ "${EXISTING_SECRETS}" == "yes" ]]; then
+_extract_secret() { printf '%s\n' "${SECRETS_DUMP}" | grep "^${1}=" | cut -d= -f2-; }
+
+if [[ "$(_extract_secret exists)" == "yes" ]]; then
   echo "    Found existing calypso-api-secrets — reusing passwords (idempotent run)."
-  APP_RW_PASSWORD=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.DATABASE_URL}' | base64 -d | sed 's|.*://[^:]*:\([^@]*\)@.*|\1|'
-SSHDECODE
-)
-  JWT_SECRET=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.JWT_SECRET}' | base64 -d
-SSHDECODE
-)
-  ENCRYPTION_MASTER_KEY=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.ENCRYPTION_MASTER_KEY}' | base64 -d
-SSHDECODE
-)
-  AUDIT_W_PASSWORD=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.AUDIT_W_PASSWORD}' | base64 -d
-SSHDECODE
-)
-  ANALYTICS_W_PASSWORD=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.ANALYTICS_W_PASSWORD}' | base64 -d
-SSHDECODE
-)
-  AGENT_CODING_PASSWORD=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.AGENT_CODING_PASSWORD}' | base64 -d
-SSHDECODE
-)
-  AGENT_ANALYSIS_PASSWORD=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.AGENT_ANALYSIS_PASSWORD}' | base64 -d
-SSHDECODE
-)
+  APP_RW_PASSWORD="$(_extract_secret APP_RW_PASSWORD)"
+  JWT_SECRET="$(_extract_secret JWT_SECRET)"
+  ENCRYPTION_MASTER_KEY="$(_extract_secret ENCRYPTION_MASTER_KEY)"
+  AUDIT_W_PASSWORD="$(_extract_secret AUDIT_W_PASSWORD)"
+  ANALYTICS_W_PASSWORD="$(_extract_secret ANALYTICS_W_PASSWORD)"
+  AGENT_CODING_PASSWORD="$(_extract_secret AGENT_CODING_PASSWORD)"
+  AGENT_ANALYSIS_PASSWORD="$(_extract_secret AGENT_ANALYSIS_PASSWORD)"
   AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD:-$(openssl rand -hex 24)}"
   AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD:-$(openssl rand -hex 24)}"
   if [[ "${DB_MODE}" == "local" ]]; then
-    POSTGRES_SUPERUSER_PASSWORD=$(_ssh_superfield bash <<SSHDECODE
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
-  -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
-SSHDECODE
-)
+    POSTGRES_SUPERUSER_PASSWORD="$(_extract_secret POSTGRES_SUPERUSER_PASSWORD)"
   fi
+  unset -f _extract_secret
 else
   echo "    Generating new secrets."
   JWT_SECRET="$(openssl rand -hex 64)"
@@ -1403,6 +1414,7 @@ else
   if [[ "${DB_MODE}" == "local" ]]; then
     POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
   fi
+  unset -f _extract_secret
 fi
 
 # Build database URLs
@@ -1468,13 +1480,15 @@ REMOTESCRIPT
 
 # Add optional per-env secrets
 if [[ -n "${GITHUB_PAT:-}" ]]; then
+  # PAT is embedded in the script body (sent over the encrypted SSH channel),
+  # not passed as a kubectl argument, so it does not appear in ps/proc listings.
   _ssh_superfield bash <<REMOTESCRIPT
 export KUBECONFIG="/home/superfield/.kube/config"
-kubectl create secret docker-registry ghcr-pull-secret \
+printf '%s' "${GITHUB_PAT}" | kubectl create secret docker-registry ghcr-pull-secret \
   --namespace="${NAMESPACE}" \
   --docker-server=ghcr.io \
   --docker-username=calypso \
-  --docker-password="${GITHUB_PAT}" \
+  --docker-password-stdin \
   --dry-run=client -o yaml | kubectl apply -f -
 REMOTESCRIPT
 fi
@@ -1484,14 +1498,7 @@ if [[ -n "${MNEMONIC:-}" ]]; then
 export KUBECONFIG="/home/superfield/.kube/config"
 kubectl patch secret calypso-api-secrets --namespace="${NAMESPACE}" \
   --type=json \
-  -p='[{"op":"add","path":"/data/SUPERUSER_MNEMONIC","value":"'"$(echo -n "${MNEMONIC}" | base64 -w0)"'"}]'
-REMOTESCRIPT
-elif [[ -n "${SUPERUSER_PASSWORD:-}" ]]; then
-  _ssh_superfield bash <<REMOTESCRIPT
-export KUBECONFIG="/home/superfield/.kube/config"
-kubectl patch secret calypso-api-secrets --namespace="${NAMESPACE}" \
-  --type=json \
-  -p='[{"op":"add","path":"/data/SUPERUSER_PASSWORD","value":"'"$(echo -n "${SUPERUSER_PASSWORD}" | base64 -w0)"'"}]'
+  -p='[{"op":"add","path":"/data/SUPERUSER_MNEMONIC","value":"'"$(printf '%s' "${MNEMONIC}" | base64 | tr -d '\n')"'"}]'
 REMOTESCRIPT
 fi
 
@@ -1501,9 +1508,9 @@ export KUBECONFIG="/home/superfield/.kube/config"
 kubectl patch secret calypso-db-secrets --namespace="${NAMESPACE}" \
   --type=json \
   -p='[
-    {"op":"add","path":"/data/POSTGRES_USER","value":"'"$(echo -n "postgres" | base64 -w0)"'"},
-    {"op":"add","path":"/data/POSTGRES_PASSWORD","value":"'"$(echo -n "${POSTGRES_SUPERUSER_PASSWORD:-}" | base64 -w0)"'"},
-    {"op":"add","path":"/data/POSTGRES_DB","value":"'"$(echo -n "calypso_app" | base64 -w0)"'"}
+    {"op":"add","path":"/data/POSTGRES_USER","value":"'"$(printf '%s' "postgres" | base64 | tr -d '\n')"'"},
+    {"op":"add","path":"/data/POSTGRES_PASSWORD","value":"'"$(printf '%s' "${POSTGRES_SUPERUSER_PASSWORD:-}" | base64 | tr -d '\n')"'"},
+    {"op":"add","path":"/data/POSTGRES_DB","value":"'"$(printf '%s' "calypso_app" | base64 | tr -d '\n')"'"}
   ]'
 REMOTESCRIPT
 
@@ -1618,227 +1625,13 @@ kubectl rollout status statefulset/postgres --namespace="${NAMESPACE}" --timeout
 REMOTESCRIPT
 fi
 
-# Run db-init job
-_ssh_superfield bash <<REMOTESCRIPT
-set -euo pipefail
-export KUBECONFIG="/home/superfield/.kube/config"
+echo "    Secret provisioning complete."
 
-kubectl delete job calypso-db-init --namespace="${NAMESPACE}" --ignore-not-found
-kubectl apply --namespace="${NAMESPACE}" -f - <<MANIFEST
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: calypso-db-init
-  namespace: ${NAMESPACE}
-  labels:
-    app: calypso-db-init
-spec:
-  ttlSecondsAfterFinished: 3600
-  template:
-    metadata:
-      labels:
-        app: calypso-db-init
-    spec:
-      restartPolicy: OnFailure
-      containers:
-        - name: db-init
-          image: ${IMAGE}
-          imagePullPolicy: IfNotPresent
-          command: ['bun', 'run', 'packages/db/init-remote.ts']
-          env:
-            - name: ADMIN_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-db-init-secret
-                  key: ADMIN_DATABASE_URL
-            - name: APP_RW_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-db-init-secret
-                  key: APP_RW_PASSWORD
-            - name: AUDIT_W_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-db-init-secret
-                  key: AUDIT_W_PASSWORD
-            - name: ANALYTICS_W_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-db-init-secret
-                  key: ANALYTICS_W_PASSWORD
-            - name: AGENT_CODING_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-db-init-secret
-                  key: AGENT_CODING_PASSWORD
-            - name: AGENT_ANALYSIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-db-init-secret
-                  key: AGENT_ANALYSIS_PASSWORD
-          resources:
-            requests:
-              cpu: '50m'
-              memory: '64Mi'
-            limits:
-              cpu: '200m'
-              memory: '256Mi'
-      imagePullSecrets:
-        - name: ghcr-pull-secret
-MANIFEST
-
-echo "    Waiting for calypso-db-init job to complete..."
-kubectl wait --for=condition=complete job/calypso-db-init --namespace="${NAMESPACE}" --timeout=300s
-
-kubectl delete secret calypso-db-init-secret --namespace="${NAMESPACE}" --ignore-not-found
-echo "    calypso-db-init-secret deleted."
-
-kubectl delete deployment calypso-app --namespace="${NAMESPACE}" --ignore-not-found
-kubectl apply --namespace="${NAMESPACE}" -f - <<MANIFEST
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: calypso-app
-  namespace: ${NAMESPACE}
-  labels:
-    app: calypso-app
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: calypso-app
-  template:
-    metadata:
-      labels:
-        app: calypso-app
-    spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
-      containers:
-        - name: app
-          image: ${IMAGE}
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 31415
-          env:
-            - name: PORT
-              value: '31415'
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: DATABASE_URL
-            - name: AUDIT_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: AUDIT_DATABASE_URL
-            - name: ANALYTICS_DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: ANALYTICS_DATABASE_URL
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: JWT_SECRET
-            - name: ENCRYPTION_MASTER_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: ENCRYPTION_MASTER_KEY
-            - name: SUBSTACK_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: SUBSTACK_API_KEY
-                  optional: true
-            - name: BLOOMBERG_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: BLOOMBERG_API_KEY
-                  optional: true
-            - name: YAHOO_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: calypso-api-secrets
-                  key: YAHOO_API_KEY
-                  optional: true
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 31415
-            initialDelaySeconds: 15
-            periodSeconds: 20
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 31415
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          resources:
-            requests:
-              cpu: '100m'
-              memory: '128Mi'
-            limits:
-              cpu: '500m'
-              memory: '512Mi'
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: calypso-app
-  namespace: ${NAMESPACE}
-  labels:
-    app: calypso-app
-spec:
-  selector:
-    app: calypso-app
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 31415
-  type: ClusterIP
-MANIFEST
-
-echo "    calypso-app deployment applied."
-REMOTESCRIPT
-
-echo "    Application manifests complete."
-
-# ── Phase 7: Health check ─────────────────────────────────────────────────────
+# ── Phase 7: Bootstrap summary ────────────────────────────────────────────────
 
 echo ""
-echo "==> [7/8] Polling /healthz until app responds"
-
-HEALTH_OK=false
-for i in $(seq 1 30); do
-  STATUS=$(_ssh_superfield "curl -sf http://localhost:31415/healthz -o /dev/null -w '%{http_code}'" 2>/dev/null || echo "000")
-  if [[ "${STATUS}" == "200" ]]; then
-    echo "    App is healthy (attempt ${i})."
-    HEALTH_OK=true
-    break
-  fi
-  echo "    Attempt ${i}/30: HTTP ${STATUS} — waiting..."
-  sleep 10
-done
-
-if [[ "${HEALTH_OK}" != "true" ]]; then
-  echo "error: health check failed after 30 attempts" >&2
-  exit 4
-fi
-
-# ── Phase 8: Bootstrap summary ────────────────────────────────────────────────
-
-echo ""
-echo "==> [8/8] Bootstrap summary — GitHub Actions secrets to configure"
+echo "==> [7/7] Bootstrap summary — GitHub Actions secrets to configure"
+_confirm_step
 
 # Extract k3s CA cert
 K3S_CA_CERT=$(_ssh_superfield bash <<'SSHSCRIPT'
@@ -1873,7 +1666,7 @@ if [[ -n "${K3S_CA_CERT}" ]]; then
 else
   echo "   gh secret set K3S_CA_CERT --env ${ENV_LABEL} --body '<k3s-ca-pem>'"
   echo "   # Extract with:"
-  echo "   # ssh superfield@${HOST} 'kubectl config view --raw -o jsonpath=\"{.clusters[0].cluster.certificate-authority-data}\" | base64 -d'"
+  echo "   # ssh superfield@${HOST} 'kubectl config view --raw -o jsonpath=\"{.clusters[0].cluster.certificate-authority-data}\" | base64 --decode'"
 fi
 echo ""
 echo "════════════════════════════════════════════════════════════════════"
@@ -1882,9 +1675,12 @@ echo "==> Provisioning complete!"
 echo "    Host        : ${HOST}"
 echo "    Environment : ${ENV_LABEL}"
 echo "    Namespace   : ${NAMESPACE}"
-echo "    Image       : ${IMAGE}"
 echo ""
 echo "    Admin access: ssh superfield@${HOST}"
 echo "    Deploys:      trigger .github/workflows/deploy.yml via workflow_dispatch"
 echo "    Runbook:      docs/host-init-script.md"
 echo ""
+
+
+# vim: ft=sh sw=2 ts=2 et
+
