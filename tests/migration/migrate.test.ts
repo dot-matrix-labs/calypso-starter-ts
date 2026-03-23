@@ -13,6 +13,7 @@ const EXPECTED_TABLES = [
   'task_queue',
   'task_queue_view_analysis',
   'task_queue_view_coding',
+  'worker_credentials',
 ] as const;
 
 let pg: PgContainer;
