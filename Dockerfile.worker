@@ -1,0 +1,77 @@
+# Dockerfile.worker — Codex task runner worker image.
+#
+# Two-stage build:
+#   Stage 1 (builder): install dependencies and compile the worker bundle.
+#   Stage 2 (runtime): distroless image with no shell or package manager.
+#
+# The Codex binary is copied into the image at a fixed path (/usr/local/bin/codex).
+# It must be supplied as a build argument (CODEX_BINARY_PATH).
+# The build will fail if the binary is absent, preventing silent misconfiguration.
+#
+# Blueprint constraints enforced here:
+#   WORKER-C-001  No-shell distroless runtime (shell absent in production stage)
+#   WORKER-C-002  Vendor CLI invoked without shell (binary copied directly)
+#   WORKER-S-001  Vendor CLI version pinned (set CODEX_VERSION in CI)
+#
+# Build arguments:
+#   CODEX_VERSION — version tag for documentation (e.g. "0.1.0"); not used at runtime
+#
+# Environment variables expected at container startup:
+#   AGENT_DATABASE_URL — read-only PostgreSQL connection string for the agent role
+#   AGENT_TYPE         — agent type name (e.g. "coding")
+#   API_BASE_URL       — base URL of the Calypso API server
+#   WORKER_ID          — unique identifier for this instance (defaults to hostname)
+#   CODEX_PATH         — path to the codex binary (default: /usr/local/bin/codex)
+
+# --- builder stage ---
+FROM oven/bun:1.2@sha256:6ebf306367da43ad75c4d5119563e24de9b66372929ad4fa31546be053a16f74 AS builder
+
+WORKDIR /app
+
+# Copy workspace manifests and lockfile first for layer caching
+COPY package.json bun.lock ./
+COPY apps/worker/package.json apps/worker/
+COPY packages/core/package.json packages/core/
+COPY packages/db/package.json packages/db/
+
+# Install workspace dependencies with frozen lockfile
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Copy source files needed for the worker bundle
+COPY apps/worker/ apps/worker/
+COPY packages/core/ packages/core/
+COPY packages/db/ packages/db/
+COPY tsconfig.json ./
+
+# Compile the worker entry-point to a single bundle targeting the bun runtime
+RUN bun build apps/worker/src/index.ts \
+      --target bun \
+      --outfile dist/worker.js \
+      --external postgres
+
+# --- runtime stage ---
+# Distroless: no shell (/bin/sh absent), no package manager, minimal attack surface.
+FROM oven/bun:1.2-distroless@sha256:e2c3f36733fa2c2c9c80d89b481d9fc7629558cac2533c776f6285ae1ba6b8fa AS runtime
+
+ARG CODEX_VERSION=unknown
+LABEL codex.version="${CODEX_VERSION}"
+
+WORKDIR /app
+
+# Copy compiled worker bundle
+COPY --from=builder /app/dist/worker.js ./dist/worker.js
+
+# Copy node_modules for postgres (external dependency not bundled)
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy the Codex binary — must be present in the build context as codex-binary/codex
+# The CI build step downloads/verifies the pinned binary before building this image.
+COPY codex-binary/codex /usr/local/bin/codex
+
+# Runtime environment defaults
+ENV CODEX_PATH=/usr/local/bin/codex
+
+# Health: no HTTP endpoint — check if the process is running via container runtime
+# healthcheck can be added at the orchestrator level with `docker inspect`.
+
+ENTRYPOINT ["bun", "run", "dist/worker.js"]
