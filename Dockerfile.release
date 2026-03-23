@@ -25,6 +25,9 @@ RUN bun install --frozen-lockfile --ignore-scripts
 # Copy source
 COPY . .
 
+# Refresh workspace package links against the copied sources before bundling.
+RUN bun install --frozen-lockfile --ignore-scripts
+
 # Build the Vite frontend
 RUN cd apps/web && bun run build
 
