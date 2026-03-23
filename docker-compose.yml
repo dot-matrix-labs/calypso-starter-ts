@@ -1,13 +1,22 @@
 ## docker-compose.yml — zero-config local development.
 ##
 ## Usage:
-##   docker compose up          # start app + postgres
-##   docker compose down -v     # stop and remove volumes
+##   docker compose up                    # start app + postgres + worker
+##   docker compose up app postgres       # start app + postgres only (no worker)
+##   docker compose down -v               # stop and remove volumes
 ##
-## The app service mounts the repo root as a read-only volume so changes to
-## source files are reflected immediately (bun --hot handles reload).
-## Only node_modules is excluded from the volume mount so the pre-built
-## layer inside the image is used instead.
+## The app and worker services mount the repo root as a volume so source
+## changes are reflected immediately.  Only node_modules is excluded from
+## the volume mount so the pre-built image layer is used instead.
+##
+## Dev worker notes:
+##   - The worker uses a stub Codex binary (scripts/dev-codex-stub) that
+##     returns mock results without a real Codex subscription.
+##   - Worker credentials are seeded automatically at startup.
+##   - The agent_coding DB role is created by scripts/dev-postgres-init/.
+##   - Set ENCRYPTION_MASTER_KEY to a consistent 64-char hex value across
+##     restarts so seeded credentials can be decrypted.  The default dev key
+##     is safe for local use only — never use it in production.
 
 services:
   postgres:
@@ -21,6 +30,9 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Init scripts run once on first container start (before application migration).
+      # Creates the agent_coding / agent_analysis roles with LOGIN passwords.
+      - ./scripts/dev-postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U app_rw -d calypso_app']
       interval: 5s
@@ -41,8 +53,38 @@ services:
       DATABASE_URL: 'postgres://app_rw:app_rw_password@postgres:5432/calypso_app'
       AUDIT_DATABASE_URL: 'postgres://app_rw:app_rw_password@postgres:5432/calypso_app'
       ANALYTICS_DATABASE_URL: 'postgres://app_rw:app_rw_password@postgres:5432/calypso_app'
+      # Dev encryption key — local use only, never use in production.
+      ENCRYPTION_MASTER_KEY: '0000000000000000000000000000000000000000000000000000000000000001'
     ports:
       - '31415:31415'
+    volumes:
+      # Mount repository root so source changes are visible inside the container
+      - .:/app
+      # Exclude node_modules so the pre-built image layer is used
+      - /app/node_modules
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker.dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      app:
+        condition: service_started
+    environment:
+      # Queue credential — read-only agent_coding role (created by postgres init script).
+      AGENT_DATABASE_URL: 'postgres://agent_coding:agent_coding_dev_password@postgres:5432/calypso_app'
+      AGENT_TYPE: 'coding'
+      # Write channel — delegated tokens submitted to the local app server.
+      API_BASE_URL: 'http://app:31415'
+      # Privileged URL used by the entrypoint to apply view grants after migration.
+      DATABASE_URL: 'postgres://app_rw:app_rw_password@postgres:5432/calypso_app'
+      # Dev encryption key — must match the key used by the app service.
+      ENCRYPTION_MASTER_KEY: '0000000000000000000000000000000000000000000000000000000000000001'
+      # Path to the dev Codex stub binary.
+      CODEX_PATH: '/app/scripts/dev-codex-stub'
     volumes:
       # Mount repository root so source changes are visible inside the container
       - .:/app

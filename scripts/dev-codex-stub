@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# dev-codex-stub — stand-in for the Codex CLI binary in local development.
+#
+# The real Codex binary requires a valid subscription token and network access.
+# In dev mode this stub reads the task payload from stdin and returns a mock
+# result so the full queue claim → execution → API submission flow can be
+# exercised end-to-end without a real Codex subscription.
+#
+# Output format must match what runner.ts expects: a single JSON object on
+# stdout with at minimum a "result" string field.
+
+set -e
+
+# Read the task payload from stdin (passed by runner.ts as JSON)
+payload=$(cat)
+
+# Extract task_id if present for the log message
+task_id=$(echo "$payload" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "unknown")
+
+echo "[dev-codex-stub] Received task payload for task_id=${task_id}" >&2
+echo "[dev-codex-stub] Returning mock result" >&2
+
+# Emit a mock JSON result to stdout
+printf '{"result":"[dev] Codex stub executed successfully for task %s","status":"completed"}\n' "$task_id"
