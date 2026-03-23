@@ -92,7 +92,6 @@ export function MicDemoCard() {
       if (autoStopRef.current) clearTimeout(autoStopRef.current);
       if (audioUrl) URL.revokeObjectURL(audioUrl);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Query permission state on mount where Permissions API is available
