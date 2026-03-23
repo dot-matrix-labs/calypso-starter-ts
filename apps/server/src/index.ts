@@ -22,6 +22,7 @@ import { websocketHandler } from './websocket';
 import { handleAdminRequest } from './api/admin';
 import { handleUsersRequest } from './api/users';
 import { seedSuperuser } from './seed/superuser';
+import { getJwks } from './auth/jwt';
 
 // Starter behavior:
 // the server boot path auto-runs a local schema initializer for convenience.
@@ -109,6 +110,20 @@ export default {
     if (url.pathname === '/healthz' || url.pathname === '/health') {
       const version = process.env.RELEASE_TAG ?? 'dev';
       return withTrace(Response.json({ status: 'ok', version }));
+    }
+
+    // JWKS endpoint — exposes the current EC P-256 public key(s) for token verification.
+    // Downstream services can use this to verify ES256-signed JWTs without the private key.
+    if (url.pathname === '/.well-known/jwks.json') {
+      const jwks = await getJwks();
+      return withTrace(
+        new Response(JSON.stringify(jwks), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=3600',
+          },
+        }),
+      );
     }
 
     // WebSocket upgrade endpoint — requires a valid JWT before upgrading
