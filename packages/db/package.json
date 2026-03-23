@@ -11,7 +11,8 @@
     "./task-queue": "./task-queue.ts",
     "./task-queue-worker": "./task-queue-worker.ts",
     "./api-keys": "./api-keys.ts",
-    "./worker-credentials": "./worker-credentials.ts"
+    "./worker-credentials": "./worker-credentials.ts",
+    "./worker-channel": "./worker-channel.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
