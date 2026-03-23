@@ -6,7 +6,7 @@
  * decryptField.
  */
 
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mirror pure validation helpers for isolated testing
