@@ -13,12 +13,12 @@ import type { AppState } from '../index';
 import { getCorsHeaders, getAuthenticatedUser } from './auth';
 import { createApiKey, listApiKeys, deleteApiKey } from 'db/api-keys';
 import { emitAuditEvent } from '../policies/audit-service';
+import { isSuperuser, makeJson } from '../lib/response';
 
-export function isSuperuser(userId: string): boolean {
-  const superuserId = process.env.SUPERUSER_ID;
-  if (!superuserId) return false;
-  return userId === superuserId;
-}
+// Re-export isSuperuser so existing importers (e.g. users.ts) continue to work
+// without an immediate cascading change.  Prefer importing directly from
+// '../lib/response' in new code.
+export { isSuperuser };
 
 export async function handleAdminRequest(
   req: Request,
@@ -29,12 +29,7 @@ export async function handleAdminRequest(
   if (!url.pathname.startsWith('/api/admin')) return null;
 
   const corsHeaders = getCorsHeaders(req);
-
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   const user = await getAuthenticatedUser(req);
   if (!user) return json({ error: 'Unauthorized' }, 401);

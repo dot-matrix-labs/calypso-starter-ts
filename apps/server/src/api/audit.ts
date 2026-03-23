@@ -12,17 +12,12 @@
 import type { AppState } from '../index';
 import { getCorsHeaders, getAuthenticatedUser } from './auth';
 import { computeAuditHash } from 'core';
+import { isSuperuser, makeJson } from '../lib/response';
 
 const DEFAULT_GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
 function resolveGenesisHash(): string {
   return process.env.AUDIT_GENESIS_HASH ?? DEFAULT_GENESIS_HASH;
-}
-
-function isSuperuser(userId: string): boolean {
-  const superuserId = process.env.SUPERUSER_ID;
-  if (!superuserId) return false;
-  return userId === superuserId;
 }
 
 export async function handleAuditRequest(
@@ -34,12 +29,7 @@ export async function handleAuditRequest(
 
   const corsHeaders = getCorsHeaders(req);
   const { auditSql } = appState;
-
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   // GET /api/audit/verify — superuser only
   if (req.method === 'GET' && url.pathname === '/api/audit/verify') {

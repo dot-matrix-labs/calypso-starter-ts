@@ -18,6 +18,7 @@
 import type { AppState } from '../index';
 import { getCorsHeaders } from './auth';
 import { verifyDelegatedToken } from '../auth/delegated-token';
+import { makeJson } from '../lib/response';
 
 export async function handleTaskQueueResultRequest(
   req: Request,
@@ -31,12 +32,7 @@ export async function handleTaskQueueResultRequest(
   const taskId = match[1];
   const corsHeaders = getCorsHeaders(req);
   const { sql } = appState;
-
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   // Extract Bearer token from Authorization header
   const authHeader = req.headers.get('Authorization') ?? '';

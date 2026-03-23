@@ -9,6 +9,7 @@ import {
   type StudioMessage,
 } from '../studio/helpers';
 import { getCorsHeaders, getAuthenticatedUser } from './auth';
+import { makeJson } from '../lib/response';
 
 // In-memory session context per studio session
 const sessionMessages: StudioMessage[] = [];
@@ -27,11 +28,7 @@ export async function handleStudioRequest(req: Request, url: URL): Promise<Respo
   if (!url.pathname.startsWith('/studio')) return null;
 
   const corsHeaders = getCorsHeaders(req);
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   // Authentication guard — applied at route registration level so all current
   // and future studio routes are protected without per-handler checks.

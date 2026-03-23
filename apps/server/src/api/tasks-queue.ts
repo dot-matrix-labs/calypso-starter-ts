@@ -21,6 +21,7 @@ import {
   type TaskQueueStatus,
 } from 'db/task-queue';
 import { validateTaskPayload, PayloadValidationError } from './task-payload-validation';
+import { makeJson } from '../lib/response';
 
 export async function handleTasksQueueRequest(
   req: Request,
@@ -34,11 +35,7 @@ export async function handleTasksQueueRequest(
   void appState;
 
   const corsHeaders = getCorsHeaders(req);
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   const user = await getAuthenticatedUser(req);
   if (!user) return json({ error: 'Unauthorized' }, 401);

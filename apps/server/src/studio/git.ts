@@ -1,10 +1,6 @@
 import { REPO_ROOT } from './agent';
 import { parseSessionCommits } from './helpers';
-
-async function readProcStdout(stdout: number | ReadableStream<Uint8Array> | undefined) {
-  if (!stdout || typeof stdout === 'number') return '';
-  return new Response(stdout).text();
-}
+import { readProcStdout } from '../lib/response';
 
 async function resolveCommitBaseRef(explicitBaseBranch?: string): Promise<string | null> {
   const candidates = explicitBaseBranch

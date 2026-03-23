@@ -2,13 +2,9 @@ import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { config } from 'core/config';
 import { buildStudioPrompt, type StudioMessage } from './helpers';
+import { readProcStdout } from '../lib/response';
 
 export const REPO_ROOT = config.repoRoot;
-
-async function readProcStdout(stdout: number | ReadableStream<Uint8Array> | undefined) {
-  if (!stdout || typeof stdout === 'number') return '';
-  return new Response(stdout).text();
-}
 
 export async function runAgent(messages: StudioMessage[], branch: string): Promise<string> {
   const changesPath = join(REPO_ROOT, `docs/studio-sessions/${branch}/changes.md`);

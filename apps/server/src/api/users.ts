@@ -13,7 +13,7 @@
 
 import type { AppState } from '../index';
 import { getCorsHeaders, getAuthenticatedUser } from './auth';
-import { isSuperuser } from './admin';
+import { isSuperuser, makeJson } from '../lib/response';
 
 export async function handleUsersRequest(
   req: Request,
@@ -24,12 +24,7 @@ export async function handleUsersRequest(
 
   const corsHeaders = getCorsHeaders(req);
   const { sql } = appState;
-
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   // DELETE /api/users/:id
   if (req.method === 'DELETE' && url.pathname.match(/^\/api\/users\/[^/]+$/)) {

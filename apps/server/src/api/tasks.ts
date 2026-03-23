@@ -6,6 +6,7 @@ import { applyTaskPatchThroughBoundary } from '../policies/task-write-service';
 import { verifyCsrf } from '../auth/csrf';
 import { validate } from './validation';
 import { broadcast } from '../websocket';
+import { makeJson } from '../lib/response';
 
 // Starter task note:
 // Task CRUD currently mutates entity rows directly. That is acceptable for the
@@ -40,11 +41,7 @@ export async function handleTasksRequest(
 
   const corsHeaders = getCorsHeaders(req);
   const { sql } = appState;
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  const json = makeJson(corsHeaders);
 
   const user = await getAuthenticatedUser(req);
   if (!user) return json({ error: 'Unauthorized' }, 401);
