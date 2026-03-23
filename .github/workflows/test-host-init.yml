@@ -43,6 +43,7 @@ jobs:
     needs: preflight
     if: github.event_name != 'schedule' && needs.preflight.outputs.has-dockerfile == 'true' && needs.preflight.outputs.has-init-host == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
@@ -182,10 +183,10 @@ jobs:
         if: always()
         run: |
           if [[ -n "${APP_PID:-}" ]]; then
-            kill "$APP_PID" 2>/dev/null || true
+            kill -9 "$APP_PID" 2>/dev/null || true
           fi
           if [[ -n "${PF_PID:-}" ]]; then
-            kill "$PF_PID" 2>/dev/null || true
+            kill -9 "$PF_PID" 2>/dev/null || true
           fi
 
   # ── Branch integration test — remote postgres mock ────────────────────────
@@ -195,6 +196,7 @@ jobs:
     needs: preflight
     if: github.event_name != 'schedule' && needs.preflight.outputs.has-dockerfile == 'true' && needs.preflight.outputs.has-init-host == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
@@ -358,7 +360,7 @@ jobs:
         if: always()
         run: |
           if [[ -n "${APP_PID:-}" ]]; then
-            kill "$APP_PID" 2>/dev/null || true
+            kill -9 "$APP_PID" 2>/dev/null || true
           fi
 
   # ── Release smoke test — local postgres ──────────────────────────────────
