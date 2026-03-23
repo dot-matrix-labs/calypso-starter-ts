@@ -8,7 +8,8 @@
     "./pg-container": "./pg-container.ts",
     "./revocation": "./revocation.ts",
     "./trace": "./trace.ts",
-    "./task-queue": "./task-queue.ts"
+    "./task-queue": "./task-queue.ts",
+    "./task-queue-worker": "./task-queue-worker.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
