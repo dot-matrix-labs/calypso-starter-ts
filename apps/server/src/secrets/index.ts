@@ -21,7 +21,14 @@ import type { SecretsProvider } from './provider';
 const DB_URL_KEYS = ['DATABASE_URL', 'AUDIT_DATABASE_URL', 'ANALYTICS_DATABASE_URL'] as const;
 
 /** All secret keys that are pre-loaded into the cache at startup */
-const KNOWN_KEYS = [...DB_URL_KEYS, 'JWT_SECRET', 'VAULT_TOKEN'] as const;
+const KNOWN_KEYS = [
+  ...DB_URL_KEYS,
+  'JWT_SECRET',
+  'VAULT_TOKEN',
+  'SUPERUSER_EMAIL',
+  'SUPERUSER_PASSWORD',
+  'SUPERUSER_MNEMONIC',
+] as const;
 
 let provider: SecretsProvider | null = null;
 const cache = new Map<string, string>();

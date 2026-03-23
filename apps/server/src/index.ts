@@ -20,6 +20,8 @@ import { handleTasksQueueRequest } from './api/tasks-queue';
 import { startStaleClaimRecovery } from './policies/stale-claim-recovery-service';
 import { websocketHandler } from './websocket';
 import { handleAdminRequest } from './api/admin';
+import { handleUsersRequest } from './api/users';
+import { seedSuperuser } from './seed/superuser';
 
 // Starter behavior:
 // the server boot path auto-runs a local schema initializer for convenience.
@@ -44,6 +46,9 @@ startRevocationCleanup();
 // Start background stale-claim recovery (TQ-D-003). Runs every 60 seconds and
 // resets expired claimed tasks to pending or promotes them to dead.
 startStaleClaimRecovery();
+
+// Seed the initial superuser if none exists yet.
+await seedSuperuser({ sql }).catch((err) => console.error('[seed] Superuser seeding failed:', err));
 
 export interface AppState {
   sql: typeof sql;
@@ -168,6 +173,11 @@ export default {
     if (url.pathname.startsWith('/api/admin')) {
       const adminRes = await handleAdminRequest(req, url, appState);
       if (adminRes) return adminRes;
+    }
+
+    if (url.pathname.startsWith('/api/users')) {
+      const usersRes = await handleUsersRequest(req, url, appState);
+      if (usersRes) return withTrace(usersRes);
     }
 
     if (url.pathname.startsWith('/studio')) {
