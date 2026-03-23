@@ -38,6 +38,7 @@ import { spawn } from 'child_process';
 import os from 'os';
 import { createAgentPool, loadAgentDbConfig } from './db';
 import { assertReadOnlyRole } from './startup';
+import { restoreCodexCredentials } from './codex-credentials';
 import { runWorkerLoop } from 'db/task-queue-worker';
 import { claimNextTask, updateTaskStatus } from 'db/task-queue';
 
@@ -190,7 +191,14 @@ export async function startRunner(): Promise<void> {
   // Verify that the DB role is read-only before entering the loop (TQ-C-008).
   await assertReadOnlyRole(db as Parameters<typeof assertReadOnlyRole>[0]);
 
-  console.log(`[runner] DB role verified read-only — entering worker loop`);
+  console.log(`[runner] DB role verified read-only`);
+
+  // Restore Codex subscription credentials from the encrypted bundle stored
+  // in the database.  Fails closed if the bundle is missing, expired, or
+  // cannot be decrypted.
+  await restoreCodexCredentials(agentType);
+
+  console.log(`[runner] Codex credentials restored — entering worker loop`);
 
   const { stop } = await runWorkerLoop({
     agentType,

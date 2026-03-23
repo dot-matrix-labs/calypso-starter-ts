@@ -189,6 +189,33 @@ CREATE TABLE IF NOT EXISTS passkey_challenges (
 CREATE INDEX IF NOT EXISTS idx_passkey_challenges_user_id ON passkey_challenges(user_id);
 CREATE INDEX IF NOT EXISTS idx_passkey_challenges_challenge ON passkey_challenges(challenge);
 
+-- Worker vendor credentials — encrypted Codex subscription auth material.
+-- Stores the minimum authentication state required to restore a Codex session
+-- inside an ephemeral worker container at boot.
+--
+-- auth_bundle: AES-256-GCM encrypted JSON blob (enc:v1:<iv>:<ciphertext> format).
+--   Contains the Codex session material (access token, refresh token, expiry, etc.)
+--   Never stored in plaintext. Workers decrypt at startup using ENCRYPTION_MASTER_KEY.
+-- agent_type:  Agent type this credential is scoped to (e.g. "coding").
+-- expires_at:  When the auth bundle itself expires (independent of token expiry).
+--   Workers must refuse to use expired bundles.
+-- created_by:  User or system that stored the credential.
+-- revoked_at:  Set when the credential is explicitly revoked; workers must reject revoked bundles.
+CREATE TABLE IF NOT EXISTS worker_credentials (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    agent_type TEXT NOT NULL,
+    auth_bundle TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_worker_credentials_agent_type
+    ON worker_credentials (agent_type, expires_at)
+    WHERE revoked_at IS NULL;
+
 -- API keys for machine-to-machine authentication
 CREATE TABLE IF NOT EXISTS api_keys (
   id TEXT PRIMARY KEY,

@@ -62,6 +62,7 @@
     "apps/worker": {
       "name": "worker",
       "dependencies": {
+        "core": "workspace:*",
         "db": "workspace:*",
         "postgres": "^3.4.8",
       },
