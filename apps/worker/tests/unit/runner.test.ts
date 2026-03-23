@@ -5,7 +5,7 @@
  * construction without spawning real subprocesses or making real HTTP calls.
  */
 
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mirror pure helpers for isolated testing
