@@ -174,6 +174,7 @@ jobs:
           docker run -d \
             --name calypso \
             --network host \
+            -v "$PWD/packages/db/schema.sql:/app/dist/schema.sql:ro" \
             -e DATABASE_URL=postgres://app_rw:app_rw_password@localhost:5432/calypso_app \
             -e AUDIT_DATABASE_URL=postgres://audit_w:audit_w_password@localhost:5432/calypso_audit \
             -e ANALYTICS_DATABASE_URL=postgres://analytics_w:analytics_w_password@localhost:5432/calypso_analytics \
