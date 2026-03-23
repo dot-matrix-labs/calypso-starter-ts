@@ -15,6 +15,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: calypso
+          POSTGRES_PASSWORD: calypso
+          POSTGRES_DB: calypso
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
       - name: Setup Bun
@@ -24,6 +39,11 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
       - name: Run PWA tests
+        env:
+          DATABASE_URL: postgres://calypso:calypso@localhost:5432/calypso
+          AUDIT_DATABASE_URL: postgres://calypso:calypso@localhost:5432/calypso
+          ANALYTICS_DATABASE_URL: postgres://calypso:calypso@localhost:5432/calypso
+          JWT_SECRET: test-secret-for-pwa-ci
         run: bunx playwright test --config tests/pwa/playwright.config.mts
       - name: Upload Playwright report
         if: failure()
