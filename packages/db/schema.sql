@@ -188,3 +188,13 @@ CREATE TABLE IF NOT EXISTS passkey_challenges (
 
 CREATE INDEX IF NOT EXISTS idx_passkey_challenges_user_id ON passkey_challenges(user_id);
 CREATE INDEX IF NOT EXISTS idx_passkey_challenges_challenge ON passkey_challenges(challenge);
+
+-- API keys for machine-to-machine authentication
+CREATE TABLE IF NOT EXISTS api_keys (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  created_by TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ
+);

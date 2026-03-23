@@ -19,6 +19,7 @@ import { extractTraceId, traceLog, log } from 'core';
 import { handleTasksQueueRequest } from './api/tasks-queue';
 import { startStaleClaimRecovery } from './policies/stale-claim-recovery-service';
 import { websocketHandler } from './websocket';
+import { handleAdminRequest } from './api/admin';
 
 // Starter behavior:
 // the server boot path auto-runs a local schema initializer for convenience.
@@ -162,6 +163,11 @@ export default {
     if (url.pathname.startsWith('/api/audit')) {
       const auditRes = await handleAuditRequest(req, url, appState);
       if (auditRes) return withTrace(auditRes);
+    }
+
+    if (url.pathname.startsWith('/api/admin')) {
+      const adminRes = await handleAdminRequest(req, url, appState);
+      if (adminRes) return adminRes;
     }
 
     if (url.pathname.startsWith('/studio')) {

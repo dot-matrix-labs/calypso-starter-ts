@@ -3,6 +3,7 @@ import { migrate } from '../../packages/db';
 import { startPostgres, type PgContainer } from '../../packages/db/pg-container';
 
 const EXPECTED_TABLES = [
+  'api_keys',
   'entities',
   'entity_types',
   'passkey_challenges',

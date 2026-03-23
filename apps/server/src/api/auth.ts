@@ -13,6 +13,7 @@ import {
   registerIpLimiter,
   tooManyRequests,
 } from '../security/rate-limiter';
+import { authenticateApiKey } from 'db/api-keys';
 
 // Starter auth note:
 // These routes are intentionally simple so the current app can register and log
@@ -49,6 +50,36 @@ export async function getAuthenticatedUser(
   } catch {
     return null;
   }
+}
+
+// Helper to verify auth from a Request object, also accepting Bearer API keys.
+// Returns { id, username } for session-cookie auth or { id, username: 'api-key' }
+// for a valid API key bearer, where id is the api_key row id.
+export async function getAuthenticatedUserOrApiKey(
+  req: Request,
+): Promise<{ id: string; username: string } | null> {
+  // Try session cookie first
+  const sessionUser = await getAuthenticatedUser(req);
+  if (sessionUser) return sessionUser;
+
+  // Try Bearer token (API key)
+  const authHeader = req.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const rawKey = authHeader.slice(7).trim();
+    if (rawKey) {
+      try {
+        const keyRow = await authenticateApiKey(rawKey);
+        if (keyRow) {
+          // Represent the API key principal using the key's id; username identifies the key source
+          return { id: keyRow.id, username: `api-key:${keyRow.label}` };
+        }
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  return null;
 }
 
 // Helper to get CORS headers dynamically
@@ -291,9 +322,9 @@ export async function handleAuthRequest(
   }
 
   // 3. GET /api/auth/me
-  // Validates the session cookie and returns user profile
+  // Validates the session cookie or Bearer API key and returns user profile
   if (req.method === 'GET' && url.pathname === '/api/auth/me') {
-    const user = await getAuthenticatedUser(req);
+    const user = await getAuthenticatedUserOrApiKey(req);
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,

@@ -9,7 +9,8 @@
     "./revocation": "./revocation.ts",
     "./trace": "./trace.ts",
     "./task-queue": "./task-queue.ts",
-    "./task-queue-worker": "./task-queue-worker.ts"
+    "./task-queue-worker": "./task-queue-worker.ts",
+    "./api-keys": "./api-keys.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
