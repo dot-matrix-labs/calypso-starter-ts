@@ -153,17 +153,19 @@ export async function migrate(options: MigrateOptions = {}) {
 }
 
 /**
- * Initialises the audit database tables by executing the audit-specific SQL schema.
- * Must be called at server startup before any audit writes occur.
+ * Verifies connectivity to the audit database at server startup.
+ *
+ * The audit schema (audit_log table, indexes, grants) is created by
+ * init-remote.ts running as a database admin at deploy time. Attempting to
+ * re-run that DDL here as audit_w fails on PG 15+ because audit_w only holds
+ * USAGE on the public schema, not CREATE. This function replaces the old
+ * DDL-executing migration with a lightweight SELECT 1 connectivity probe so
+ * that server startup succeeds and emitAuditEvent works on the first request.
  */
 export async function migrateAudit(options: MigrateAuditOptions = {}) {
-  console.log('[db] Initializing audit database schema...');
-  const schemaSql = readFileSync(
-    fileURLToPath(new URL('./audit-schema.sql', import.meta.url)),
-    'utf-8',
-  );
+  console.log('[db] Verifying audit database connectivity...');
   const databaseUrl = options.databaseUrl ?? databaseUrls.audit;
-  const migrationSql =
+  const connectSql =
     options.databaseUrl === undefined
       ? auditSql
       : postgres(databaseUrl, {
@@ -174,23 +176,14 @@ export async function migrateAudit(options: MigrateAuditOptions = {}) {
         });
 
   try {
-    const cleanSql = schemaSql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
-
-    const statements = cleanSql
-      .split(';')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    for (const statement of statements) {
-      await migrationSql.unsafe(statement);
-    }
-    console.log('[db] Audit schema migration complete.');
+    await connectSql`SELECT 1`;
+    console.log('[db] Audit database connectivity verified.');
   } catch (err) {
-    console.error('[db] Audit schema migration failed:', err);
+    console.error('[db] Audit database connectivity check failed:', err);
     throw err;
   } finally {
-    if (migrationSql !== auditSql) {
-      await migrationSql.end({ timeout: 5 });
+    if (connectSql !== auditSql) {
+      await connectSql.end({ timeout: 5 });
     }
   }
 }
