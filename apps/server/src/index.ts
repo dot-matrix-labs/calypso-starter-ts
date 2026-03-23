@@ -9,7 +9,7 @@
 import { analyticsSql, auditSql, migrate, migrateAudit, sql } from 'db';
 import { cleanupExpiredRevocations, startRevocationCleanup } from 'db/revocation';
 import { scrubPii } from 'core';
-import { handleAuthRequest } from './api/auth';
+import { handleAuthRequest, getAuthenticatedUser } from './api/auth';
 import { handlePasskeyRequest } from './api/passkey';
 import { handleTasksRequest } from './api/tasks';
 import { handleTaskQueueResultRequest } from './api/task-queue';
@@ -18,6 +18,7 @@ import { handleAuditRequest } from './api/audit';
 import { extractTraceId, traceLog, log } from 'core';
 import { handleTasksQueueRequest } from './api/tasks-queue';
 import { startStaleClaimRecovery } from 'db/task-queue';
+import { websocketHandler } from './websocket';
 
 // Starter behavior:
 // the server boot path auto-runs a local schema initializer for convenience.
@@ -58,16 +59,20 @@ export const appState: AppState = {
 export default {
   port: Number(process.env.PORT) || 31415,
 
+  websocket: websocketHandler,
+
   /**
    * The core fetch handler for the Bun native HTTP server.
    * Every request gets a trace ID from the `X-Trace-Id` header (or a generated
    * UUID when the header is absent). The ID is included in all log entries for
    * the request lifecycle and echoed back in the response header so the browser
    * can correlate server logs with client-side context.
+   * The `server` parameter is the Bun Server instance, needed to upgrade
+   * WebSocket connections via `server.upgrade(req)`.
    *
    * @returns {Response} A unified response object containing the HTML document or API payload.
    */
-  async fetch(req: Request) {
+  async fetch(req: Request, server: import('bun').Server<undefined>) {
     const url = new URL(req.url);
     const traceId = extractTraceId(req);
     const reqStart = Date.now();
@@ -98,6 +103,23 @@ export default {
     if (url.pathname === '/healthz' || url.pathname === '/health') {
       const version = process.env.RELEASE_TAG ?? 'dev';
       return withTrace(Response.json({ status: 'ok', version }));
+    }
+
+    // WebSocket upgrade endpoint — requires a valid JWT before upgrading
+    if (url.pathname === '/ws') {
+      const user = await getAuthenticatedUser(req);
+      if (!user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const upgraded = server.upgrade(req);
+      if (!upgraded) {
+        return new Response('WebSocket upgrade failed', { status: 400 });
+      }
+      // Return undefined so Bun completes the upgrade handshake
+      return undefined as unknown as Response;
     }
 
     // Handle CORS for local dev
