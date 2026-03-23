@@ -5,6 +5,14 @@ import { revokeToken } from 'db/revocation';
 import { generateCsrfToken, csrfCookieHeader, verifyCsrf } from '../auth/csrf';
 import { registerUserSchema, loginUserSchema } from 'core';
 import { validate } from './validation';
+import {
+  getClientIp,
+  globalLimiter,
+  loginIpLimiter,
+  loginUserLimiter,
+  registerIpLimiter,
+  tooManyRequests,
+} from '../security/rate-limiter';
 
 // Starter auth note:
 // These routes are intentionally simple so the current app can register and log
@@ -61,7 +69,7 @@ export async function handleAuthRequest(
   const corsHeaders = getCorsHeaders(req);
   const { sql } = appState;
 
-  // Preflight CORS
+  // Preflight CORS — no rate limiting needed for OPTIONS
   if (req.method === 'OPTIONS' && url.pathname.startsWith('/api/auth')) {
     return new Response(null, { headers: corsHeaders });
   }
@@ -83,8 +91,25 @@ export async function handleAuthRequest(
     if (csrfError) return csrfError;
   }
 
+  // Global per-IP rate limit applied to all auth endpoints
+  if (url.pathname.startsWith('/api/auth')) {
+    const ip = getClientIp(req);
+    const globalResult = globalLimiter.check(ip);
+    if (!globalResult.allowed) {
+      return tooManyRequests(globalResult, corsHeaders);
+    }
+    globalLimiter.consume(ip);
+  }
+
   // 1. POST /api/auth/register
   if (req.method === 'POST' && url.pathname === '/api/auth/register') {
+    const ip = getClientIp(req);
+    const ipResult = registerIpLimiter.check(ip);
+    if (!ipResult.allowed) {
+      return tooManyRequests(ipResult, corsHeaders);
+    }
+    registerIpLimiter.consume(ip);
+
     try {
       const rawBody = await req.json();
       const registerResult = validate<{ username: string; password: string }>(
@@ -169,29 +194,50 @@ export async function handleAuthRequest(
 
   // 2. POST /api/auth/login
   if (req.method === 'POST' && url.pathname === '/api/auth/login') {
-    try {
-      const rawLoginBody = await req.json();
-      const loginResult = validate<{ username: string; password: string }>(
-        loginUserSchema,
-        rawLoginBody,
-      );
-      if (!loginResult.valid) {
-        return new Response(
-          JSON.stringify({
-            error: 'Validation failed',
-            details: loginResult.errors.map((e) => ({
-              instancePath: e.instancePath,
-              message: e.message,
-            })),
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
-        );
-      }
-      const { username, password } = loginResult.data;
+    const ip = getClientIp(req);
+    const ipResult = loginIpLimiter.check(ip);
+    if (!ipResult.allowed) {
+      return tooManyRequests(ipResult, corsHeaders);
+    }
 
+    // Validate and parse body using AJV schema
+    const rawLoginBody = await req.json().catch(() => null);
+    if (!rawLoginBody) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const loginResult = validate<{ username: string; password: string }>(
+      loginUserSchema,
+      rawLoginBody,
+    );
+    if (!loginResult.valid) {
+      return new Response(
+        JSON.stringify({
+          error: 'Validation failed',
+          details: loginResult.errors.map((e) => ({
+            instancePath: e.instancePath,
+            message: e.message,
+          })),
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+    const { username, password } = loginResult.data;
+
+    const userResult = loginUserLimiter.check(username);
+    if (!userResult.allowed) {
+      return tooManyRequests(userResult, corsHeaders);
+    }
+
+    loginIpLimiter.consume(ip);
+    loginUserLimiter.consume(username);
+
+    try {
       // Retrieve User Entity
       const users = await sql`
                 SELECT id, properties->>'username' as username, properties->>'password_hash' as password_hash 
