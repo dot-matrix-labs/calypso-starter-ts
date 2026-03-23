@@ -21,10 +21,8 @@ let pg: PgContainer;
 let server: Subprocess;
 let superuserId = '';
 let superuserCookie = '';
-let userAId = '';
 let userACookie = '';
 let userBId = '';
-let userBCookie = '';
 
 beforeAll(async () => {
   pg = await startPostgres();
@@ -61,8 +59,6 @@ beforeAll(async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: `usera_${Date.now()}`, password: 'testpass123' }),
   });
-  const bodyA = await resA.json();
-  userAId = bodyA.user?.id ?? '';
   userACookie = (resA.headers.get('set-cookie') ?? '').split(';')[0];
 
   // Register user B
@@ -73,7 +69,6 @@ beforeAll(async () => {
   });
   const bodyB = await resB.json();
   userBId = bodyB.user?.id ?? '';
-  userBCookie = (resB.headers.get('set-cookie') ?? '').split(';')[0];
 
   // Restart server with SUPERUSER_ID set to the registered superuser
   server.kill();
