@@ -20,23 +20,7 @@ import {
   submitTaskResult,
   type TaskQueueStatus,
 } from 'db/task-queue';
-
-/** Keys forbidden in task payloads to prevent PII leakage (TQ-P-002). */
-const PAYLOAD_DENYLIST = new Set([
-  'email',
-  'name',
-  'address',
-  'phone',
-  'ssn',
-  'content',
-  'body',
-  'message',
-]);
-
-function hasDisallowedPayloadKeys(payload: unknown): boolean {
-  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return false;
-  return Object.keys(payload).some((k) => PAYLOAD_DENYLIST.has(k.toLowerCase()));
-}
+import { validateTaskPayload, PayloadValidationError } from './task-payload-validation';
 
 export async function handleTasksQueueRequest(
   req: Request,
@@ -88,12 +72,14 @@ export async function handleTasksQueueRequest(
       return json({ error: 'job_type is required' }, 400);
     }
 
-    const safePayload = (payload ?? {}) as Record<string, unknown>;
-    if (hasDisallowedPayloadKeys(safePayload)) {
-      return json(
-        { error: 'Payload must not contain PII fields (TQ-P-002: opaque-reference-payloads)' },
-        400,
-      );
+    const safePayload = payload ?? {};
+    try {
+      validateTaskPayload(safePayload);
+    } catch (err) {
+      if (err instanceof PayloadValidationError) {
+        return json({ error: err.message }, 400);
+      }
+      throw err;
     }
 
     const task = await enqueueTask({

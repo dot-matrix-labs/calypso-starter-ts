@@ -4,24 +4,11 @@
  */
 
 import { describe, expect, test } from 'vitest';
-
-// ── Payload PII denylist check (mirrors hasDisallowedPayloadKeys in tasks-queue.ts)
-
-const PAYLOAD_DENYLIST = new Set([
-  'email',
-  'name',
-  'address',
-  'phone',
-  'ssn',
-  'content',
-  'body',
-  'message',
-]);
-
-function hasDisallowedPayloadKeys(payload: unknown): boolean {
-  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return false;
-  return Object.keys(payload as object).some((k) => PAYLOAD_DENYLIST.has(k.toLowerCase()));
-}
+import {
+  validateTaskPayload,
+  PAYLOAD_PII_DENYLIST,
+  PayloadValidationError,
+} from '../../src/api/task-payload-validation';
 
 // ── Status state machine allowed values
 
@@ -35,56 +22,179 @@ const VALID_STATUSES = new Set([
   'dead',
 ]);
 
-describe('hasDisallowedPayloadKeys (TQ-C-004 payload-contains-no-pii)', () => {
+describe('validateTaskPayload (TQ-P-002 opaque-reference-payloads)', () => {
   test('allows opaque reference payloads', () => {
-    expect(hasDisallowedPayloadKeys({ task_id: 'abc', correlation_ref: 'xyz' })).toBe(false);
+    expect(() => validateTaskPayload({ task_id: 'abc', correlation_ref: 'xyz' })).not.toThrow();
   });
 
+  test('allows empty object', () => {
+    expect(() => validateTaskPayload({})).not.toThrow();
+  });
+
+  test('allows all listed opaque keys', () => {
+    expect(() =>
+      validateTaskPayload({
+        task_id: '1',
+        user_id: '2',
+        entity_id: '3',
+        correlation_id: '4',
+        job_type: 'send',
+        priority: 1,
+        source: 'api',
+        target: 'worker',
+        ref: 'abc',
+        version: 2,
+        batch_id: 'b1',
+      }),
+    ).not.toThrow();
+  });
+
+  // ── Structural validation
+
+  test('throws for null payload', () => {
+    expect(() => validateTaskPayload(null)).toThrow(PayloadValidationError);
+    expect(() => validateTaskPayload(null)).toThrow('payload must be a flat JSON object');
+  });
+
+  test('throws for array payload', () => {
+    expect(() => validateTaskPayload([])).toThrow(PayloadValidationError);
+    expect(() => validateTaskPayload(['a', 'b'])).toThrow('payload must be a flat JSON object');
+  });
+
+  test('throws for string primitive payload', () => {
+    expect(() => validateTaskPayload('string')).toThrow(PayloadValidationError);
+    expect(() => validateTaskPayload('string')).toThrow('payload must be a flat JSON object');
+  });
+
+  test('throws for number primitive payload', () => {
+    expect(() => validateTaskPayload(42)).toThrow(PayloadValidationError);
+  });
+
+  test('throws for boolean payload', () => {
+    expect(() => validateTaskPayload(true)).toThrow(PayloadValidationError);
+  });
+
+  // ── PII denylist checks — each entry in PAYLOAD_PII_DENYLIST
+
   test('rejects payload with "email" key', () => {
-    expect(hasDisallowedPayloadKeys({ email: 'user@example.com' })).toBe(true);
+    expect(() => validateTaskPayload({ email: 'user@example.com' })).toThrow(
+      PayloadValidationError,
+    );
+    expect(() => validateTaskPayload({ email: 'user@example.com' })).toThrow(
+      'payload key "email" is not allowed — use a resource ID reference instead',
+    );
   });
 
   test('rejects payload with "name" key', () => {
-    expect(hasDisallowedPayloadKeys({ name: 'Alice' })).toBe(true);
+    expect(() => validateTaskPayload({ name: 'Alice' })).toThrow(PayloadValidationError);
   });
 
   test('rejects payload with "address" key', () => {
-    expect(hasDisallowedPayloadKeys({ address: '123 Main St' })).toBe(true);
+    expect(() => validateTaskPayload({ address: '123 Main St' })).toThrow(PayloadValidationError);
   });
 
   test('rejects payload with "phone" key', () => {
-    expect(hasDisallowedPayloadKeys({ phone: '555-1234' })).toBe(true);
+    expect(() => validateTaskPayload({ phone: '555-1234' })).toThrow(PayloadValidationError);
   });
 
   test('rejects payload with "ssn" key', () => {
-    expect(hasDisallowedPayloadKeys({ ssn: '000-00-0000' })).toBe(true);
+    expect(() => validateTaskPayload({ ssn: '000-00-0000' })).toThrow(PayloadValidationError);
   });
 
   test('rejects payload with "content" key', () => {
-    expect(hasDisallowedPayloadKeys({ content: 'some text' })).toBe(true);
+    expect(() => validateTaskPayload({ content: 'some text' })).toThrow(PayloadValidationError);
   });
 
   test('rejects payload with "body" key', () => {
-    expect(hasDisallowedPayloadKeys({ body: 'some text' })).toBe(true);
+    expect(() => validateTaskPayload({ body: 'some text' })).toThrow(PayloadValidationError);
   });
 
   test('rejects payload with "message" key', () => {
-    expect(hasDisallowedPayloadKeys({ message: 'hello' })).toBe(true);
+    expect(() => validateTaskPayload({ message: 'hello' })).toThrow(PayloadValidationError);
   });
+
+  test('rejects payload with "text" key', () => {
+    expect(() => validateTaskPayload({ text: 'hello world' })).toThrow(PayloadValidationError);
+  });
+
+  test('rejects payload with "description" key', () => {
+    expect(() => validateTaskPayload({ description: 'a task' })).toThrow(PayloadValidationError);
+  });
+
+  test('rejects payload with "title" key', () => {
+    expect(() => validateTaskPayload({ title: 'My title' })).toThrow(PayloadValidationError);
+  });
+
+  test('rejects payload with "subject" key', () => {
+    expect(() => validateTaskPayload({ subject: 'Re: order' })).toThrow(PayloadValidationError);
+  });
+
+  test('rejects payload with "password" key', () => {
+    expect(() => validateTaskPayload({ password: 'hunter2' })).toThrow(PayloadValidationError);
+  });
+
+  test('rejects payload with "secret" key', () => {
+    expect(() => validateTaskPayload({ secret: 'shh' })).toThrow(PayloadValidationError);
+  });
+
+  test('rejects payload with "token" key', () => {
+    expect(() => validateTaskPayload({ token: 'abc123' })).toThrow(PayloadValidationError);
+  });
+
+  // ── Case-insensitivity
 
   test('is case-insensitive for denylist keys', () => {
-    expect(hasDisallowedPayloadKeys({ Email: 'user@example.com' })).toBe(true);
-    expect(hasDisallowedPayloadKeys({ EMAIL: 'user@example.com' })).toBe(true);
+    expect(() => validateTaskPayload({ Email: 'user@example.com' })).toThrow(
+      PayloadValidationError,
+    );
+    expect(() => validateTaskPayload({ EMAIL: 'user@example.com' })).toThrow(
+      PayloadValidationError,
+    );
+    expect(() => validateTaskPayload({ PASSWORD: 'hunter2' })).toThrow(PayloadValidationError);
+    expect(() => validateTaskPayload({ Token: 'abc' })).toThrow(PayloadValidationError);
   });
 
-  test('returns false for non-object payloads', () => {
-    expect(hasDisallowedPayloadKeys(null)).toBe(false);
-    expect(hasDisallowedPayloadKeys('string')).toBe(false);
-    expect(hasDisallowedPayloadKeys([])).toBe(false);
+  // ── Error message format includes the offending key
+
+  test('error message includes the offending key name', () => {
+    expect(() => validateTaskPayload({ Email: 'x' })).toThrow(
+      'payload key "Email" is not allowed — use a resource ID reference instead',
+    );
   });
 
-  test('empty object is allowed', () => {
-    expect(hasDisallowedPayloadKeys({})).toBe(false);
+  // ── PAYLOAD_PII_DENYLIST export is complete
+
+  test('PAYLOAD_PII_DENYLIST contains all 15 expected keys', () => {
+    const expected = [
+      'email',
+      'name',
+      'address',
+      'phone',
+      'ssn',
+      'content',
+      'body',
+      'message',
+      'text',
+      'description',
+      'title',
+      'subject',
+      'password',
+      'secret',
+      'token',
+    ];
+    expect(PAYLOAD_PII_DENYLIST.size).toBe(15);
+    for (const key of expected) {
+      expect(PAYLOAD_PII_DENYLIST.has(key)).toBe(true);
+    }
+  });
+
+  // ── PayloadValidationError properties
+
+  test('PayloadValidationError has statusCode 400', () => {
+    const err = new PayloadValidationError('test');
+    expect(err.statusCode).toBe(400);
+    expect(err).toBeInstanceOf(PayloadValidationError);
+    expect(err).toBeInstanceOf(Error);
   });
 });
 
