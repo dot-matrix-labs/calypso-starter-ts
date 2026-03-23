@@ -1,0 +1,47 @@
+# Dockerfile.worker.dev — dev worker image for local task execution.
+#
+# Unlike Dockerfile.worker (distroless, requires a real Codex binary), this
+# dev image uses oven/bun:1 (with shell) and runs the worker directly from
+# source via volume mount.  The Codex binary is replaced by dev-codex-stub
+# so the full queue claim → execution → API submission flow can be exercised
+# without a real Codex subscription.
+#
+# Docker Compose mounts the repo root as a volume so source changes are
+# reflected without rebuilding the image.
+#
+# Environment variables expected at runtime:
+#   AGENT_DATABASE_URL — read-only PostgreSQL URL using agent_<type> role
+#   AGENT_TYPE         — agent type name (e.g. "coding")
+#   API_BASE_URL       — base URL of the local app server
+#   DATABASE_URL       — privileged URL (app_rw) for grant setup in entrypoint
+#   ENCRYPTION_MASTER_KEY — 64-char hex dev key for credential decryption
+#   CODEX_PATH         — path to the codex binary (set to dev-codex-stub)
+
+FROM oven/bun:1
+
+WORKDIR /app
+
+# Copy workspace manifests and lockfile for dependency installation
+COPY package.json bun.lock ./
+COPY apps/worker/package.json apps/worker/
+COPY apps/server/package.json apps/server/
+COPY apps/web/package.json apps/web/
+COPY packages/core/package.json packages/core/
+COPY packages/db/package.json packages/db/
+COPY packages/ui/package.json packages/ui/
+
+# Install all workspace dependencies
+RUN bun install --frozen-lockfile
+
+# Copy entrypoint and codex stub before source (volume-mount overrides at runtime)
+COPY scripts/dev-worker-entrypoint.sh ./scripts/dev-worker-entrypoint.sh
+COPY scripts/dev-codex-stub ./scripts/dev-codex-stub
+RUN chmod +x ./scripts/dev-worker-entrypoint.sh ./scripts/dev-codex-stub
+
+# Source is volume-mounted at runtime via docker-compose
+COPY . .
+
+# Point the worker at the dev Codex stub
+ENV CODEX_PATH=/app/scripts/dev-codex-stub
+
+ENTRYPOINT ["./scripts/dev-worker-entrypoint.sh"]
