@@ -578,13 +578,42 @@ echo ""
 echo "==> [8/8] Running db-init job and deploying application"
 
 echo "    Waiting for calypso-db-init job to complete..."
-if ! kubectl wait --for=condition=complete job/calypso-db-init \
+
+# Stream pod status and logs every 20 s while waiting so hangs are diagnosable.
+_poll_db_init() {
+  local ns="$1" tick=0
+  while true; do
+    sleep 20
+    tick=$((tick + 20))
+    echo "    [db-init +${tick}s] pod status:" >&2
+    kubectl get pods -n "${ns}" --selector=app=calypso-db-init \
+      -o wide --no-headers 2>&1 | sed 's/^/      /' >&2 || true
+    echo "    [db-init +${tick}s] recent logs:" >&2
+    kubectl logs -n "${ns}" --selector=app=calypso-db-init \
+      --tail=30 --ignore-errors 2>&1 | sed 's/^/      /' >&2 || true
+  done
+}
+_poll_db_init "${NAMESPACE}" &
+POLL_PID=$!
+
+WAIT_EXIT=0
+kubectl wait --for=condition=complete job/calypso-db-init \
   --namespace="${NAMESPACE}" \
-  --timeout=300s; then
-  echo "    ERROR: calypso-db-init job timed out or failed. Dumping pod logs:" >&2
-  kubectl get pods --namespace="${NAMESPACE}" --selector=app=calypso-db-init >&2 || true
-  kubectl logs --namespace="${NAMESPACE}" --selector=app=calypso-db-init --tail=100 >&2 || true
+  --timeout=300s || WAIT_EXIT=$?
+
+kill "${POLL_PID}" 2>/dev/null || true
+wait "${POLL_PID}" 2>/dev/null || true
+
+if [[ "${WAIT_EXIT}" -ne 0 ]]; then
+  echo "    ERROR: calypso-db-init job timed out or failed." >&2
+  echo "    === Job description ===" >&2
   kubectl describe job/calypso-db-init --namespace="${NAMESPACE}" >&2 || true
+  echo "    === Pod list ===" >&2
+  kubectl get pods --namespace="${NAMESPACE}" --selector=app=calypso-db-init -o wide >&2 || true
+  echo "    === Pod descriptions ===" >&2
+  kubectl describe pods --namespace="${NAMESPACE}" --selector=app=calypso-db-init >&2 || true
+  echo "    === Full pod logs ===" >&2
+  kubectl logs --namespace="${NAMESPACE}" --selector=app=calypso-db-init --tail=200 >&2 || true
   exit 1
 fi
 
