@@ -45,11 +45,11 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center font-sans">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Calypso Weekly</h1>
-        <p className="text-gray-500 text-center mb-8">
-          {isRegister ? 'Create a Journalist Account' : 'Sign in to your account'}
+    <div className="min-h-screen bg-zinc-50 flex flex-col justify-center items-center font-sans">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-zinc-200 w-full max-w-md">
+        <h1 className="text-3xl font-bold text-zinc-900 mb-2 text-center">Calypso</h1>
+        <p className="text-zinc-500 text-center mb-8">
+          {isRegister ? 'Create an account' : 'Sign in to your account'}
         </p>
 
         {error && (
@@ -60,22 +60,22 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Username</label>
             <input
               type="text"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
-              placeholder="e.g. KaraSwisher"
+              className="w-full px-4 py-3 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
+              placeholder="e.g. yourname"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Password</label>
             <input
               type="password"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
+              className="w-full px-4 py-3 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -84,7 +84,7 @@ export const Login: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-sm disabled:opacity-50"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition-colors shadow-sm disabled:opacity-50"
           >
             {loading ? 'Authenticating...' : isRegister ? 'Create Account' : 'Sign In'}
           </button>
@@ -93,9 +93,9 @@ export const Login: React.FC = () => {
         {!isRegister && (
           <>
             <div className="my-5 flex items-center gap-3">
-              <div className="flex-1 border-t border-gray-200" />
-              <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">or</span>
-              <div className="flex-1 border-t border-gray-200" />
+              <div className="flex-1 border-t border-zinc-200" />
+              <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">or</span>
+              <div className="flex-1 border-t border-zinc-200" />
             </div>
             <PasskeyLoginButton
               onSuccess={(user) => setUser(user)}
@@ -111,7 +111,7 @@ export const Login: React.FC = () => {
               setIsRegister(!isRegister);
               setError('');
             }}
-            className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+            className="text-indigo-600 hover:text-indigo-800 hover:underline transition-colors"
           >
             {isRegister ? 'Already have an account? Sign In' : 'Need an account? Register'}
           </button>

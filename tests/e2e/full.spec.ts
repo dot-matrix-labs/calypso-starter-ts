@@ -36,7 +36,7 @@ async function registerAndOpenStudioAt(page: Page, baseUrl: string) {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Need an account? Register' }).click();
   const username = `e2e_studio_${Date.now()}`;
-  await page.getByPlaceholder('e.g. KaraSwisher').fill(username);
+  await page.getByPlaceholder('e.g. yourname').fill(username);
   await page.getByPlaceholder('••••••••').fill('studio-pass-123');
   await page.getByRole('button', { name: 'Create Account' }).click();
   await playwrightExpect(page.getByRole('heading', { name: 'Studio' })).toBeVisible({
@@ -87,7 +87,7 @@ test('app loads and shows login screen', async () => {
 
   await page.goto(env.baseUrl, { waitUntil: 'networkidle' });
 
-  await playwrightExpect(page.getByRole('heading', { name: 'Calypso Weekly' })).toBeVisible();
+  await playwrightExpect(page.getByRole('heading', { name: 'Calypso' })).toBeVisible();
   await playwrightExpect(page.getByPlaceholder('••••••••')).toBeVisible();
   vitestExpect(consoleErrors.filter((e) => !isExpectedError(e))).toHaveLength(0);
 
@@ -105,7 +105,7 @@ test('register and login renders the Calypso layout shell', async () => {
 
   await page.getByRole('button', { name: 'Need an account? Register' }).click();
   const username = `e2e_smoke_${Date.now()}`;
-  await page.getByPlaceholder('e.g. KaraSwisher').fill(username);
+  await page.getByPlaceholder('e.g. yourname').fill(username);
   await page.getByPlaceholder('••••••••').fill('smokepass123');
   await page.getByRole('button', { name: 'Create Account' }).click();
 

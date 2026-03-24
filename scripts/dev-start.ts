@@ -16,7 +16,7 @@ import { startPostgres } from '../packages/db/pg-container';
 import { createProxy } from '../apps/web/vite.config';
 
 const REPO_ROOT = join(import.meta.dir, '..');
-const WEB_PORT = Number(process.env.PORT ?? 31415);
+const WEB_PORT = Number(process.env.STUDIO_PORT ?? process.env.PORT ?? 5174);
 const API_PORT = Number(process.env.STUDIO_API_PORT ?? WEB_PORT + 1);
 
 async function main() {
