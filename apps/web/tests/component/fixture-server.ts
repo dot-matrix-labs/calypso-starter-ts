@@ -9,6 +9,7 @@ type StudioStatus = {
 };
 type StudioChatResponse = { reply: string; commits?: Commit[] };
 type StudioRollbackResponse = { commits?: Commit[] };
+type ClusterStatus = 'healthy' | 'restarting' | 'degraded' | 'unknown';
 type FixtureResponse<T> = {
   status?: number;
   body?: T | { error?: string };
@@ -34,6 +35,8 @@ type FixtureState = {
   studioStatus?: StudioStatus | FixtureResponse<StudioStatus>;
   studioChatResponse?: StudioChatResponse | FixtureResponse<StudioChatResponse>;
   studioRollbackResponse?: StudioRollbackResponse | FixtureResponse<StudioRollbackResponse>;
+  /** Cluster status emitted as a single SSE event then the stream stays open */
+  studioClusterStatus?: ClusterStatus;
 };
 
 type FixtureStore = Record<string, FixtureState>;
@@ -102,6 +105,30 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
 
   if (req.method === 'POST' && url.pathname === '/studio/rollback') {
     return fixtureJson(state.studioRollbackResponse ?? { commits: [] });
+  }
+
+  // SSE stream: GET /studio/cluster/events
+  // Emits one "cluster-status" event with the fixture's studioClusterStatus value
+  // then keeps the stream open. Closes when the client disconnects.
+  if (req.method === 'GET' && url.pathname === '/studio/cluster/events') {
+    const clusterStatus: ClusterStatus = state.studioClusterStatus ?? 'healthy';
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        const event = `event: cluster-status\ndata: ${JSON.stringify({ status: clusterStatus })}\n\n`;
+        controller.enqueue(encoder.encode(event));
+        // Stream stays open; test-side components will close the SSE connection
+        // via AbortController when the component unmounts.
+      },
+    });
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
   }
 
   return new Response(
