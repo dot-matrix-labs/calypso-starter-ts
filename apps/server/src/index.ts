@@ -21,6 +21,14 @@ import { handleAdminRequest } from './api/admin';
 import { handleUsersRequest } from './api/users';
 import { seedSuperuser } from './seed/superuser';
 import { getJwks } from './auth/jwt';
+import { ClusterEventStream, clusterEventsResponse } from './studio/cluster-events';
+
+// Studio Mode: start the long-lived kubectl get pods --watch subprocess if
+// running in studio context. STUDIO_CLUSTER_CONTEXT defaults to 'default'.
+const studioClusterStream = new ClusterEventStream(process.env.STUDIO_CLUSTER_CONTEXT ?? 'default');
+if (process.env.STUDIO_MODE === '1') {
+  studioClusterStream.start();
+}
 
 // Starter behavior:
 // the server boot path auto-runs a local schema initializer for convenience.
@@ -191,6 +199,11 @@ export default {
     if (url.pathname.startsWith('/api/users')) {
       const usersRes = await handleUsersRequest(req, url, appState);
       if (usersRes) return withTrace(usersRes);
+    }
+
+    // Studio Mode: SSE cluster event stream
+    if (url.pathname === '/studio/cluster/events') {
+      return clusterEventsResponse(studioClusterStream);
     }
 
     // Serve static assets — path is relative to this file, not process cwd
