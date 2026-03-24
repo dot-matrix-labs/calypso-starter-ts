@@ -15,7 +15,6 @@
  */
 
 import { afterAll, beforeAll, expect, test } from 'vitest';
-import type { Server } from 'bun';
 
 // ---------------------------------------------------------------------------
 // In-process fixture server
@@ -34,7 +33,8 @@ let fixtureState: StudioFixture = {
   cluster: 'healthy',
 };
 
-let server: Server;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let server: import('bun').Server<any>;
 let baseUrl: string;
 
 beforeAll(() => {
