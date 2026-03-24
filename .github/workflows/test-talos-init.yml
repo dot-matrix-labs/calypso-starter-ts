@@ -40,7 +40,7 @@ jobs:
           talosctl cluster create --provisioner docker \
             --workers 0 \
             --registry-mirror localhost:5000=http://172.17.0.1:5000
-          
+
           # Wait until nodes are ready
           kubectl wait --for=condition=Ready nodes --all --timeout=120s || true
 
