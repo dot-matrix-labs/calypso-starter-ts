@@ -10,5 +10,5 @@
     "jsx": "react-jsx",
     "noEmit": true
   },
-  "exclude": ["node_modules", "apps/web/tests/component", "apps/web/src/sw.ts"]
+  "exclude": ["node_modules", "apps/web/tests/component", "apps/web/src/sw.ts", "studio"]
 }
