@@ -55,7 +55,7 @@ export function OAuthPanel({ baseUrl = '' }: OAuthPanelProps) {
       }
       const data = (await res.json()) as { url: string };
       setOauthUrl(data.url);
-    } catch (err) {
+    } catch {
       setError('Failed to connect. Please try again.');
     }
   }
