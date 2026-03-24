@@ -14,7 +14,7 @@
 import React from 'react';
 import { render } from 'vitest-browser-react';
 import { commands } from '@vitest/browser/context';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import { ChatPanel } from '../../src/components/studio/ChatPanel';
 import { IframePanel } from '../../src/components/studio/IframePanel';
 import { ClusterStatusIndicator } from '../../src/components/studio/ClusterStatusIndicator';

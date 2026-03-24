@@ -28,7 +28,7 @@ interface StudioFixture {
   cluster: ClusterState;
 }
 
-let fixtureState: StudioFixture = {
+const fixtureState: StudioFixture = {
   chat: { reply: '' },
   cluster: 'healthy',
 };

@@ -31,8 +31,6 @@ interface ChatPanelProps {
   clusterEventsUrl?: string;
   /** POST endpoint for chat messages; defaults to /studio/chat */
   chatEndpoint?: string;
-  /** SSE endpoint for streaming responses; defaults to /studio/chat/stream */
-  streamEndpoint?: string;
 }
 
 /**
@@ -49,7 +47,6 @@ export function ChatPanel({
   clusterStatus,
   clusterEventsUrl,
   chatEndpoint = '/studio/chat',
-  streamEndpoint: _streamEndpoint = '/studio/chat/stream',
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
