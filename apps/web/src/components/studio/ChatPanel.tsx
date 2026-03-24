@@ -15,6 +15,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
 import { ClusterStatusIndicator, type ClusterStatus } from './ClusterStatusIndicator';
+import { OAuthPanel } from './OAuthPanel';
 
 export interface ChatMessage {
   id: string;
@@ -151,6 +152,9 @@ export function ChatPanel({
         <span className="text-sm font-semibold text-zinc-100">Claude Chat</span>
         <ClusterStatusIndicator statusOverride={clusterStatus} eventsUrl={clusterEventsUrl} />
       </div>
+
+      {/* OAuth Connection Panel */}
+      <OAuthPanel />
 
       {/* Message list */}
       <div

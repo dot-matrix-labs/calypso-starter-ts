@@ -30,6 +30,10 @@ type FixtureTask = {
   createdAt: string;
 };
 
+type OAuthStatus = { connected: boolean };
+type OAuthInitResponse = { url: string };
+type OAuthCompleteResponse = { connected: boolean };
+
 type FixtureState = {
   tasks?: FixtureTask[];
   studioStatus?: StudioStatus | FixtureResponse<StudioStatus>;
@@ -37,6 +41,12 @@ type FixtureState = {
   studioRollbackResponse?: StudioRollbackResponse | FixtureResponse<StudioRollbackResponse>;
   /** Cluster status emitted as a single SSE event then the stream stays open */
   studioClusterStatus?: ClusterStatus;
+  /** OAuth status response */
+  oauthStatus?: OAuthStatus | FixtureResponse<OAuthStatus>;
+  /** OAuth init response */
+  oauthInit?: OAuthInitResponse | FixtureResponse<OAuthInitResponse>;
+  /** OAuth complete response */
+  oauthComplete?: OAuthCompleteResponse | FixtureResponse<OAuthCompleteResponse>;
 };
 
 type FixtureStore = Record<string, FixtureState>;
@@ -129,6 +139,25 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
         Connection: 'keep-alive',
       },
     });
+  }
+
+  // OAuth status endpoint
+  if (req.method === 'GET' && url.pathname === '/api/auth/oauth/status') {
+    return fixtureJson(state.oauthStatus ?? { connected: false });
+  }
+
+  // OAuth init endpoint
+  if (req.method === 'GET' && url.pathname === '/api/auth/oauth/init') {
+    return fixtureJson(
+      state.oauthInit ?? {
+        url: 'https://auth.claude.ai/oauth/authorize?client_id=test&redirect_uri=http://localhost:7000/api/auth/oauth/complete&response_type=code&state=test-state',
+      },
+    );
+  }
+
+  // OAuth complete endpoint
+  if (req.method === 'POST' && url.pathname === '/api/auth/oauth/complete') {
+    return fixtureJson(state.oauthComplete ?? { connected: true });
   }
 
   return new Response(
