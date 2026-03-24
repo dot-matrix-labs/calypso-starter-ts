@@ -37,12 +37,12 @@ jobs:
 
       - name: Create local Talos cluster
         run: |
-          talosctl cluster create --provisioner docker \
+          sudo -E talosctl cluster create --provisioner docker \
             --workers 0 \
             --registry-mirror localhost:5000=http://172.17.0.1:5000
 
           # Wait until nodes are ready
-          kubectl wait --for=condition=Ready nodes --all --timeout=120s || true
+          sudo -E kubectl wait --for=condition=Ready nodes --all --timeout=120s || true
 
       - name: Run init-host-talos.sh (local mode, branch image)
         run: bash scripts/init-host-talos.sh 127.0.0.1 demo
