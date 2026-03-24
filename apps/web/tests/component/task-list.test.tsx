@@ -23,8 +23,6 @@ async function setTasksFixture(tasks: Task[] = []) {
   await commands.setFixtureState({
     state: {
       tasks,
-      studioStatus: { active: false },
-      studioChatResponse: { reply: '' },
     },
   });
 }

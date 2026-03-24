@@ -38,7 +38,6 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': `http://127.0.0.1:${FIXTURE_PORT}`,
-      '/studio': `http://127.0.0.1:${FIXTURE_PORT}`,
     },
   },
   test: {
@@ -55,37 +54,6 @@ export default defineConfig({
           const store = readFixtureStore();
           store[fixtureId] = payload.state;
           writeFixtureStore(store);
-        },
-        waitForStudioStatus: async (
-          _,
-          expected: { fixtureId?: string; active: boolean; minCommits?: number },
-        ) => {
-          const fixtureId = expected.fixtureId ?? 'default';
-          const deadline = Date.now() + 5_000;
-          while (Date.now() < deadline) {
-            const response = await fetch(
-              `http://127.0.0.1:${FIXTURE_PORT}/studio/status?fixtureId=${encodeURIComponent(fixtureId)}`,
-            );
-            const body = (await response.json()) as {
-              active?: boolean;
-              commits?: { hash: string; message: string }[];
-            };
-
-            if (
-              response.ok &&
-              body.active === expected.active &&
-              (expected.minCommits === undefined ||
-                (Array.isArray(body.commits) && body.commits.length >= expected.minCommits))
-            ) {
-              return body;
-            }
-
-            await Bun.sleep(50);
-          }
-
-          throw new Error(
-            `Timed out waiting for studio status active=${expected.active} minCommits=${expected.minCommits ?? 0}`,
-          );
         },
         getFixtureState: async (_, payload?: { fixtureId?: string }) => {
           const fixtureId = payload?.fixtureId ?? 'default';

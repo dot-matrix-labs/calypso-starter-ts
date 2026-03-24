@@ -2,7 +2,7 @@
 /**
  * dev-start — Spins up an ephemeral Postgres container, runs migrations,
  * then starts the API server subprocess and Vite in middleware mode as the
- * single HTTP entry point. Proxies /api and /studio through to the API server.
+ * single HTTP entry point. Proxies /api through to the API server.
  * Tears down the container on exit.
  *
  * Run via: bun run dev
@@ -16,8 +16,8 @@ import { startPostgres } from '../packages/db/pg-container';
 import { createProxy } from '../apps/web/vite.config';
 
 const REPO_ROOT = join(import.meta.dir, '..');
-const WEB_PORT = Number(process.env.STUDIO_PORT ?? process.env.PORT ?? 5174);
-const API_PORT = Number(process.env.STUDIO_API_PORT ?? WEB_PORT + 1);
+const WEB_PORT = Number(process.env.PORT ?? 5174);
+const API_PORT = WEB_PORT + 1;
 
 async function main() {
   console.log('\n⬡ Starting dev environment');
@@ -44,7 +44,6 @@ async function main() {
       AUDIT_DATABASE_URL: pg.url,
       ANALYTICS_DATABASE_URL: pg.url,
       PORT: String(API_PORT),
-      STUDIO_API_PORT: String(API_PORT),
     },
     stdout: 'inherit',
     stderr: 'inherit',
@@ -56,7 +55,7 @@ async function main() {
     root: join(REPO_ROOT, 'apps', 'web'),
     server: {
       middlewareMode: true,
-      proxy: createProxy({ ...process.env, STUDIO_API_PORT: String(API_PORT) }),
+      proxy: createProxy({ ...process.env, PORT: String(API_PORT) }),
     },
     appType: 'spa',
   });

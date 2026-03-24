@@ -5,7 +5,7 @@ import autoprefixer from 'autoprefixer';
 import tailwindConfig from './tailwind.config';
 
 export function getApiPort(env: NodeJS.ProcessEnv = process.env): number {
-  const rawPort = env.STUDIO_API_PORT ?? env.PORT ?? '31415';
+  const rawPort = env.PORT ?? '31415';
   const value = Number(rawPort);
   return Number.isFinite(value) ? value : 31415;
 }
@@ -14,10 +14,6 @@ export function createProxy(env: NodeJS.ProcessEnv = process.env) {
   const target = `http://localhost:${getApiPort(env)}`;
   return {
     '/api': {
-      target,
-      changeOrigin: true,
-    },
-    '/studio': {
       target,
       changeOrigin: true,
     },

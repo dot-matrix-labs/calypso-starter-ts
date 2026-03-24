@@ -1,15 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
 
-type Commit = { hash: string; message: string };
-type StudioStatus = {
-  active: boolean;
-  sessionId?: string;
-  branch?: string;
-  commits?: Commit[];
-};
-type StudioChatResponse = { reply: string; commits?: Commit[] };
-type StudioRollbackResponse = { commits?: Commit[] };
-type ClusterStatus = 'healthy' | 'restarting' | 'degraded' | 'unknown';
 type FixtureResponse<T> = {
   status?: number;
   body?: T | { error?: string };
@@ -36,11 +26,6 @@ type OAuthCompleteResponse = { connected: boolean };
 
 type FixtureState = {
   tasks?: FixtureTask[];
-  studioStatus?: StudioStatus | FixtureResponse<StudioStatus>;
-  studioChatResponse?: StudioChatResponse | FixtureResponse<StudioChatResponse>;
-  studioRollbackResponse?: StudioRollbackResponse | FixtureResponse<StudioRollbackResponse>;
-  /** Cluster status emitted as a single SSE event then the stream stays open */
-  studioClusterStatus?: ClusterStatus;
   /** OAuth status response */
   oauthStatus?: OAuthStatus | FixtureResponse<OAuthStatus>;
   /** OAuth init response */
@@ -102,42 +87,6 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
       dependsOn: [],
       tags: [],
       createdAt: new Date().toISOString(),
-    });
-  }
-
-  if (req.method === 'GET' && url.pathname === '/studio/status') {
-    return fixtureJson(state.studioStatus ?? { active: false });
-  }
-
-  if (req.method === 'POST' && url.pathname === '/studio/chat') {
-    return fixtureJson(state.studioChatResponse ?? { reply: '' });
-  }
-
-  if (req.method === 'POST' && url.pathname === '/studio/rollback') {
-    return fixtureJson(state.studioRollbackResponse ?? { commits: [] });
-  }
-
-  // SSE stream: GET /studio/cluster/events
-  // Emits one "cluster-status" event with the fixture's studioClusterStatus value
-  // then keeps the stream open. Closes when the client disconnects.
-  if (req.method === 'GET' && url.pathname === '/studio/cluster/events') {
-    const clusterStatus: ClusterStatus = state.studioClusterStatus ?? 'healthy';
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      start(controller) {
-        const event = `event: cluster-status\ndata: ${JSON.stringify({ status: clusterStatus })}\n\n`;
-        controller.enqueue(encoder.encode(event));
-        // Stream stays open; test-side components will close the SSE connection
-        // via AbortController when the component unmounts.
-      },
-    });
-    return new Response(stream, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
     });
   }
 

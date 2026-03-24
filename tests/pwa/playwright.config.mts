@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import { fileURLToPath } from 'url';
 
-const BASE_URL = `http://127.0.0.1:${Number(process.env.STUDIO_PORT ?? 5174)}`;
+const BASE_URL = `http://127.0.0.1:${Number(process.env.PORT ?? 5174)}`;
 
 const desktopChrome = devices['Desktop Chrome'];
 const androidChrome = devices['Pixel 7'];
