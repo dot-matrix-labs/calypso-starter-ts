@@ -918,7 +918,7 @@ if [[ "${DRY_RUN}" == "true" ]]; then
   echo "    2. Harden sshd: PasswordAuthentication no, MaxAuthTries 3, LoginGraceTime 30, AllowUsers superfield"
   echo "    3. CIS Benchmark Level 1: disable unused services, kernel sysctl, unattended-upgrades"
   echo "    4. Disable root password login: PermitRootLogin prohibit-password (key-based root SSH remains available)"
-  echo "    5. Install k3s as root system service (port 6443 blocked externally by ufw); kubeconfig shared to /home/superfield/.kube/config"
+  echo "    5. Install k3s as root system service (port 6443 blocked externally by ufw); kubeconfig symlinked to /home/superfield/.kube/config"
   echo "    6. Create Kubernetes ServiceAccount ${SA_NAME} with RBAC (patch on deployments in ${NAMESPACE})"
   echo "    7. Apply k8s secrets and postgres StatefulSet (local DB mode) via superfield@${HOST}"
   echo "    8. Print GitHub Actions secrets summary with 'gh secret set --env ${ENV_LABEL}' commands"
@@ -1180,7 +1180,7 @@ REMOTESCRIPT
 
 echo "    Root password login disabled."
 
-# ── Phase 4: k3s installation (root system service, kubeconfig shared to superfield) ──
+# ── Phase 4: k3s installation (root system service, kubeconfig symlinked to superfield) ──
 
 echo ""
 echo "==> [4/7] Installing k3s (root system service, API localhost-only)"
@@ -1217,7 +1217,7 @@ else
   # the agent from reaching the API, breaking flannel and all kube-system pods.
   # External access to port 6443 is blocked by ufw instead.
   curl -sfL https://get.k3s.io | \
-    INSTALL_K3S_EXEC="--disable traefik --https-listen-port 6443 --write-kubeconfig-mode 600" \
+    INSTALL_K3S_EXEC="--disable traefik --https-listen-port 6443 --write-kubeconfig-mode 644" \
     sh -
 
   echo "    Waiting for k3s to be ready..."
@@ -1236,13 +1236,12 @@ else
   fi
 fi
 
-# Share kubeconfig with superfield (always refresh on re-run — idempotent)
+# Symlink kubeconfig to superfield (always refresh on re-run — idempotent)
 SUPERFIELD_KUBE_DIR="/home/superfield/.kube"
 mkdir -p "${SUPERFIELD_KUBE_DIR}"
-cp /etc/rancher/k3s/k3s.yaml "${SUPERFIELD_KUBE_DIR}/config"
+ln -sf /etc/rancher/k3s/k3s.yaml "${SUPERFIELD_KUBE_DIR}/config"
 chown -R superfield:superfield "${SUPERFIELD_KUBE_DIR}"
-chmod 600 "${SUPERFIELD_KUBE_DIR}/config"
-echo "    kubeconfig shared to /home/superfield/.kube/config."
+echo "    kubeconfig symlinked to /home/superfield/.kube/config."
 
 # Configure ufw: SSH and app ports only — do NOT expose 6443 externally
 if command -v ufw &>/dev/null; then
