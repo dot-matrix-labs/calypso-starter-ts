@@ -14,6 +14,7 @@ import {
   tooManyRequests,
 } from '../security/rate-limiter';
 import { authenticateApiKey } from 'db/api-keys';
+import { isSuperuser } from '../lib/response';
 
 // Starter auth note:
 // These routes are intentionally simple so the current app can register and log
@@ -351,7 +352,7 @@ export async function handleAuthRequest(
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    return new Response(JSON.stringify({ user }), {
+    return new Response(JSON.stringify({ user: { ...user, isSuperadmin: isSuperuser(user.id) } }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

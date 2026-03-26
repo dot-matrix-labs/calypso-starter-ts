@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './components/Login';
-import { Settings, Plus, User, LayoutDashboard, Smartphone } from 'lucide-react';
+import { Settings, Plus, User, LayoutDashboard, Smartphone, Shield } from 'lucide-react';
 import { TaskListView } from './components/TaskListView';
 import { PwaDemoPage } from './pages/pwa-demo';
+import { AdminDashboard } from './pages/admin-dashboard';
 
 function App() {
   const { user, logout, loading } = useAuth();
 
   // Core Layout State
-  const [activeView, setActiveView] = useState<'board' | 'settings' | 'pwa'>('board');
+  const [activeView, setActiveView] = useState<'board' | 'settings' | 'pwa' | 'admin'>('board');
 
   if (loading) {
     return (
@@ -52,6 +53,15 @@ function App() {
             >
               <Smartphone size={20} strokeWidth={2.5} />
             </button>
+            {user.isSuperadmin && (
+              <button
+                onClick={() => setActiveView('admin')}
+                className={`p-3 rounded-xl flex items-center justify-center transition-all ${activeView === 'admin' ? 'bg-indigo-50 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'}`}
+                title="Admin Dashboard"
+              >
+                <Shield size={20} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -93,6 +103,12 @@ function App() {
           <div className="flex-1 overflow-hidden overflow-y-auto">
             {activeView === 'board' && <TaskListView />}
             {activeView === 'pwa' && <PwaDemoPage />}
+            {activeView === 'admin' && user.isSuperadmin && <AdminDashboard />}
+            {activeView === 'admin' && !user.isSuperadmin && (
+              <div className="p-8 text-zinc-400 text-sm">
+                Access denied. Superadmin privileges required.
+              </div>
+            )}
             {activeView === 'settings' && (
               <div className="p-8 text-zinc-400 text-sm">Settings coming soon.</div>
             )}

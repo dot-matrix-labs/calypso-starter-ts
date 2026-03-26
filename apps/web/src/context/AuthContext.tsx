@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 export interface User {
   id: string;
   username: string;
+  isSuperadmin?: boolean;
 }
 
 interface AuthContextType {
