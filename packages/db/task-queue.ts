@@ -223,6 +223,68 @@ export async function recoverStaleClaims(): Promise<RecoveredTaskRow[]> {
  * Callback invoked once per recovered row so callers can emit audit events
  * without coupling the db package to the audit infrastructure.
  */
+/**
+ * Response shape for the admin task-queue monitoring endpoint.
+ * Excludes sensitive fields (payload, delegated_token) from the full
+ * TaskQueueRow to prevent leaking secrets or PII through the admin API.
+ */
+export interface TaskQueueAdminRow {
+  id: string;
+  idempotency_key: string;
+  agent_type: string;
+  job_type: string;
+  status: TaskQueueStatus;
+  correlation_id: string | null;
+  created_by: string;
+  claimed_by: string | null;
+  claimed_at: Date | null;
+  claim_expires_at: Date | null;
+  result: Record<string, unknown> | null;
+  error_message: string | null;
+  attempt: number;
+  max_attempts: number;
+  next_retry_at: Date | null;
+  priority: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ListTasksAdminOptions {
+  status?: TaskQueueStatus;
+  agent_type?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Lists task queue entries for admin monitoring.
+ *
+ * Returns rows ordered by created_at descending. Sensitive fields (payload,
+ * delegated_token) are excluded from the result set. Supports optional
+ * filtering by status and agent_type, and pagination via limit/offset.
+ */
+export async function listTasksForAdmin(
+  options: ListTasksAdminOptions = {},
+): Promise<TaskQueueAdminRow[]> {
+  const { status, agent_type, limit = 50, offset = 0 } = options;
+
+  const rows = await sql<TaskQueueAdminRow[]>`
+    SELECT
+      id, idempotency_key, agent_type, job_type, status,
+      correlation_id, created_by, claimed_by, claimed_at,
+      claim_expires_at, result, error_message, attempt,
+      max_attempts, next_retry_at, priority, created_at, updated_at
+    FROM task_queue
+    WHERE 1=1
+      ${status ? sql`AND status = ${status}` : sql``}
+      ${agent_type ? sql`AND agent_type = ${agent_type}` : sql``}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `;
+  return rows;
+}
+
 export type StaleRecoveryAuditCallback = (rows: RecoveredTaskRow[]) => Promise<void>;
 
 /**

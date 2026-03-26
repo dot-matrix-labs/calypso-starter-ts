@@ -1,9 +1,10 @@
 /**
- * Admin API — superuser-only API key management.
+ * Admin API — superuser-only endpoints.
  *
  * POST   /api/admin/keys        — generates a new API key, returns raw key once
  * GET    /api/admin/keys        — lists API key metadata (no raw values)
  * DELETE /api/admin/keys/:id    — revokes an API key
+ * GET    /api/admin/task-queue   — lists recent task queue entries for monitoring
  *
  * Superuser is determined by the SUPERUSER_ID environment variable.
  * All create and revoke operations are written to the audit log.
@@ -12,6 +13,7 @@
 import type { AppState } from '../index';
 import { getCorsHeaders, getAuthenticatedUser } from './auth';
 import { createApiKey, listApiKeys, deleteApiKey } from 'db/api-keys';
+import { listTasksForAdmin, type TaskQueueStatus } from 'db/task-queue';
 import { emitAuditEvent } from '../policies/audit-service';
 import { isSuperuser, makeJson } from '../lib/response';
 
@@ -90,6 +92,46 @@ export async function handleAdminRequest(
     }).catch((err) => console.warn('[audit] api_key.revoke audit write failed:', err));
 
     return json({ success: true });
+  }
+
+  // GET /api/admin/task-queue — list recent task queue entries for monitoring.
+  // Supports optional query parameters:
+  //   ?status=<pending|claimed|running|submitting|completed|failed|dead>
+  //   ?agent_type=<string>
+  //   ?limit=<number>   (default 50, max 200)
+  //   ?offset=<number>  (default 0)
+  // Response excludes sensitive fields (payload, delegated_token).
+  if (req.method === 'GET' && url.pathname === '/api/admin/task-queue') {
+    const statusParam = url.searchParams.get('status') ?? undefined;
+    const agentTypeParam = url.searchParams.get('agent_type') ?? undefined;
+    const limitParam = url.searchParams.get('limit');
+    const offsetParam = url.searchParams.get('offset');
+
+    // Validate status if provided
+    const allowedStatuses: TaskQueueStatus[] = [
+      'pending',
+      'claimed',
+      'running',
+      'submitting',
+      'completed',
+      'failed',
+      'dead',
+    ];
+    if (statusParam && !allowedStatuses.includes(statusParam as TaskQueueStatus)) {
+      return json({ error: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` }, 400);
+    }
+
+    const limit = Math.min(Math.max(parseInt(limitParam ?? '50', 10) || 50, 1), 200);
+    const offset = Math.max(parseInt(offsetParam ?? '0', 10) || 0, 0);
+
+    const tasks = await listTasksForAdmin({
+      status: statusParam as TaskQueueStatus | undefined,
+      agent_type: agentTypeParam,
+      limit,
+      offset,
+    });
+
+    return json({ tasks, limit, offset });
   }
 
   return null;
