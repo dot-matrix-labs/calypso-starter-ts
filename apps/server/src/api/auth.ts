@@ -3,6 +3,7 @@ import type { AppState } from '../index';
 import { signJwt, verifyJwt } from '../auth/jwt';
 import { revokeToken } from 'db/revocation';
 import { generateCsrfToken, csrfCookieHeader, verifyCsrf } from '../auth/csrf';
+import { authCookieHeader, authCookieClearHeader, getAuthToken } from '../auth/cookie-config';
 import { registerUserSchema, loginUserSchema } from 'core';
 import { validate } from './validation';
 import {
@@ -36,12 +37,13 @@ export function parseCookies(cookieHeader: string | null): Record<string, string
   return cookies;
 }
 
-// Helper to verify auth from a Request object
+// Helper to verify auth from a Request object.
+// Accepts both plain and __Host- prefixed cookie names for transition tolerance.
 export async function getAuthenticatedUser(
   req: Request,
 ): Promise<{ id: string; username: string } | null> {
   const cookies = parseCookies(req.headers.get('Cookie'));
-  const token = cookies['calypso_auth'];
+  const token = getAuthToken(cookies);
 
   if (!token) return null;
 
@@ -204,21 +206,10 @@ export async function handleAuthRequest(
           'Content-Type': 'application/json',
         },
       });
-      // SameSite=Strict prevents the cookie from being sent on any cross-site
-      // request, including top-level navigations. This is the correct posture for
-      // a session-authentication cookie because it eliminates CSRF via cross-site
-      // top-level navigation flows that SameSite=Lax would otherwise allow.
-      //
-      // If OAuth or social-login redirect flows are added in the future, the
-      // redirect-landing endpoint must issue a *new* session cookie after
-      // validating the OAuth state parameter on the server side. The OAuth state
-      // callback itself should use a short-lived, purpose-specific cookie with
-      // SameSite=Lax scoped only to that flow — the primary session cookie must
-      // remain SameSite=Strict.
-      res.headers.append(
-        'Set-Cookie',
-        `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Strict; Max-Age=604800`,
-      );
+      // Cookie attributes are controlled by the SECURE_COOKIES env var.
+      // Dev mode: plain name, SameSite=Strict, no Secure flag.
+      // HTTPS mode: __Host- prefix, Secure, SameSite=Lax.
+      res.headers.append('Set-Cookie', authCookieHeader(token));
       res.headers.append('Set-Cookie', csrfCookieHeader(csrfToken));
       return res;
     } catch (err) {
@@ -322,12 +313,8 @@ export async function handleAuthRequest(
           'Content-Type': 'application/json',
         },
       });
-      // SameSite=Strict — see the register endpoint comment above for the full
-      // rationale and guidance for future OAuth flows.
-      res.headers.append(
-        'Set-Cookie',
-        `calypso_auth=${token}; HttpOnly; Path=/; SameSite=Strict; Max-Age=604800`,
-      );
+      // Cookie attributes controlled by SECURE_COOKIES — see cookie-config.ts.
+      res.headers.append('Set-Cookie', authCookieHeader(token));
       res.headers.append('Set-Cookie', csrfCookieHeader(csrfToken));
       return res;
     } catch (err) {
@@ -361,7 +348,7 @@ export async function handleAuthRequest(
   // 4. POST /api/auth/logout
   if (req.method === 'POST' && url.pathname === '/api/auth/logout') {
     const cookies = parseCookies(req.headers.get('Cookie'));
-    const token = cookies['calypso_auth'];
+    const token = getAuthToken(cookies);
 
     if (token) {
       try {
@@ -393,7 +380,7 @@ export async function handleAuthRequest(
         'Content-Type': 'application/json',
       },
     });
-    res.headers.append('Set-Cookie', 'calypso_auth=; HttpOnly; Path=/; Max-Age=0');
+    res.headers.append('Set-Cookie', authCookieClearHeader());
     res.headers.append(
       'Set-Cookie',
       '__Host-csrf-token=; SameSite=Strict; Secure; Path=/; Max-Age=0',
