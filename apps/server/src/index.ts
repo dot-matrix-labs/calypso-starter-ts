@@ -15,7 +15,7 @@ import { handleTasksRequest } from './api/tasks';
 import { handleTaskQueueResultRequest, handleTasksQueueRequest } from './api/task-queue';
 import { handleAuditRequest } from './api/audit';
 import { extractTraceId, traceLog, log } from 'core';
-import { startStaleClaimRecovery } from './policies/stale-claim-recovery-service';
+import { startCronScheduler } from './cron/boot';
 import { websocketHandler } from './websocket';
 import { handleAdminRequest } from './api/admin';
 import { handleUsersRequest } from './api/users';
@@ -45,9 +45,9 @@ await cleanupExpiredRevocations().catch((err) =>
 );
 startRevocationCleanup();
 
-// Start background stale-claim recovery (TQ-D-003). Runs every 60 seconds and
-// resets expired claimed tasks to pending or promotes them to dead.
-startStaleClaimRecovery();
+// Start the cron scheduler which manages all recurring jobs including
+// stale-claim recovery (TQ-D-003).
+startCronScheduler();
 
 // Seed the initial superuser if none exists yet.
 await seedSuperuser({ sql }).catch((err) => console.error('[seed] Superuser seeding failed:', err));
