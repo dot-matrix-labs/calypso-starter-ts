@@ -10,11 +10,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import {
-  isDismissalActive,
-  DISMISSED_KEY,
-  DISMISS_TTL_MS,
-} from '../../src/components/pwa/install-prompt.js';
+import { isDismissalActive, DISMISSED_KEY } from '../../src/components/pwa/install-prompt.js';
 
 // ---------------------------------------------------------------------------
 // Platform routing logic (mirrors MobileInstallPage.handleInstallButton)
