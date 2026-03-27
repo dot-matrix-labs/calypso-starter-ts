@@ -162,8 +162,6 @@ export async function handleAdminRequest(
       'code_cleanup',
     ] as const;
 
-    type FindingsAgentType = (typeof FINDINGS_AGENT_TYPES)[number];
-
     // Query completed tasks from the findings-producing agent types
     interface CompletedTaskRow {
       id: string;
