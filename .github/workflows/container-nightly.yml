@@ -33,6 +33,7 @@ jobs:
         with:
           ref: main
           submodules: recursive
+          token: ${{ secrets.GH_SUBMODULE_PAT }}
 
       - uses: oven-sh/setup-bun@v2
 

@@ -15,6 +15,7 @@ jobs:
           # Fetch full history so we can access main branch's schema
           fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.GH_SUBMODULE_PAT }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1

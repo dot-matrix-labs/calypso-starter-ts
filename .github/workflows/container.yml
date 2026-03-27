@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.GH_SUBMODULE_PAT }}
 
       - name: Download web-dist from release
         run: gh release download "${{ github.ref_name }}" --pattern "web-dist.tar.gz"
