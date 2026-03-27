@@ -22,6 +22,7 @@ import { handleUsersRequest } from './api/users';
 import { seedSuperuser } from './seed/superuser';
 import { seedDemoPersonas } from './seed/demo-personas';
 import { seedDemoData } from './seed/demo-data';
+import { startDemoHealthCheck } from './cron/demo-health-check';
 import { getJwks } from './auth/jwt';
 
 // Starter behavior:
@@ -60,6 +61,11 @@ await seedDemoPersonas({ sql }).catch((err) =>
 await seedDemoData({ sql }).catch((err) =>
   console.error('[demo] Demo sample data seeding failed:', err),
 );
+
+// Start the demo health-check cron job when DEMO_MODE=true is set.
+// Runs every 2 minutes and enqueues a task into task_queue with
+// agent_type=cron so the admin monitor shows continuous activity.
+startDemoHealthCheck({ sql });
 
 export interface AppState {
   sql: typeof sql;
