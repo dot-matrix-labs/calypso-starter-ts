@@ -9,6 +9,14 @@
  */
 
 import { describe, test, expect } from 'vitest';
+
+/** Helper: return a copy of `obj` with `key` removed. */
+function omit<T extends Record<string, unknown>>(obj: T, key: keyof T): Partial<T> {
+  const copy = { ...obj };
+  delete copy[key];
+  return copy;
+}
+
 import {
   CODE_CLEANUP_JOB_TYPE,
   CODE_CLEANUP_AGENT_TYPE,
@@ -134,7 +142,7 @@ describe('validateCodeCleanupResult', () => {
   });
 
   test('throws when a finding is missing path', () => {
-    const { path: _path, ...withoutPath } = validFinding;
+    const withoutPath = omit(validFinding, 'path');
     expect(() =>
       validateCodeCleanupResult({
         findings: [withoutPath],
@@ -144,7 +152,7 @@ describe('validateCodeCleanupResult', () => {
   });
 
   test('throws when a finding is missing description', () => {
-    const { description: _desc, ...withoutDesc } = validFinding;
+    const withoutDesc = omit(validFinding, 'description');
     expect(() =>
       validateCodeCleanupResult({
         findings: [withoutDesc],
@@ -154,7 +162,7 @@ describe('validateCodeCleanupResult', () => {
   });
 
   test('throws when a finding is missing action', () => {
-    const { action: _action, ...withoutAction } = validFinding;
+    const withoutAction = omit(validFinding, 'action');
     expect(() =>
       validateCodeCleanupResult({
         findings: [withoutAction],
