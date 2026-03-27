@@ -87,6 +87,7 @@ if kubectl get secret calypso-api-secrets --namespace="${NAMESPACE}" &>/dev/null
   ANALYTICS_W_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets ANALYTICS_W_PASSWORD)"
   AGENT_CODING_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_CODING_PASSWORD)"
   AGENT_ANALYSIS_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_ANALYSIS_PASSWORD)"
+  AGENT_CODE_CLEANUP_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_CODE_CLEANUP_PASSWORD)"
   JWT_SECRET="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets JWT_SECRET)"
   ENCRYPTION_MASTER_KEY="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets ENCRYPTION_MASTER_KEY)"
   if [[ "${DB_MODE}" == "local" ]]; then
@@ -101,6 +102,7 @@ else
   ANALYTICS_W_PASSWORD="$(openssl rand -hex 24)"
   AGENT_CODING_PASSWORD="$(openssl rand -hex 24)"
   AGENT_ANALYSIS_PASSWORD="$(openssl rand -hex 24)"
+  AGENT_CODE_CLEANUP_PASSWORD="$(openssl rand -hex 24)"
   if [[ "${DB_MODE}" == "local" ]]; then
     POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
   fi
@@ -182,6 +184,7 @@ DB_SECRET_ARGS=(
   --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}"
   --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}"
   --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
+  --from-literal=AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD}"
 )
 if [[ "${DB_MODE}" == "local" ]]; then
   DB_SECRET_ARGS+=(--from-literal=POSTGRES_USER="postgres")
@@ -199,6 +202,7 @@ DB_INIT_SECRET_ARGS=(
   --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}"
   --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}"
   --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
+  --from-literal=AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD}"
 )
 [[ -n "${REMOTE_PG_CA_CERT:-}" ]] && DB_INIT_SECRET_ARGS+=(--from-literal=DB_CA_CERT="${REMOTE_PG_CA_CERT}")
 kubectl delete secret calypso-db-init-secret --namespace="${NAMESPACE}" --ignore-not-found
@@ -369,6 +373,11 @@ spec:
                 secretKeyRef:
                   name: calypso-db-init-secret
                   key: AGENT_ANALYSIS_PASSWORD
+            - name: AGENT_CODE_CLEANUP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-db-init-secret
+                  key: AGENT_CODE_CLEANUP_PASSWORD
           resources:
             requests:
               cpu: '50m'

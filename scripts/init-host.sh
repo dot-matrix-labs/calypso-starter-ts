@@ -332,8 +332,10 @@ if _is_legacy_call; then
     ANALYTICS_W_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets ANALYTICS_W_PASSWORD)"
     AGENT_CODING_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_CODING_PASSWORD)"
     AGENT_ANALYSIS_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_ANALYSIS_PASSWORD)"
+    AGENT_CODE_CLEANUP_PASSWORD="$(_decode_secret_key "${NAMESPACE}" calypso-db-secrets AGENT_CODE_CLEANUP_PASSWORD)"
     AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD:-$(openssl rand -hex 24)}"
     AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD:-$(openssl rand -hex 24)}"
+    AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD:-$(openssl rand -hex 24)}"
     JWT_SECRET="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets JWT_SECRET)"
     ENCRYPTION_MASTER_KEY="$(_decode_secret_key "${NAMESPACE}" calypso-api-secrets ENCRYPTION_MASTER_KEY)"
     if [[ "${DB_MODE}" == "local" ]]; then
@@ -348,6 +350,7 @@ if _is_legacy_call; then
     ANALYTICS_W_PASSWORD="$(openssl rand -hex 24)"
     AGENT_CODING_PASSWORD="$(openssl rand -hex 24)"
     AGENT_ANALYSIS_PASSWORD="$(openssl rand -hex 24)"
+    AGENT_CODE_CLEANUP_PASSWORD="$(openssl rand -hex 24)"
     if [[ "${DB_MODE}" == "local" ]]; then
       POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
     fi
@@ -424,6 +427,7 @@ if _is_legacy_call; then
     --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}"
     --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}"
     --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
+    --from-literal=AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD}"
   )
   if [[ "${DB_MODE}" == "local" ]]; then
     DB_SECRET_ARGS+=(--from-literal=POSTGRES_USER="postgres")
@@ -441,6 +445,7 @@ if _is_legacy_call; then
     --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}"
     --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}"
     --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
+    --from-literal=AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD}"
   )
   [[ -n "${REMOTE_PG_CA_CERT:-}" ]] && DB_INIT_SECRET_ARGS+=(--from-literal=DB_CA_CERT="${REMOTE_PG_CA_CERT}")
   kubectl delete secret calypso-db-init-secret --namespace="${NAMESPACE}" --ignore-not-found
@@ -613,6 +618,11 @@ spec:
                 secretKeyRef:
                   name: calypso-db-init-secret
                   key: AGENT_ANALYSIS_PASSWORD
+            - name: AGENT_CODE_CLEANUP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-db-init-secret
+                  key: AGENT_CODE_CLEANUP_PASSWORD
           resources:
             requests:
               cpu: '50m'
@@ -1379,6 +1389,8 @@ printf 'AGENT_CODING_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --
   -o jsonpath='{.data.AGENT_CODING_PASSWORD}' | base64 -d)"
 printf 'AGENT_ANALYSIS_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
   -o jsonpath='{.data.AGENT_ANALYSIS_PASSWORD}' | base64 -d)"
+printf 'AGENT_CODE_CLEANUP_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
+  -o jsonpath='{.data.AGENT_CODE_CLEANUP_PASSWORD}' | base64 -d)"
 printf 'POSTGRES_SUPERUSER_PASSWORD=%s\n' "\$(kubectl get secret calypso-db-secrets --namespace="${NAMESPACE}" \
   -o jsonpath='{.data.POSTGRES_PASSWORD}' 2>/dev/null | base64 -d 2>/dev/null || true)"
 SSHDECODE
@@ -1395,8 +1407,10 @@ if [[ "$(_extract_secret exists)" == "yes" ]]; then
   ANALYTICS_W_PASSWORD="$(_extract_secret ANALYTICS_W_PASSWORD)"
   AGENT_CODING_PASSWORD="$(_extract_secret AGENT_CODING_PASSWORD)"
   AGENT_ANALYSIS_PASSWORD="$(_extract_secret AGENT_ANALYSIS_PASSWORD)"
+  AGENT_CODE_CLEANUP_PASSWORD="$(_extract_secret AGENT_CODE_CLEANUP_PASSWORD)"
   AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD:-$(openssl rand -hex 24)}"
   AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD:-$(openssl rand -hex 24)}"
+  AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD:-$(openssl rand -hex 24)}"
   if [[ "${DB_MODE}" == "local" ]]; then
     POSTGRES_SUPERUSER_PASSWORD="$(_extract_secret POSTGRES_SUPERUSER_PASSWORD)"
   fi
@@ -1410,6 +1424,7 @@ else
   ANALYTICS_W_PASSWORD="$(openssl rand -hex 24)"
   AGENT_CODING_PASSWORD="$(openssl rand -hex 24)"
   AGENT_ANALYSIS_PASSWORD="$(openssl rand -hex 24)"
+  AGENT_CODE_CLEANUP_PASSWORD="$(openssl rand -hex 24)"
   if [[ "${DB_MODE}" == "local" ]]; then
     POSTGRES_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
   fi
@@ -1462,7 +1477,8 @@ kubectl create secret generic calypso-db-secrets \
   --from-literal=AUDIT_W_PASSWORD="${AUDIT_W_PASSWORD}" \
   --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}" \
   --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}" \
-  --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
+  --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}" \
+  --from-literal=AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD}"
 
 kubectl delete secret calypso-db-init-secret --namespace="${NAMESPACE}" --ignore-not-found
 kubectl create secret generic calypso-db-init-secret \
@@ -1472,7 +1488,8 @@ kubectl create secret generic calypso-db-init-secret \
   --from-literal=AUDIT_W_PASSWORD="${AUDIT_W_PASSWORD}" \
   --from-literal=ANALYTICS_W_PASSWORD="${ANALYTICS_W_PASSWORD}" \
   --from-literal=AGENT_CODING_PASSWORD="${AGENT_CODING_PASSWORD}" \
-  --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}"
+  --from-literal=AGENT_ANALYSIS_PASSWORD="${AGENT_ANALYSIS_PASSWORD}" \
+  --from-literal=AGENT_CODE_CLEANUP_PASSWORD="${AGENT_CODE_CLEANUP_PASSWORD}"
 
 echo "    Secrets applied."
 REMOTESCRIPT

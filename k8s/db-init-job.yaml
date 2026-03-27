@@ -60,6 +60,11 @@ spec:
                 secretKeyRef:
                   name: calypso-db-init-secret
                   key: AGENT_ANALYSIS_PASSWORD
+            - name: AGENT_CODE_CLEANUP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: calypso-db-init-secret
+                  key: AGENT_CODE_CLEANUP_PASSWORD
             # Optional: override default database names
             - name: APP_DB
               valueFrom:
