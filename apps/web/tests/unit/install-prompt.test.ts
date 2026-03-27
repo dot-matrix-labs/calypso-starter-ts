@@ -5,8 +5,8 @@
  * The component's rendering depends on:
  *   1. Whether the app is already in standalone mode (always non-eligible)
  *   2. Whether the user has an active dismissal within the 90-day TTL
- *   3. OS for iOS guided overlay (any browser on ios, not only Safari)
- *   4. Presence of a deferred BeforeInstallPromptEvent (Android banner)
+ *   3. OS/browser for the iOS install banner
+ *   4. Presence of a deferred BeforeInstallPromptEvent (native banner path)
  *
  * Dismissal TTL rules:
  *   - A missing value → not dismissed (expired)
@@ -23,6 +23,7 @@ import {
   isDismissalActive,
   DISMISSED_KEY,
   DISMISS_TTL_MS,
+  resolveInstallPromptVariant,
 } from '../../src/components/pwa/install-prompt.js';
 
 // ---------------------------------------------------------------------------
@@ -56,115 +57,76 @@ describe('isDismissalActive', () => {
     const borderTs = String(Date.now() - DISMISS_TTL_MS + 5000); // 5 seconds inside TTL
     expect(isDismissalActive(borderTs)).toBe(true);
   });
+
+  test('returns false for a timestamp exactly at the TTL boundary', () => {
+    const boundaryTs = String(Date.now() - DISMISS_TTL_MS);
+    expect(isDismissalActive(boundaryTs)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
-// Eligibility logic (mirrored from InstallPrompt useEffect)
+// Prompt routing logic
 // ---------------------------------------------------------------------------
 
-function resolveEligibility(opts: {
-  isStandalone: boolean;
-  dismissalActive: boolean;
-  hasBeforeInstallPrompt: boolean;
-  os: string;
-}): 'not-eligible' | 'eligible' | 'installed' {
-  if (opts.isStandalone) return 'installed';
-  if (opts.dismissalActive) return 'not-eligible';
-  if (opts.hasBeforeInstallPrompt) return 'eligible';
-  // iOS: eligible for ALL ios browsers (not only Safari)
-  if (opts.os === 'ios') return 'eligible';
-  return 'not-eligible';
-}
-
-describe('InstallPrompt eligibility logic', () => {
-  test('returns installed when already standalone', () => {
+describe('InstallPrompt routing logic', () => {
+  test('uses the native prompt path when beforeinstallprompt is available', () => {
     expect(
-      resolveEligibility({
-        isStandalone: true,
-        dismissalActive: false,
-        hasBeforeInstallPrompt: false,
-        os: 'android',
-      }),
-    ).toBe('installed');
-  });
-
-  test('returns not-eligible when dismissal is within TTL', () => {
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: true,
-        hasBeforeInstallPrompt: true,
-        os: 'android',
-      }),
-    ).toBe('not-eligible');
-  });
-
-  test('returns eligible when beforeinstallprompt captured on Android', () => {
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: false,
-        hasBeforeInstallPrompt: true,
-        os: 'android',
-      }),
-    ).toBe('eligible');
-  });
-
-  test('returns eligible for iOS Safari', () => {
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: false,
-        hasBeforeInstallPrompt: false,
-        os: 'ios',
-      }),
-    ).toBe('eligible');
-  });
-
-  test('returns eligible for Chrome iOS (os=ios)', () => {
-    // Chrome iOS, Firefox iOS, Brave iOS all report os=ios
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: false,
-        hasBeforeInstallPrompt: false,
-        os: 'ios',
-      }),
-    ).toBe('eligible');
-  });
-
-  test('returns eligible for iPadOS 13+ (os=ios via maxTouchPoints)', () => {
-    // iPadOS 13+ is detected as ios by use-platform.ts
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: false,
-        hasBeforeInstallPrompt: false,
-        os: 'ios',
-      }),
-    ).toBe('eligible');
-  });
-
-  test('returns not-eligible when iOS but dismissal is active', () => {
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: true,
-        hasBeforeInstallPrompt: false,
-        os: 'ios',
-      }),
-    ).toBe('not-eligible');
-  });
-
-  test('returns not-eligible on desktop Chrome with no prompt event', () => {
-    expect(
-      resolveEligibility({
-        isStandalone: false,
-        dismissalActive: false,
-        hasBeforeInstallPrompt: false,
+      resolveInstallPromptVariant({
+        installState: 'eligible',
+        skippedForSession: false,
+        deferredPromptAvailable: true,
         os: 'windows',
+        browser: 'edge',
       }),
-    ).toBe('not-eligible');
+    ).toBe('native');
+  });
+
+  test('routes iOS Safari to the concise install banner', () => {
+    expect(
+      resolveInstallPromptVariant({
+        installState: 'eligible',
+        skippedForSession: false,
+        deferredPromptAvailable: false,
+        os: 'ios',
+        browser: 'safari',
+      }),
+    ).toBe('ios-safari');
+  });
+
+  test('routes iOS Chrome to the open-in-Safari banner', () => {
+    expect(
+      resolveInstallPromptVariant({
+        installState: 'eligible',
+        skippedForSession: false,
+        deferredPromptAvailable: false,
+        os: 'ios',
+        browser: 'chrome',
+      }),
+    ).toBe('ios-non-safari');
+  });
+
+  test('renders nothing on desktop without beforeinstallprompt', () => {
+    expect(
+      resolveInstallPromptVariant({
+        installState: 'eligible',
+        skippedForSession: false,
+        deferredPromptAvailable: false,
+        os: 'windows',
+        browser: 'chrome',
+      }),
+    ).toBe('none');
+  });
+
+  test('renders nothing when skipped for the current session', () => {
+    expect(
+      resolveInstallPromptVariant({
+        installState: 'eligible',
+        skippedForSession: true,
+        deferredPromptAvailable: true,
+        os: 'android',
+        browser: 'chrome',
+      }),
+    ).toBe('none');
   });
 
   test('dismissed key name is stable (used in localStorage)', () => {
@@ -232,5 +194,10 @@ describe('InstallPrompt module exports', () => {
   test('DISMISSED_KEY is exported from the module', async () => {
     const mod = await import('../../src/components/pwa/install-prompt.js');
     expect(mod.DISMISSED_KEY).toBe('calypso:pwa-install-dismissed');
+  });
+
+  test('resolveInstallPromptVariant is exported from the module', async () => {
+    const mod = await import('../../src/components/pwa/install-prompt.js');
+    expect(typeof mod.resolveInstallPromptVariant).toBe('function');
   });
 });
