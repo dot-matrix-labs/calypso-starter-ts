@@ -54,6 +54,8 @@ jobs:
 
       # ── 2. Checkout repository (deploy.sh lives here) ───────────────────────
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       # ── 3. Install kubectl ──────────────────────────────────────────────────
       - name: Install kubectl

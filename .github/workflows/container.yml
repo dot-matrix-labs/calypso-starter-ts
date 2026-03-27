@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download web-dist from release
         run: gh release download "${{ github.ref_name }}" --pattern "web-dist.tar.gz"

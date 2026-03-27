@@ -14,6 +14,7 @@ jobs:
         with:
           # Fetch full history so we can access main branch's schema
           fetch-depth: 0
+          submodules: recursive
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1

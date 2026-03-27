@@ -20,6 +20,8 @@ jobs:
       release-tag: ${{ steps.check.outputs.release-tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,6 +58,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install bun
         run: |
@@ -111,6 +115,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install bun
         run: |
@@ -198,6 +204,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install bun
         run: |
@@ -248,6 +256,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install bun
         run: |
