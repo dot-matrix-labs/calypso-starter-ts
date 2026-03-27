@@ -69,6 +69,12 @@ import {
   buildSocComplianceCliPayload,
   validateSocComplianceResult,
 } from './soc-compliance-agent-job';
+import {
+  RUNTIME_TRACE_JOB_TYPE,
+  RUNTIME_TRACE_TIMEOUT_MS,
+  buildRuntimeTraceCliPayload,
+  validateRuntimeTraceResult,
+} from './runtime-tracer-job';
 import { runWorkerLoop } from 'db/task-queue-worker';
 import { claimNextTask, updateTaskStatus } from 'db/task-queue';
 
@@ -205,9 +211,9 @@ async function tryClaimAndExecute(
     console.log(`[runner] Claimed task ${task.id} (type=${task.job_type}, timeout=${timeoutMs}ms)`);
 
     // Route to the appropriate CLI based on job type.
-    // claude_sample jobs go through the Claude CLI integration; security_scan
-    // and soc_compliance_review jobs go through Claude CLI with a hard timeout
-    // and read-only code access; all others use the existing Codex path.
+    // claude_sample jobs go through the Claude CLI integration; security_scan,
+    // soc_compliance_review, and runtime_trace jobs go through Claude CLI with
+    // a hard timeout and read-only access; all others use the existing Codex path.
     let result: Record<string, unknown>;
     if (task.job_type === SAMPLE_JOB_TYPE) {
       const cliPayload = buildCliPayload(task.id, agentType, task.payload);
@@ -236,6 +242,15 @@ async function tryClaimAndExecute(
         sigtermGraceMs,
       });
       result = validateSocComplianceResult(rawResult);
+    } else if (task.job_type === RUNTIME_TRACE_JOB_TYPE) {
+      const cliPayload = buildRuntimeTraceCliPayload(task.id, agentType, task.payload);
+      const rawResult = await invokeCli({
+        cliPath: CLAUDE_CLI_PATH,
+        taskPayload: cliPayload,
+        timeoutMs: RUNTIME_TRACE_TIMEOUT_MS,
+        sigtermGraceMs,
+      });
+      result = validateRuntimeTraceResult(rawResult);
     } else {
       result = await invokeCodex(task.payload, timeoutMs, sigtermGraceMs);
     }
