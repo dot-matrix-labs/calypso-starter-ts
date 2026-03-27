@@ -11,12 +11,13 @@
  * When no deferred prompt is available (Brave, post-uninstall cooldown) we
  * show inline browser-menu install instructions instead.
  *
- * iOS (all browsers) — guided overlay
- * -------------------------------------
+ * iOS (all browsers) — concise install banner
+ * -------------------------------------------
  * iOS Safari never fires `beforeinstallprompt`, and neither do Chrome iOS,
- * Firefox iOS, or Brave iOS.  For all iOS browsers (detected via os='ios') we
- * show a guided overlay with step-by-step "Share → Add to Home Screen"
- * instructions.  The overlay is shown when:
+ * Firefox iOS, or Brave iOS. Safari can still install via "Add to Home Screen",
+ * so we show a concise bottom banner with an inline Share icon hint. Other iOS
+ * browsers cannot install PWAs directly, so they instead get an "Open in
+ * Safari" banner. The banner is shown when:
  *   - the OS is ios (any browser, including iPadOS 13+)
  *   - the app is not already in standalone mode
  *   - the user has not dismissed within the last 90 days
@@ -60,6 +61,12 @@ export function isDismissalActive(stored: string | null): boolean {
 }
 
 type InstallState = 'not-eligible' | 'eligible' | 'prompted' | 'installed' | 'dismissed';
+export type InstallPromptVariant =
+  | 'none'
+  | 'native'
+  | 'android-fallback'
+  | 'ios-safari'
+  | 'ios-non-safari';
 
 /** Minimal typing for the non-standard BeforeInstallPromptEvent */
 interface BeforeInstallPromptEvent extends Event {
@@ -67,15 +74,66 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+export function resolveInstallPromptVariant(opts: {
+  installState: InstallState;
+  skippedForSession: boolean;
+  deferredPromptAvailable: boolean;
+  os: 'android' | 'ios' | 'windows' | 'macos' | 'linux' | 'unknown';
+  browser: 'chrome' | 'safari' | 'firefox' | 'edge' | 'unknown';
+}): InstallPromptVariant {
+  if (
+    opts.skippedForSession ||
+    opts.installState === 'not-eligible' ||
+    opts.installState === 'installed' ||
+    opts.installState === 'dismissed'
+  ) {
+    return 'none';
+  }
+
+  if (opts.deferredPromptAvailable) {
+    return 'native';
+  }
+
+  if (opts.os === 'android' && opts.installState === 'eligible') {
+    return 'android-fallback';
+  }
+
+  if (opts.os === 'ios' && opts.installState === 'eligible') {
+    return opts.browser === 'safari' ? 'ios-safari' : 'ios-non-safari';
+  }
+
+  return 'none';
+}
+
+function ShareIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+      <polyline points="16 6 12 2 8 6" />
+      <line x1="12" y1="2" x2="12" y2="15" />
+    </svg>
+  );
+}
+
 /**
  * PWA install prompt component.  Renders either an Android install banner,
- * an iOS guided overlay, or nothing — depending on platform and current
+ * an iOS install banner, or nothing — depending on platform and current
  * install state.
  *
  * Mount this component near the root of the app (e.g. in App.tsx).
  */
 export function InstallPrompt() {
-  const { os, isStandalone } = usePlatform();
+  const { os, browser, isStandalone } = usePlatform();
 
   const [installState, setInstallState] = useState<InstallState>('not-eligible');
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -145,18 +203,20 @@ export function InstallPrompt() {
     setInstallState('dismissed');
   }, []);
 
-  // Nothing to render in these states
-  if (
-    installState === 'not-eligible' ||
-    installState === 'installed' ||
-    installState === 'dismissed' ||
-    skippedForSession
-  ) {
+  const variant = resolveInstallPromptVariant({
+    installState,
+    skippedForSession,
+    deferredPromptAvailable: deferredPrompt !== null,
+    os,
+    browser,
+  });
+
+  if (variant === 'none') {
     return null;
   }
 
   // Android install banner (with deferred prompt available)
-  if (deferredPrompt) {
+  if (variant === 'native') {
     return (
       <div
         role="banner"
@@ -182,7 +242,7 @@ export function InstallPrompt() {
             onClick={handleMaybeLater}
             className="px-3 py-1.5 rounded-lg text-zinc-400 text-xs hover:text-zinc-600 transition-colors"
           >
-            Not now
+            Maybe later
           </button>
         </div>
       </div>
@@ -190,7 +250,7 @@ export function InstallPrompt() {
   }
 
   // Android fallback — no deferred prompt (Brave, post-uninstall cooldown)
-  if (os === 'android' && !deferredPrompt && installState === 'eligible') {
+  if (variant === 'android-fallback') {
     return (
       <div
         role="banner"
@@ -243,89 +303,56 @@ export function InstallPrompt() {
     );
   }
 
-  // iOS guided overlay (all iOS browsers)
-  if (os === 'ios' && installState === 'eligible') {
+  if (variant === 'ios-safari' || variant === 'ios-non-safari') {
+    const message =
+      variant === 'ios-safari' ? (
+        <span>
+          Install Calypso{' '}
+          <span className="text-zinc-400" aria-hidden="true">
+            -
+          </span>{' '}
+          tap{' '}
+          <span className="inline-flex items-center gap-1 font-medium text-zinc-900">
+            Share
+            <ShareIcon />
+          </span>{' '}
+          then <span className="font-medium text-zinc-900">&ldquo;Add to Home Screen&rdquo;</span>
+        </span>
+      ) : (
+        <span>Open in Safari to install Calypso</span>
+      );
+
     return (
       <div
-        role="dialog"
-        aria-label="Install Calypso on iOS"
-        className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-4"
+        role="banner"
+        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-lg z-50 bg-white border border-zinc-200 rounded-2xl shadow-xl p-4 flex flex-col gap-3"
       >
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-black text-lg">C</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-zinc-900">Install Calypso</p>
-              <p className="text-xs text-zinc-500">Add to your home screen</p>
-            </div>
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+            <span className="text-white font-black text-lg">C</span>
           </div>
-
-          {/* Step-by-step instructions */}
-          <ol className="flex flex-col gap-3 text-sm text-zinc-700">
-            <li className="flex items-start gap-2">
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                1
-              </span>
-              <span>
-                Tap the{' '}
-                <span className="inline-flex items-center gap-0.5 font-medium text-zinc-900">
-                  Share
-                  {/* Share icon (Unicode fallback) */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-3.5 h-3.5 ml-0.5"
-                    aria-hidden="true"
-                  >
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
-                </span>{' '}
-                button in your browser toolbar.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                2
-              </span>
-              <span>Scroll down in the share sheet.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                3
-              </span>
-              <span>
-                Tap{' '}
-                <span className="font-medium text-zinc-900">&ldquo;Add to Home Screen&rdquo;</span>{' '}
-                and confirm.
-              </span>
-            </li>
-          </ol>
-
-          {/* Action buttons */}
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={handleMaybeLater}
-              className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
-            >
-              Maybe later
-            </button>
-            <button
-              onClick={handleDismiss}
-              className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
-            >
-              Dismiss
-            </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-zinc-900">{message}</p>
+            {variant === 'ios-non-safari' ? (
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Safari is required for iPhone and iPad install flows.
+              </p>
+            ) : null}
           </div>
+        </div>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={handleMaybeLater}
+            className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
+            Maybe later
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
+            Dismiss
+          </button>
         </div>
       </div>
     );
