@@ -1,132 +1,147 @@
 /**
- * Unit tests for the local storage demo card helpers.
+ * Unit tests for the Storage API demo card helpers.
  *
- * Tests the pure data-layer functions (loadNotes, saveNotes, readQuota
- * logic) without mounting the React component.
+ * Tests the pure data-layer functions (IndexedDB helpers, quota formatting,
+ * persistent storage logic) without mounting the React component.
  */
 
 import { describe, test, expect } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// Mirror pure helpers for isolated unit testing
+// Storage quota formatting — mirrors readStorageQuota output shape
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEY = 'pwa-demo-notes';
-
-/** Simple in-memory store for testing */
-const memStore: Record<string, string> = {};
-
-const mockStorage = {
-  getItem: (k: string) => memStore[k] ?? null,
-  setItem: (k: string, v: string) => {
-    memStore[k] = v;
-  },
-  removeItem: (k: string) => {
-    delete memStore[k];
-  },
-  clear: () => {
-    for (const k in memStore) delete memStore[k];
-  },
-};
-
-function loadNotes(): string[] {
-  try {
-    const raw = mockStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (Array.isArray(parsed)) return parsed.filter((n): n is string => typeof n === 'string');
-    return [];
-  } catch {
-    return [];
-  }
+interface StorageQuota {
+  usedMb: number;
+  totalMb: number;
+  percentUsed: number;
 }
 
-function saveNotes(notes: string[]): void {
-  mockStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+function formatQuota(usage: number, quota: number): StorageQuota | null {
+  if (quota === 0) return null;
+  const usedMb = Math.round((usage / (1024 * 1024)) * 10) / 10;
+  const totalMb = Math.round(quota / (1024 * 1024));
+  const percentUsed = Math.round((usage / quota) * 100);
+  return { usedMb, totalMb, percentUsed };
 }
 
-// ---------------------------------------------------------------------------
-// loadNotes
-// ---------------------------------------------------------------------------
-
-describe('loadNotes', () => {
-  test('returns empty array when no data stored', () => {
-    mockStorage.clear();
-    expect(loadNotes()).toEqual([]);
+describe('formatQuota', () => {
+  test('returns null when quota is zero', () => {
+    expect(formatQuota(0, 0)).toBeNull();
   });
 
-  test('returns stored notes array', () => {
-    saveNotes(['hello', 'world']);
-    expect(loadNotes()).toEqual(['hello', 'world']);
-    mockStorage.clear();
+  test('computes usedMb correctly', () => {
+    const result = formatQuota(5 * 1024 * 1024, 100 * 1024 * 1024);
+    expect(result?.usedMb).toBe(5);
   });
 
-  test('filters out non-string entries from stored data', () => {
-    mockStorage.setItem(STORAGE_KEY, JSON.stringify(['valid', 42, null, 'also-valid']));
-    expect(loadNotes()).toEqual(['valid', 'also-valid']);
-    mockStorage.clear();
+  test('computes totalMb correctly', () => {
+    const result = formatQuota(5 * 1024 * 1024, 100 * 1024 * 1024);
+    expect(result?.totalMb).toBe(100);
   });
 
-  test('returns empty array for malformed JSON', () => {
-    mockStorage.setItem(STORAGE_KEY, 'not-json{{{');
-    expect(loadNotes()).toEqual([]);
-    mockStorage.clear();
+  test('computes percentUsed correctly', () => {
+    const result = formatQuota(25 * 1024 * 1024, 100 * 1024 * 1024);
+    expect(result?.percentUsed).toBe(25);
   });
 
-  test('returns empty array when stored value is not an array', () => {
-    mockStorage.setItem(STORAGE_KEY, JSON.stringify({ note: 'oops' }));
-    expect(loadNotes()).toEqual([]);
-    mockStorage.clear();
+  test('handles fractional MB usage', () => {
+    // 1.5 MB used
+    const result = formatQuota(1.5 * 1024 * 1024, 100 * 1024 * 1024);
+    expect(result?.usedMb).toBe(1.5);
+  });
+
+  test('clamps percentUsed to a reasonable integer', () => {
+    const result = formatQuota(1, 3);
+    expect(result?.percentUsed).toBe(33);
   });
 });
 
 // ---------------------------------------------------------------------------
-// saveNotes / round-trip
+// IndexedDB mock helpers — mirrors idbWrite / idbRead logic
 // ---------------------------------------------------------------------------
 
-describe('saveNotes round-trip', () => {
-  test('saves and reloads notes correctly', () => {
-    mockStorage.clear();
-    const notes = ['first', 'second', 'third'];
-    saveNotes(notes);
-    expect(loadNotes()).toEqual(notes);
-    mockStorage.clear();
+const memDb: Record<string, string> = {};
+
+function mockIdbWrite(key: string, value: string): void {
+  memDb[key] = value;
+}
+
+function mockIdbRead(key: string): string | null {
+  return memDb[key] ?? null;
+}
+
+const DEMO_KEY = 'demo-record';
+
+describe('IndexedDB write / read round-trip', () => {
+  test('read returns null before any write', () => {
+    delete memDb[DEMO_KEY];
+    expect(mockIdbRead(DEMO_KEY)).toBeNull();
   });
 
-  test('overwrites previous notes on subsequent save', () => {
-    mockStorage.clear();
-    saveNotes(['old']);
-    saveNotes(['new1', 'new2']);
-    expect(loadNotes()).toEqual(['new1', 'new2']);
-    mockStorage.clear();
+  test('write stores value and read returns it', () => {
+    mockIdbWrite(DEMO_KEY, 'hello indexeddb');
+    expect(mockIdbRead(DEMO_KEY)).toBe('hello indexeddb');
+  });
+
+  test('second write overwrites previous value', () => {
+    mockIdbWrite(DEMO_KEY, 'first');
+    mockIdbWrite(DEMO_KEY, 'second');
+    expect(mockIdbRead(DEMO_KEY)).toBe('second');
+  });
+
+  test('empty string can be stored and read back', () => {
+    mockIdbWrite(DEMO_KEY, '');
+    expect(mockIdbRead(DEMO_KEY)).toBe('');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Platform note derivation
+// Persistent storage state derivation
 // ---------------------------------------------------------------------------
 
-describe('platform note derivation', () => {
-  function getPlatformNote(os: string, isStandalone: boolean): string | undefined {
-    if (os === 'ios' && !isStandalone)
-      return 'Data may be cleared after 7 days of inactivity (browser tab mode)';
-    if (os === 'ios' && isStandalone) return 'Data persists normally when installed to home screen';
-    return undefined;
+describe('persistent storage state display', () => {
+  function persistLabel(state: boolean | null): string {
+    if (state === true) return 'granted';
+    if (state === false) return 'not-persistent';
+    return 'loading';
   }
 
-  test('shows eviction warning for iOS browser tab', () => {
-    expect(getPlatformNote('ios', false)).toMatch(/7 days/);
+  test('returns "granted" when persist state is true', () => {
+    expect(persistLabel(true)).toBe('granted');
   });
 
-  test('shows persistence note for iOS standalone', () => {
-    expect(getPlatformNote('ios', true)).toMatch(/persists/);
+  test('returns "not-persistent" when persist state is false', () => {
+    expect(persistLabel(false)).toBe('not-persistent');
   });
 
-  test('returns undefined for Android', () => {
-    expect(getPlatformNote('android', false)).toBeUndefined();
+  test('returns "loading" when persist state is null', () => {
+    expect(persistLabel(null)).toBe('loading');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Feature availability guard
+// ---------------------------------------------------------------------------
+
+describe('storageApiAvailable guard', () => {
+  function isStorageApiAvailable(hasStorageManager: boolean, hasIndexedDB: boolean): boolean {
+    return hasStorageManager || hasIndexedDB;
+  }
+
+  test('available when both flags true', () => {
+    expect(isStorageApiAvailable(true, true)).toBe(true);
   });
 
-  test('returns undefined for macOS desktop', () => {
-    expect(getPlatformNote('macos', false)).toBeUndefined();
+  test('available when only storageManager is true', () => {
+    expect(isStorageApiAvailable(true, false)).toBe(true);
+  });
+
+  test('available when only indexedDB is true', () => {
+    expect(isStorageApiAvailable(false, true)).toBe(true);
+  });
+
+  test('unavailable when both flags false', () => {
+    expect(isStorageApiAvailable(false, false)).toBe(false);
   });
 });

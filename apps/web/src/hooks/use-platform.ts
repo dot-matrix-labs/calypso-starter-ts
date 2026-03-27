@@ -57,6 +57,10 @@ export interface PlatformInfo {
     notifications: boolean;
     /** navigator.storage?.estimate */
     storageManager: boolean;
+    /** navigator.storage?.persist and navigator.storage?.persisted */
+    persistentStorage: boolean;
+    /** window.indexedDB */
+    indexedDB: boolean;
     /** HTML capture attribute — universally supported, always true */
     inputCapture: boolean;
   };
@@ -114,6 +118,12 @@ function buildPlatformInfo(): PlatformInfo {
         typeof navigator !== 'undefined' &&
         typeof navigator.storage !== 'undefined' &&
         typeof navigator.storage.estimate === 'function',
+      persistentStorage:
+        typeof navigator !== 'undefined' &&
+        typeof navigator.storage !== 'undefined' &&
+        typeof navigator.storage.persist === 'function' &&
+        typeof navigator.storage.persisted === 'function',
+      indexedDB: typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined',
       // HTML <input capture> is a plain attribute — no JS API to detect; it's
       // universally supported in all current browsers/OSes.
       inputCapture: true,
