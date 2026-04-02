@@ -58,75 +58,13 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_SUBMODULE_PAT }}
 
-      # ── 3. Install kubectl ──────────────────────────────────────────────────
+      # ── 3. Install Bun ──────────────────────────────────────────────────────
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      # ── 4. Install kubectl ──────────────────────────────────────────────────
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
-
-      # ── 4. Write SSH key and known_hosts ────────────────────────────────────
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-
-      # ── 5. Open SSH tunnel to k3s API (background, with health check) ───────
-      - name: Open SSH tunnel to k3s API
-        run: |
-          ssh -f -N -L 6443:localhost:6443 \
-            -i ~/.ssh/deploy_key \
-            -o ServerAliveInterval=30 \
-            -o ServerAliveCountMax=3 \
-            -o ExitOnForwardFailure=yes \
-            -o StrictHostKeyChecking=yes \
-            superfield@${{ secrets.DEPLOY_HOST }}
-          for i in $(seq 1 10); do
-            if nc -z localhost 6443 2>/dev/null; then break; fi
-            sleep 1
-          done
-          if ! nc -z localhost 6443 2>/dev/null; then
-            echo "::error::SSH tunnel to k3s API failed to open"
-            exit 1
-          fi
-          echo "SSH tunnel to k3s API is ready on localhost:6443"
-
-      # ── 6. Generate short-lived ServiceAccount token (1h TTL) ───────────────
-      - name: Generate deploy token
-        run: |
-          TOKEN=$(ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=yes \
-            superfield@${{ secrets.DEPLOY_HOST }} \
-            "kubectl create token ${{ secrets.DEPLOY_SA_NAME }} \
-              --namespace ${{ secrets.DEPLOY_NAMESPACE }} \
-              --duration=1h")
-          echo "::add-mask::${TOKEN}"
-          echo "DEPLOY_TOKEN=${TOKEN}" >> $GITHUB_ENV
-
-      # ── 7. Write temporary kubeconfig with TLS verification ─────────────────
-      - name: Write kubeconfig
-        run: |
-          CA_DATA=$(echo "${{ secrets.K3S_CA_CERT }}" | base64 -w0)
-          cat > /tmp/kubeconfig <<KUBEEOF
-          apiVersion: v1
-          kind: Config
-          clusters:
-            - cluster:
-                server: https://localhost:6443
-                certificate-authority-data: ${CA_DATA}
-              name: k3s
-          contexts:
-            - context:
-                cluster: k3s
-                namespace: ${{ secrets.DEPLOY_NAMESPACE }}
-                user: deployer
-              name: deploy
-          current-context: deploy
-          users:
-            - name: deployer
-              user:
-                token: ${{ env.DEPLOY_TOKEN }}
-          KUBEEOF
-          chmod 600 /tmp/kubeconfig
 
       # ── 8. Create GitHub deployment event (pending) ─────────────────────────
       - name: Create deployment event
@@ -143,26 +81,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 9. Run deploy.sh ────────────────────────────────────────────────────
+      # ── 9. Run Google Cloud liveness + deploy flow ──────────────────────────
       - name: Deploy
         run: |
-          export KUBECONFIG=/tmp/kubeconfig
-          export DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}
-          export DEPLOY_NAMESPACE=${{ secrets.DEPLOY_NAMESPACE }}
-          ./deploy.sh "${{ inputs.image-tag }}"
-
-      # ── 10. Annotate Kubernetes deployment ──────────────────────────────────
-      - name: Annotate k8s deployment
-        if: success()
-        run: |
-          export KUBECONFIG=/tmp/kubeconfig
-          kubectl annotate deployment/calypso-app \
-            --namespace ${{ secrets.DEPLOY_NAMESPACE }} \
-            --overwrite \
-            deploy.calypso/actor="${{ github.actor }}" \
-            deploy.calypso/run-id="${{ github.run_id }}" \
-            deploy.calypso/image-tag="${{ inputs.image-tag }}" \
-            deploy.calypso/timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          bun run scripts/gcp/deploy.ts \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "${{ secrets.GCP_REGION }}" \
+            --zone "${{ secrets.GCP_ZONE }}" \
+            --environment "${{ inputs.environment }}" \
+            --vm-name "${{ secrets.GCP_VM_NAME }}" \
+            --alloydb-cluster "${{ secrets.GCP_ALLOYDB_CLUSTER }}" \
+            --alloydb-instance "${{ secrets.GCP_ALLOYDB_INSTANCE }}" \
+            --tag "${{ inputs.image-tag }}"
+        env:
+          GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+          GCP_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_JSON }}
+          CALYPSO_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_NAMESPACE: ${{ secrets.DEPLOY_NAMESPACE }}
+          DEPLOY_SA_NAME: ${{ secrets.DEPLOY_SA_NAME }}
 
       # ── 11. Update GitHub deployment status ─────────────────────────────────
       - name: Mark deployment success
@@ -187,6 +123,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f /tmp/kubeconfig ~/.ssh/deploy_key
-          pkill -f 'ssh.*-L 6443:localhost:6443' || true
           echo "Cleanup complete."
