@@ -6,9 +6,10 @@
  * database or authenticator device.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { getRpConfig } from '../../src/api/passkey';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { getRpConfig, handlePasskeyRequest } from '../../src/api/passkey';
 import { verifyCsrf } from '../../src/auth/csrf';
+import * as authModule from '../../src/api/auth';
 
 describe('passkey route matching', () => {
   test('register/begin path is distinct from /api/auth/register', () => {
@@ -230,5 +231,110 @@ describe('register/complete CSRF guard', () => {
     const req = makeCompleteRequest(undefined, undefined);
     const res = verifyCsrf(req, {});
     expect(res).toBeNull();
+  });
+});
+
+describe('passkey credential management routes', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function makeAppStateWithSql(
+    sqlImpl: (strings: TemplateStringsArray, ...values: unknown[]) => Promise<unknown[]>,
+  ) {
+    const sql = vi.fn(sqlImpl) as unknown as import('../../src/index').AppState['sql'];
+    return {
+      sql,
+      auditSql: sql,
+      analyticsSql: sql,
+    } satisfies import('../../src/index').AppState;
+  }
+
+  test('GET /api/auth/passkey/credentials returns 401 when unauthenticated', async () => {
+    vi.spyOn(authModule, 'getAuthenticatedUser').mockResolvedValue(null);
+    const appState = makeAppStateWithSql(async () => []);
+
+    const req = new Request('http://localhost/api/auth/passkey/credentials', { method: 'GET' });
+    const res = await handlePasskeyRequest(req, new URL(req.url), appState);
+
+    expect(res?.status).toBe(401);
+  });
+
+  test('GET /api/auth/passkey/credentials returns only caller credentials', async () => {
+    vi.spyOn(authModule, 'getAuthenticatedUser').mockResolvedValue({
+      id: 'user-1',
+      username: 'alice',
+    });
+    const rows = [
+      {
+        id: 'cred-1',
+        credential_id: 'abcdefghijklmnopqrstuvwxyz',
+        created_at: '2026-03-01T12:00:00.000Z',
+        last_used_at: '2026-03-02T12:00:00.000Z',
+      },
+    ];
+    const appState = makeAppStateWithSql(async () => rows);
+
+    const req = new Request('http://localhost/api/auth/passkey/credentials', { method: 'GET' });
+    const res = await handlePasskeyRequest(req, new URL(req.url), appState);
+
+    expect(res?.status).toBe(200);
+    await expect(res?.json()).resolves.toEqual(rows);
+  });
+
+  test('GET /api/auth/passkey/credentials returns empty array when none exist', async () => {
+    vi.spyOn(authModule, 'getAuthenticatedUser').mockResolvedValue({
+      id: 'user-1',
+      username: 'alice',
+    });
+    const appState = makeAppStateWithSql(async () => []);
+
+    const req = new Request('http://localhost/api/auth/passkey/credentials', { method: 'GET' });
+    const res = await handlePasskeyRequest(req, new URL(req.url), appState);
+
+    expect(res?.status).toBe(200);
+    await expect(res?.json()).resolves.toEqual([]);
+  });
+
+  test('DELETE /api/auth/passkey/credentials/:id returns 401 when unauthenticated', async () => {
+    vi.spyOn(authModule, 'getAuthenticatedUser').mockResolvedValue(null);
+    const appState = makeAppStateWithSql(async () => []);
+
+    const req = new Request('http://localhost/api/auth/passkey/credentials/cred-1', {
+      method: 'DELETE',
+    });
+    const res = await handlePasskeyRequest(req, new URL(req.url), appState);
+
+    expect(res?.status).toBe(401);
+  });
+
+  test('DELETE /api/auth/passkey/credentials/:id returns 404 for unknown credential', async () => {
+    vi.spyOn(authModule, 'getAuthenticatedUser').mockResolvedValue({
+      id: 'user-1',
+      username: 'alice',
+    });
+    const appState = makeAppStateWithSql(async () => []);
+
+    const req = new Request('http://localhost/api/auth/passkey/credentials/cred-missing', {
+      method: 'DELETE',
+    });
+    const res = await handlePasskeyRequest(req, new URL(req.url), appState);
+
+    expect(res?.status).toBe(404);
+  });
+
+  test('DELETE /api/auth/passkey/credentials/:id returns 204 on success', async () => {
+    vi.spyOn(authModule, 'getAuthenticatedUser').mockResolvedValue({
+      id: 'user-1',
+      username: 'alice',
+    });
+    const appState = makeAppStateWithSql(async () => [{ id: 'cred-1' }]);
+
+    const req = new Request('http://localhost/api/auth/passkey/credentials/cred-1', {
+      method: 'DELETE',
+    });
+    const res = await handlePasskeyRequest(req, new URL(req.url), appState);
+
+    expect(res?.status).toBe(204);
   });
 });
