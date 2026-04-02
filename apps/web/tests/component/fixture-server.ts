@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 type FixtureResponse<T> = {
   status?: number;
@@ -23,6 +23,12 @@ type FixtureTask = {
 type OAuthStatus = { connected: boolean };
 type OAuthInitResponse = { url: string };
 type OAuthCompleteResponse = { connected: boolean };
+type FixturePasskeyCredential = {
+  id: string;
+  credential_id: string;
+  created_at: string;
+  last_used_at: string | null;
+};
 
 type FixtureState = {
   tasks?: FixtureTask[];
@@ -32,6 +38,7 @@ type FixtureState = {
   oauthInit?: OAuthInitResponse | FixtureResponse<OAuthInitResponse>;
   /** OAuth complete response */
   oauthComplete?: OAuthCompleteResponse | FixtureResponse<OAuthCompleteResponse>;
+  passkeys?: FixturePasskeyCredential[];
 };
 
 type FixtureStore = Record<string, FixtureState>;
@@ -43,6 +50,10 @@ function loadState(path: string): FixtureStore {
   } catch {
     return {};
   }
+}
+
+function writeState(path: string, store: FixtureStore): void {
+  writeFileSync(path, JSON.stringify(store, null, 2));
 }
 
 export async function handleFixtureRequest(req: Request, statePath: string): Promise<Response> {
@@ -88,6 +99,27 @@ export async function handleFixtureRequest(req: Request, statePath: string): Pro
       tags: [],
       createdAt: new Date().toISOString(),
     });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/auth/passkey/credentials') {
+    return json(state.passkeys ?? []);
+  }
+
+  if (req.method === 'DELETE' && url.pathname.match(/^\/api\/auth\/passkey\/credentials\/[^/]+$/)) {
+    const credentialId = url.pathname.split('/').at(-1);
+    const existing = state.passkeys ?? [];
+    const next = existing.filter((credential) => credential.id !== credentialId);
+
+    if (existing.length === next.length) {
+      return new Response(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    store[fixtureId] = { ...state, passkeys: next };
+    writeState(statePath, store);
+    return new Response(null, { status: 204 });
   }
 
   // OAuth status endpoint
