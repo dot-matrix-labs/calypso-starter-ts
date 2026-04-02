@@ -9,24 +9,19 @@ Calypso now includes three Bun scripts for Google Cloud deployment automation wi
 
 ## Authentication
 
-These scripts call Google Cloud REST APIs directly. The canonical credential inputs are:
+These scripts call Google Cloud REST APIs directly. Provisioning and deploy use
+the same runtime env input order:
 
-- `GCP_SERVICE_ACCOUNT_JSON`
-- `GOOGLE_APPLICATION_CREDENTIALS`
-
-Supported legacy fallbacks are:
-
-- `GCP_SERVICE_ACCOUNT_FILE`
-- `GCP_SERVICE_ACCOUNT_KEY_JSON`
-- `GCP_SERVICE_ACCOUNT_KEY_FILE`
-- `GCP_ACCESS_TOKEN`
+1. `GCP_ACCESS_TOKEN` (recommended for CI and explicit local overrides)
+2. `GCP_OAUTH_TOKEN_FILE` (default `~/.config/calypso/gcp-oauth-token.json`)
+3. Service-account JSON fallbacks (`GCP_SERVICE_ACCOUNT_JSON`, `GOOGLE_APPLICATION_CREDENTIALS`,
+   `GCP_SERVICE_ACCOUNT_FILE`, `GCP_SERVICE_ACCOUNT_KEY_JSON`, `GCP_SERVICE_ACCOUNT_KEY_FILE`)
 
 Standard API keys are not sufficient for IAM-authorized provisioning calls.
 
-Recommended default:
-
-- CLI: `export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json`
-- GitHub Actions: store the raw JSON in `GCP_SERVICE_ACCOUNT_JSON`
+Use `bun run gcp:login` to create the local OAuth token file without `gcloud`.
+CI deploy uses Workload Identity Federation and passes the minted short-lived
+token to scripts as `GCP_ACCESS_TOKEN`.
 
 ## Required permissions
 
@@ -113,6 +108,9 @@ bun run scripts/gcp/provision.ts \
   --image-tag v1.2.3
 ```
 
+Provisioning is a local terminal-only workflow. The repository does not run
+infrastructure provisioning from GitHub Actions.
+
 Required env:
 
 - `CALYPSO_SSH_PRIVATE_KEY` or `CALYPSO_SSH_PRIVATE_KEY_FILE`
@@ -147,3 +145,10 @@ bun run scripts/gcp/deploy.ts \
 ```
 
 Use `--check-only` to stop after liveness validation.
+
+GitHub Actions deploy flow:
+
+- Uses OIDC + Workload Identity Federation (`google-github-actions/auth`) to mint
+  a short-lived Google access token.
+- Exports that token as `GCP_ACCESS_TOKEN` for `scripts/gcp/deploy.ts`.
+- Does not require storing a long-lived service-account JSON key in GitHub secrets.
