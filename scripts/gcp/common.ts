@@ -75,6 +75,12 @@ export interface TempFile {
   cleanup: () => void;
 }
 
+export interface SshAuthMaterial {
+  mode: 'agent' | 'key-file';
+  privateKeyPath?: string;
+  cleanup: () => void;
+}
+
 export interface GoogleCredentialInfo {
   principal?: string;
   projectId?: string;
@@ -488,28 +494,80 @@ export function createTempFile(prefix: string, contents: string, mode = 0o600): 
   };
 }
 
-export function ensurePrivateKeyFile(): TempFile {
+export function ensureSshAuthMaterial(): SshAuthMaterial {
+  if (process.env.SSH_AUTH_SOCK) {
+    const listedKeys = runCommand(['ssh-add', '-L'], { allowFailure: true });
+    if (listedKeys.exitCode !== 0 || !listedKeys.stdout.trim()) {
+      throw new Error(
+        'SSH_AUTH_SOCK is set but ssh-agent does not expose any loaded identities. Load a key with ssh-add first.',
+      );
+    }
+    return {
+      mode: 'agent',
+      cleanup: () => {},
+    };
+  }
+
   const fromFile = process.env.CALYPSO_SSH_PRIVATE_KEY_FILE;
   if (fromFile) {
     if (!existsSync(fromFile)) {
       throw new Error(`CALYPSO_SSH_PRIVATE_KEY_FILE does not exist: ${fromFile}`);
     }
-    return { path: fromFile, cleanup: () => {} };
+    return {
+      mode: 'key-file',
+      privateKeyPath: fromFile,
+      cleanup: () => {},
+    };
   }
 
-  const fromEnv = process.env.CALYPSO_SSH_PRIVATE_KEY;
-  if (!fromEnv) {
-    throw new Error(
-      'A private SSH key is required via CALYPSO_SSH_PRIVATE_KEY or CALYPSO_SSH_PRIVATE_KEY_FILE',
-    );
-  }
-
-  return createTempFile('id_ed25519', fromEnv.endsWith('\n') ? fromEnv : `${fromEnv}\n`);
+  throw new Error(
+    'SSH authentication requires either an agent identity via SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE as a local fallback',
+  );
 }
 
 export function derivePublicKey(privateKeyPath: string): string {
   const { stdout } = runCommand(['ssh-keygen', '-y', '-f', privateKeyPath]);
   return stdout.trim();
+}
+
+export function resolveAdminPublicKey(sshAuth: SshAuthMaterial): string {
+  const fromFile = process.env.CALYPSO_SSH_PUBLIC_KEY_FILE;
+  if (fromFile) {
+    if (!existsSync(fromFile)) {
+      throw new Error(`CALYPSO_SSH_PUBLIC_KEY_FILE does not exist: ${fromFile}`);
+    }
+    return readFileSync(fromFile, 'utf8').trim();
+  }
+
+  if (sshAuth.mode === 'agent') {
+    const { stdout } = runCommand(['ssh-add', '-L']);
+    const firstKey = stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.length > 0 && !line.startsWith('The agent has no identities'));
+    if (!firstKey) {
+      throw new Error('ssh-agent does not expose a usable public key');
+    }
+    return firstKey;
+  }
+
+  if (!sshAuth.privateKeyPath) {
+    throw new Error('Unable to resolve an SSH public key from the current auth material');
+  }
+  return derivePublicKey(sshAuth.privateKeyPath);
+}
+
+export function buildSshOptions(sshAuth: SshAuthMaterial): string[] {
+  const command = ['ssh'];
+  if (sshAuth.privateKeyPath) {
+    command.push('-i', sshAuth.privateKeyPath);
+  }
+  command.push('-o', 'StrictHostKeyChecking=accept-new');
+  return command;
+}
+
+export function sshTarget(sshUser: string, hostIp: string): string {
+  return `${sshUser}@${hostIp}`;
 }
 
 export function shellQuote(value: string): string {

@@ -5,8 +5,7 @@ import {
   computeRegionalOperationUrl,
   computeZonalOperationUrl,
   createTempFile,
-  derivePublicKey,
-  ensurePrivateKeyFile,
+  ensureSshAuthMaterial,
   extractNatIp,
   getProjectNumber,
   googleJsonRequest,
@@ -18,6 +17,7 @@ import {
   resolveBooleanOption,
   resolveOption,
   resolveRequiredOption,
+  resolveAdminPublicKey,
   runCommand,
   waitForGoogleOperation,
   waitForTcpPort,
@@ -56,7 +56,7 @@ Required configuration:
   --zone / GCP_ZONE
   --environment / CALYPSO_ENV
   --image-tag / CALYPSO_IMAGE_TAG
-  CALYPSO_SSH_PRIVATE_KEY or CALYPSO_SSH_PRIVATE_KEY_FILE
+  SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE
 
 Google auth:
   Preferred: GCP_ACCESS_TOKEN or local OAuth cache via GCP_OAUTH_TOKEN_FILE
@@ -93,7 +93,7 @@ export async function main(): Promise<void> {
     return;
   }
 
-  requireCommands(['ssh', 'ssh-keygen', 'bash']);
+  requireCommands(['ssh', 'ssh-add', 'ssh-keygen', 'bash']);
 
   const projectId = resolveRequiredOption(args, 'project', ['GCP_PROJECT_ID'], 'GCP project');
   const region = resolveRequiredOption(args, 'region', ['GCP_REGION'], 'GCP region');
@@ -215,10 +215,10 @@ export async function main(): Promise<void> {
     false,
   );
 
-  const privateKeyFile = ensurePrivateKeyFile();
+  const sshAuth = ensureSshAuthMaterial();
   const publicKeyFile = createTempFile(
     'id_ed25519.pub',
-    `${derivePublicKey(privateKeyFile.path)}\n`,
+    `${resolveAdminPublicKey(sshAuth)}\n`,
     0o644,
   );
 
@@ -321,21 +321,14 @@ export async function main(): Promise<void> {
     };
 
     log(`Delegating host bootstrap to scripts/init-host.sh for ${hostIp}`);
-    runCommand(
-      [
-        'bash',
-        'scripts/init-host.sh',
-        hostIp,
-        environment,
-        '--admin-key',
-        publicKeyFile.path,
-        '--root-key',
-        privateKeyFile.path,
-      ],
-      {
-        env: initHostEnv,
-      },
-    );
+    const initHostCommand = ['bash', 'scripts/init-host.sh', hostIp, environment, '--admin-key'];
+    initHostCommand.push(publicKeyFile.path);
+    if (sshAuth.privateKeyPath) {
+      initHostCommand.push('--root-key', sshAuth.privateKeyPath);
+    }
+    runCommand(initHostCommand, {
+      env: initHostEnv,
+    });
 
     log('Provisioning complete.');
     console.log('');
@@ -347,8 +340,8 @@ export async function main(): Promise<void> {
     console.log(`AlloyDB IP:        ${alloy.ipAddress}`);
     console.log(`Namespace:         calypso-${environment}`);
   } finally {
+    sshAuth.cleanup();
     publicKeyFile.cleanup();
-    privateKeyFile.cleanup();
   }
 }
 
