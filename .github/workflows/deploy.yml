@@ -31,6 +31,7 @@ on:
 permissions:
   contents: read
   deployments: write
+  id-token: write
 
 concurrency:
   group: deploy-${{ inputs.environment }}
@@ -66,6 +67,16 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
 
+      # ── 5. Authenticate to Google Cloud via WIF ────────────────────────────
+      - name: Authenticate to Google Cloud
+        id: gcp-auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+
       # ── 8. Create GitHub deployment event (pending) ─────────────────────────
       - name: Create deployment event
         id: deployment
@@ -94,8 +105,7 @@ jobs:
             --alloydb-instance "${{ secrets.GCP_ALLOYDB_INSTANCE }}" \
             --tag "${{ inputs.image-tag }}"
         env:
-          GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
-          GCP_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_JSON }}
+          GCP_ACCESS_TOKEN: ${{ steps.gcp-auth.outputs.access_token }}
           CALYPSO_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_NAMESPACE: ${{ secrets.DEPLOY_NAMESPACE }}
           DEPLOY_SA_NAME: ${{ secrets.DEPLOY_SA_NAME }}

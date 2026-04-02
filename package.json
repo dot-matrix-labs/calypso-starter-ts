@@ -21,6 +21,7 @@
     "format": "bunx prettier --write .",
     "format:check": "bunx prettier --check .",
     "dev": "bun run scripts/dev-start.ts",
+    "gcp:login": "bun run scripts/gcp/login.ts",
     "gcp:doctor": "bun run scripts/gcp/doctor.ts",
     "gcp:provision": "bun run scripts/gcp/provision.ts",
     "gcp:deploy": "bun run scripts/gcp/deploy.ts",

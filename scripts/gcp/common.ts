@@ -1,10 +1,18 @@
 #!/usr/bin/env bun
 
 import { createSign } from 'node:crypto';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createConnection } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { homedir, tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 const textDecoder = new TextDecoder();
 const CLOUD_PLATFORM_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
@@ -39,7 +47,19 @@ interface ServiceAccountKey {
 interface CredentialDescriptor {
   key?: ServiceAccountKey;
   source: string;
-  type: 'service-account-json' | 'access-token';
+  oauth?: LocalOAuthCredential;
+  type: 'service-account-json' | 'access-token' | 'oauth-token-file';
+}
+
+interface LocalOAuthCredential {
+  access_token?: string;
+  client_id: string;
+  client_secret?: string;
+  expires_at_ms?: number;
+  refresh_token: string;
+  scope?: string;
+  token_uri?: string;
+  type?: string;
 }
 
 export interface ParsedArgs {
@@ -56,7 +76,7 @@ export interface GoogleCredentialInfo {
   principal?: string;
   projectId?: string;
   source: string;
-  type: 'service-account-json' | 'access-token';
+  type: 'service-account-json' | 'access-token' | 'oauth-token-file';
 }
 
 export interface ComputeOperation {
@@ -260,7 +280,76 @@ export async function getGoogleAccessToken(): Promise<string> {
     return cachedToken.accessToken;
   }
 
-  const { key } = resolveCredentialDescriptor();
+  const descriptor = resolveCredentialDescriptor();
+  if (descriptor.type === 'oauth-token-file') {
+    const oauth = descriptor.oauth;
+    if (!oauth) {
+      throw new Error(
+        `OAuth token file source ${descriptor.source} did not include token material`,
+      );
+    }
+
+    if (oauth.access_token && oauth.expires_at_ms && oauth.expires_at_ms - now > 60_000) {
+      cachedToken = {
+        accessToken: oauth.access_token,
+        expiresAtMs: oauth.expires_at_ms,
+      };
+      return oauth.access_token;
+    }
+
+    const tokenUri = oauth.token_uri ?? 'https://oauth2.googleapis.com/token';
+    const response = await fetch(tokenUri, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: oauth.client_id,
+        ...(oauth.client_secret ? { client_secret: oauth.client_secret } : {}),
+        refresh_token: oauth.refresh_token,
+      }),
+    });
+    const bodyText = await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `Failed to refresh OAuth access token from ${descriptor.source}: ${bodyText}`,
+      );
+    }
+
+    const refreshed = JSON.parse(bodyText) as {
+      access_token?: string;
+      expires_in?: number;
+      refresh_token?: string;
+      scope?: string;
+      token_type?: string;
+    };
+    if (!refreshed.access_token || typeof refreshed.expires_in !== 'number') {
+      throw new Error(
+        `OAuth refresh response from ${descriptor.source} is missing access_token or expires_in`,
+      );
+    }
+
+    const expiresAtMs = now + refreshed.expires_in * 1_000;
+    const updatedCredential: LocalOAuthCredential = {
+      ...oauth,
+      access_token: refreshed.access_token,
+      expires_at_ms: expiresAtMs,
+      refresh_token: refreshed.refresh_token ?? oauth.refresh_token,
+      scope: refreshed.scope ?? oauth.scope,
+      type: refreshed.token_type ?? oauth.type,
+      token_uri: tokenUri,
+    };
+    persistLocalOAuthCredential(updatedCredential, descriptor.source);
+
+    cachedToken = {
+      accessToken: refreshed.access_token,
+      expiresAtMs,
+    };
+    return refreshed.access_token;
+  }
+
+  const { key } = descriptor;
   if (!key) {
     throw new Error('No service account key is available for OAuth token minting');
   }
@@ -463,6 +552,16 @@ function resolveCredentialDescriptor(): CredentialDescriptor {
     };
   }
 
+  const oauthFilePath = resolveOAuthTokenFilePath();
+  if (existsSync(oauthFilePath)) {
+    const rawCredential = readFileSync(oauthFilePath, 'utf8');
+    return {
+      oauth: parseLocalOAuthCredential(rawCredential, oauthFilePath),
+      source: oauthFilePath,
+      type: 'oauth-token-file',
+    };
+  }
+
   const inlineJsonEnvs = ['GCP_SERVICE_ACCOUNT_JSON', 'GCP_SERVICE_ACCOUNT_KEY_JSON'];
   for (const envName of inlineJsonEnvs) {
     const value = process.env[envName];
@@ -490,7 +589,7 @@ function resolveCredentialDescriptor(): CredentialDescriptor {
   }
 
   throw new Error(
-    'Google credentials are required via GCP_SERVICE_ACCOUNT_JSON, GOOGLE_APPLICATION_CREDENTIALS, GCP_SERVICE_ACCOUNT_FILE, GCP_SERVICE_ACCOUNT_KEY_JSON, GCP_SERVICE_ACCOUNT_KEY_FILE, or GCP_ACCESS_TOKEN',
+    `Google credentials are required via GCP_ACCESS_TOKEN, ${resolveOAuthTokenFilePath()}, GCP_SERVICE_ACCOUNT_JSON, GOOGLE_APPLICATION_CREDENTIALS, GCP_SERVICE_ACCOUNT_FILE, GCP_SERVICE_ACCOUNT_KEY_JSON, or GCP_SERVICE_ACCOUNT_KEY_FILE`,
   );
 }
 
@@ -520,6 +619,58 @@ function parseServiceAccountKey(rawJson: string, source: string): ServiceAccount
     );
   }
   return parsed;
+}
+
+function parseLocalOAuthCredential(rawJson: string, source: string): LocalOAuthCredential {
+  let parsed: LocalOAuthCredential;
+  try {
+    parsed = JSON.parse(rawJson) as LocalOAuthCredential;
+  } catch (error) {
+    throw new Error(
+      `Failed to parse local OAuth token JSON from ${source}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      {
+        cause: error,
+      },
+    );
+  }
+
+  if (!parsed.client_id || !parsed.refresh_token) {
+    throw new Error(
+      `Credential from ${source} is missing client_id or refresh_token and is not a valid local OAuth token record`,
+    );
+  }
+  if (parsed.expires_at_ms !== undefined && !Number.isFinite(parsed.expires_at_ms)) {
+    throw new Error(`Credential from ${source} has invalid expires_at_ms`);
+  }
+  return parsed;
+}
+
+export function resolveOAuthTokenFilePath(): string {
+  const fromEnv = process.env.GCP_OAUTH_TOKEN_FILE;
+  if (fromEnv) {
+    return fromEnv;
+  }
+  return join(homedir(), '.config', 'calypso', 'gcp-oauth-token.json');
+}
+
+export function writeLocalOAuthCredentialFile(
+  credential: LocalOAuthCredential,
+  filePath = resolveOAuthTokenFilePath(),
+): void {
+  persistLocalOAuthCredential(credential, filePath);
+}
+
+function persistLocalOAuthCredential(credential: LocalOAuthCredential, filePath: string): void {
+  mkdirSync(dirname(filePath), { recursive: true });
+  const body = `${JSON.stringify(credential, null, 2)}\n`;
+  writeFileSync(filePath, body, { mode: 0o600 });
+  chmodSync(filePath, 0o600);
+}
+
+export function clearGoogleAccessTokenCache(): void {
+  cachedToken = null;
 }
 
 function createSignedJwt(key: ServiceAccountKey, tokenUri: string): string {

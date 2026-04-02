@@ -59,7 +59,9 @@ Required configuration:
   CALYPSO_SSH_PRIVATE_KEY or CALYPSO_SSH_PRIVATE_KEY_FILE
 
 Google auth:
-  Use GCP_ACCESS_TOKEN, GCP_SERVICE_ACCOUNT_KEY_JSON, GCP_SERVICE_ACCOUNT_KEY_FILE,
+  Preferred: GCP_ACCESS_TOKEN or local OAuth cache via GCP_OAUTH_TOKEN_FILE
+  (default ~/.config/calypso/gcp-oauth-token.json).
+  Migration fallback: GCP_SERVICE_ACCOUNT_KEY_JSON, GCP_SERVICE_ACCOUNT_KEY_FILE,
   or GOOGLE_APPLICATION_CREDENTIALS. Standard API keys are not sufficient for
   IAM-authorized resource provisioning.
 

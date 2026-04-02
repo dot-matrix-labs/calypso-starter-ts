@@ -98,12 +98,13 @@ Usage:
   bun run scripts/gcp/doctor.ts --project <project-id> [--mode provision|deploy]
 
 Credential sources, in resolution order:
-  1. GCP_SERVICE_ACCOUNT_JSON
-  2. GOOGLE_APPLICATION_CREDENTIALS
-  3. GCP_SERVICE_ACCOUNT_FILE
-  4. GCP_SERVICE_ACCOUNT_KEY_JSON
-  5. GCP_SERVICE_ACCOUNT_KEY_FILE
-  6. GCP_ACCESS_TOKEN
+  1. GCP_ACCESS_TOKEN
+  2. GCP_OAUTH_TOKEN_FILE (default: ~/.config/calypso/gcp-oauth-token.json)
+  3. GCP_SERVICE_ACCOUNT_JSON
+  4. GOOGLE_APPLICATION_CREDENTIALS
+  5. GCP_SERVICE_ACCOUNT_FILE
+  6. GCP_SERVICE_ACCOUNT_KEY_JSON
+  7. GCP_SERVICE_ACCOUNT_KEY_FILE
 
 Default mode: provision
 `.trim();
