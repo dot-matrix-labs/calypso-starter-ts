@@ -10,13 +10,13 @@
 #
 # Phases (each gates on a health check before the next begins):
 #   1. DB migrations  — bun run packages/db/migrate.ts; gate: SELECT 1 on DB
-#   2. API server     — kubectl set image deployment/calypso-api; gate: GET /healthz
+#   2. API server     — kubectl set image deployment/calypso-app; gate: GET /health
 #   3. Workers        — kubectl set image per worker type; gate: pod Ready condition
 #   4. Static web     — aws s3 sync + CDN invalidation; gate: sync succeeds
 #
 # Environment variables (required at deploy time):
 #   IMAGE_REPO        — container image repository (default: ghcr.io/<owner>/calypso-starter-ts)
-#   API_URL           — base URL for the running API server (default: http://calypso-api/healthz)
+#   API_URL           — base URL for the running API server (default: http://<host>:31415/health)
 #   DATABASE_URL      — postgres connection string used by migration runner
 #   CDN_DISTRIBUTION  — CloudFront distribution ID for cache invalidation (optional)
 #   S3_BUCKET         — S3 bucket name for static web assets (optional)
@@ -44,7 +44,9 @@ HEALTH_RETRY_INTERVAL="${HEALTH_RETRY_INTERVAL:-2}"
 # API health check URL — must be reachable from the runner.
 # Default assumes the app NodePort (31415) is reachable at the deploy host.
 # Override with API_URL=https://your-domain if a public hostname is available.
-API_HEALTHZ_URL="${API_URL:-http://${DEPLOY_HOST:-localhost}:31415}/healthz"
+APP_DEPLOYMENT="${APP_DEPLOYMENT:-calypso-app}"
+APP_CONTAINER_NAME="${APP_CONTAINER_NAME:-app}"
+API_HEALTHZ_URL="${API_URL:-http://${DEPLOY_HOST:-localhost}:31415}/health"
 
 # Worker deployment names — e.g. "analytics ingestion" → worker-analytics, worker-ingestion
 WORKER_TYPES="${WORKER_TYPES:-}"
@@ -169,20 +171,20 @@ log "Phase 1 complete."
 
 log "=== Phase 2: API server rollout ==="
 
-log "Updating calypso-api deployment to image: ${IMAGE}"
-kubectl set image "deployment/calypso-api" "app=${IMAGE}"
+log "Updating ${APP_DEPLOYMENT} deployment to image: ${IMAGE}"
+kubectl set image "deployment/${APP_DEPLOYMENT}" "${APP_CONTAINER_NAME}=${IMAGE}"
 
 log "Waiting for API rollout to complete..."
-if ! kubectl rollout status deployment/calypso-api --timeout="$((HEALTH_MAX_RETRIES * HEALTH_RETRY_INTERVAL))s"; then
+if ! kubectl rollout status "deployment/${APP_DEPLOYMENT}" --timeout="$((HEALTH_MAX_RETRIES * HEALTH_RETRY_INTERVAL))s"; then
   log "Rollout status timed out — triggering rollback..."
-  kubectl rollout undo deployment/calypso-api
+  kubectl rollout undo "deployment/${APP_DEPLOYMENT}"
   die "API server rollout failed — rolled back deployment."
 fi
 
 log "Verifying API health at ${API_HEALTHZ_URL}..."
 if ! wait_for_healthz "${API_HEALTHZ_URL}"; then
   log "API health check failed — triggering rollback..."
-  kubectl rollout undo deployment/calypso-api
+  kubectl rollout undo "deployment/${APP_DEPLOYMENT}"
   die "API server did not become healthy — rolled back deployment."
 fi
 
