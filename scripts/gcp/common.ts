@@ -382,7 +382,7 @@ export function derivePublicKey(privateKeyPath: string): string {
 }
 
 export function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+  return `'${value.split("'").join(`'"'"'`)}'`;
 }
 
 export async function waitForTcpPort(host: string, port: number, timeoutMs: number): Promise<void> {
@@ -503,6 +503,9 @@ function parseServiceAccountKey(rawJson: string, source: string): ServiceAccount
       `Failed to parse service account JSON from ${source}: ${
         error instanceof Error ? error.message : String(error)
       }`,
+      {
+        cause: error,
+      },
     );
   }
 
