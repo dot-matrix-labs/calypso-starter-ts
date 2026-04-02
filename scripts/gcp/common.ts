@@ -28,9 +28,18 @@ interface CommandOptions {
 }
 
 interface ServiceAccountKey {
+  type?: string;
+  project_id?: string;
   client_email: string;
   private_key: string;
+  private_key_id?: string;
   token_uri?: string;
+}
+
+interface CredentialDescriptor {
+  key?: ServiceAccountKey;
+  source: string;
+  type: 'service-account-json' | 'access-token';
 }
 
 export interface ParsedArgs {
@@ -41,6 +50,13 @@ export interface ParsedArgs {
 export interface TempFile {
   path: string;
   cleanup: () => void;
+}
+
+export interface GoogleCredentialInfo {
+  principal?: string;
+  projectId?: string;
+  source: string;
+  type: 'service-account-json' | 'access-token';
 }
 
 export interface ComputeOperation {
@@ -244,7 +260,10 @@ export async function getGoogleAccessToken(): Promise<string> {
     return cachedToken.accessToken;
   }
 
-  const key = loadServiceAccountKey();
+  const { key } = resolveCredentialDescriptor();
+  if (!key) {
+    throw new Error('No service account key is available for OAuth token minting');
+  }
   const tokenUri = key.token_uri ?? 'https://oauth2.googleapis.com/token';
   const assertion = createSignedJwt(key, tokenUri);
 
@@ -270,6 +289,23 @@ export async function getGoogleAccessToken(): Promise<string> {
     expiresAtMs: now + json.expires_in * 1_000,
   };
   return json.access_token;
+}
+
+export function getGoogleCredentialInfo(): GoogleCredentialInfo {
+  const descriptor = resolveCredentialDescriptor();
+  if (descriptor.type === 'access-token') {
+    return {
+      source: descriptor.source,
+      type: descriptor.type,
+    };
+  }
+
+  return {
+    principal: descriptor.key?.client_email,
+    projectId: descriptor.key?.project_id,
+    source: descriptor.source,
+    type: descriptor.type,
+  };
 }
 
 export async function waitForGoogleOperation(
@@ -419,21 +455,68 @@ function decodeOutput(value: ArrayBufferLike | Uint8Array | null | undefined): s
   return textDecoder.decode(uint8Array).trim();
 }
 
-function loadServiceAccountKey(): ServiceAccountKey {
-  const inlineJson = process.env.GCP_SERVICE_ACCOUNT_KEY_JSON;
-  if (inlineJson) {
-    return JSON.parse(inlineJson) as ServiceAccountKey;
+function resolveCredentialDescriptor(): CredentialDescriptor {
+  if (process.env.GCP_ACCESS_TOKEN) {
+    return {
+      source: 'GCP_ACCESS_TOKEN',
+      type: 'access-token',
+    };
   }
 
-  const keyPath =
-    process.env.GCP_SERVICE_ACCOUNT_KEY_FILE ?? process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (!keyPath) {
+  const inlineJsonEnvs = ['GCP_SERVICE_ACCOUNT_JSON', 'GCP_SERVICE_ACCOUNT_KEY_JSON'];
+  for (const envName of inlineJsonEnvs) {
+    const value = process.env[envName];
+    if (!value) continue;
+    return {
+      key: parseServiceAccountKey(value, envName),
+      source: envName,
+      type: 'service-account-json',
+    };
+  }
+
+  const filePathEnvs = [
+    'GOOGLE_APPLICATION_CREDENTIALS',
+    'GCP_SERVICE_ACCOUNT_FILE',
+    'GCP_SERVICE_ACCOUNT_KEY_FILE',
+  ];
+  for (const envName of filePathEnvs) {
+    const value = process.env[envName];
+    if (!value) continue;
+    return {
+      key: parseServiceAccountKey(readFileSync(value, 'utf8'), envName),
+      source: envName,
+      type: 'service-account-json',
+    };
+  }
+
+  throw new Error(
+    'Google credentials are required via GCP_SERVICE_ACCOUNT_JSON, GOOGLE_APPLICATION_CREDENTIALS, GCP_SERVICE_ACCOUNT_FILE, GCP_SERVICE_ACCOUNT_KEY_JSON, GCP_SERVICE_ACCOUNT_KEY_FILE, or GCP_ACCESS_TOKEN',
+  );
+}
+
+function parseServiceAccountKey(rawJson: string, source: string): ServiceAccountKey {
+  let parsed: ServiceAccountKey;
+  try {
+    parsed = JSON.parse(rawJson) as ServiceAccountKey;
+  } catch (error) {
     throw new Error(
-      'Google credentials are required via GCP_SERVICE_ACCOUNT_KEY_JSON, GCP_SERVICE_ACCOUNT_KEY_FILE, GOOGLE_APPLICATION_CREDENTIALS, or GCP_ACCESS_TOKEN',
+      `Failed to parse service account JSON from ${source}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 
-  return JSON.parse(readFileSync(keyPath, 'utf8')) as ServiceAccountKey;
+  if (parsed.type && parsed.type !== 'service_account') {
+    throw new Error(
+      `Credential from ${source} is type "${parsed.type}", but this tool expects a service account JSON key`,
+    );
+  }
+  if (!parsed.client_email || !parsed.private_key) {
+    throw new Error(
+      `Credential from ${source} is missing client_email or private_key and is not a valid service account JSON key`,
+    );
+  }
+  return parsed;
 }
 
 function createSignedJwt(key: ServiceAccountKey, tokenUri: string): string {

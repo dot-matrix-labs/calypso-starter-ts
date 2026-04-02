@@ -22,6 +22,7 @@ import {
   waitForGoogleOperation,
   waitForTcpPort,
 } from './common';
+import { runDoctor } from './doctor';
 
 interface ComputeNetwork {
   selfLink: string;
@@ -72,6 +73,7 @@ Common optional settings:
   --ssh-source-ranges / CALYPSO_SSH_SOURCE_RANGES  default: 0.0.0.0/0
   --app-source-ranges / CALYPSO_APP_SOURCE_RANGES  default: 0.0.0.0/0
   --non-interactive / CALYPSO_NON_INTERACTIVE default: false
+  --skip-doctor / CALYPSO_SKIP_GCP_DOCTOR    default: false
 
 Example:
   bun run scripts/gcp/provision.ts \\
@@ -203,6 +205,7 @@ async function main(): Promise<void> {
     ['CALYPSO_APP_SOURCE_RANGES'],
     '0.0.0.0/0',
   )!;
+  const skipDoctor = resolveBooleanOption(args, 'skip-doctor', ['CALYPSO_SKIP_GCP_DOCTOR'], false);
   const nonInteractive = resolveBooleanOption(
     args,
     'non-interactive',
@@ -218,6 +221,20 @@ async function main(): Promise<void> {
   );
 
   try {
+    if (!skipDoctor) {
+      const doctor = await runDoctor({
+        mode: 'provision',
+        projectId,
+      });
+      if (!doctor.ok) {
+        throw new Error(
+          `Doctor failed. Missing permissions: ${
+            doctor.missingPermissions.join(', ') || 'none'
+          }. Disabled APIs: ${doctor.disabledServices.join(', ') || 'none'}`,
+        );
+      }
+    }
+
     log(`Resolving project number for ${projectId}`);
     const projectNumber = await getProjectNumber(projectId);
 

@@ -1,21 +1,92 @@
 # Google Cloud Deployment
 
-Calypso now includes two Bun scripts for Google Cloud deployment automation without
+Calypso now includes three Bun scripts for Google Cloud deployment automation without
 `gcloud`:
 
+- `scripts/gcp/doctor.ts`
 - `scripts/gcp/provision.ts`
 - `scripts/gcp/deploy.ts`
 
 ## Authentication
 
-These scripts call Google Cloud REST APIs directly. Use one of:
+These scripts call Google Cloud REST APIs directly. The canonical credential inputs are:
 
-- `GCP_ACCESS_TOKEN`
-- `GCP_SERVICE_ACCOUNT_KEY_JSON`
-- `GCP_SERVICE_ACCOUNT_KEY_FILE`
+- `GCP_SERVICE_ACCOUNT_JSON`
 - `GOOGLE_APPLICATION_CREDENTIALS`
 
+Supported legacy fallbacks are:
+
+- `GCP_SERVICE_ACCOUNT_FILE`
+- `GCP_SERVICE_ACCOUNT_KEY_JSON`
+- `GCP_SERVICE_ACCOUNT_KEY_FILE`
+- `GCP_ACCESS_TOKEN`
+
 Standard API keys are not sufficient for IAM-authorized provisioning calls.
+
+Recommended default:
+
+- CLI: `export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json`
+- GitHub Actions: store the raw JSON in `GCP_SERVICE_ACCOUNT_JSON`
+
+## Required permissions
+
+For provisioning, the doctor checks this exact permission set:
+
+- `resourcemanager.projects.get`
+- `serviceusage.services.get`
+- `serviceusage.services.enable`
+- `compute.networks.get`
+- `compute.networks.create`
+- `compute.subnetworks.get`
+- `compute.subnetworks.create`
+- `compute.firewalls.get`
+- `compute.firewalls.create`
+- `compute.globalAddresses.get`
+- `compute.globalAddresses.create`
+- `compute.instances.get`
+- `compute.instances.create`
+- `compute.instances.start`
+- `compute.images.useReadOnly`
+- `compute.subnetworks.use`
+- `compute.subnetworks.useExternalIp`
+- `compute.globalOperations.get`
+- `compute.regionOperations.get`
+- `compute.zoneOperations.get`
+- `servicenetworking.services.addPeering`
+- `alloydb.clusters.get`
+- `alloydb.clusters.create`
+- `alloydb.instances.get`
+- `alloydb.instances.create`
+- `alloydb.operations.get`
+
+The simplest role bundle that matches that scope is:
+
+- `roles/serviceusage.serviceUsageAdmin`
+- `roles/compute.instanceAdmin.v1`
+- `roles/compute.networkAdmin`
+- `roles/compute.securityAdmin`
+- `roles/alloydb.admin`
+
+If you switch the VM boot image to a private custom image, also grant
+`roles/compute.imageUser` on the image project.
+
+For deploy-only checks, the doctor only requires:
+
+- `resourcemanager.projects.get`
+- `compute.instances.get`
+- `alloydb.clusters.get`
+- `alloydb.instances.get`
+
+## Doctor
+
+Run the preflight explicitly with:
+
+```sh
+bun run gcp:doctor --project my-project --mode provision
+```
+
+`scripts/gcp/provision.ts` runs this doctor automatically unless
+`--skip-doctor` or `CALYPSO_SKIP_GCP_DOCTOR=1` is set.
 
 ## Provisioning
 

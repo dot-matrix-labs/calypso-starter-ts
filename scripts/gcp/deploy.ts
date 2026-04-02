@@ -20,6 +20,7 @@ import {
   shellQuote,
   waitForTcpPort,
 } from './common';
+import { runDoctor } from './doctor';
 
 interface ComputeInstance {
   status?: string;
@@ -107,6 +108,17 @@ async function main(): Promise<void> {
   const repoRoot = join(import.meta.dir, '..', '..');
 
   try {
+    const doctor = await runDoctor({
+      mode: 'deploy',
+      projectId,
+      quiet: true,
+    });
+    if (!doctor.ok) {
+      throw new Error(
+        `Doctor failed. Missing permissions: ${doctor.missingPermissions.join(', ') || 'none'}`,
+      );
+    }
+
     await getProjectNumber(projectId);
 
     const compute = await googleJsonRequest<ComputeInstance>(
