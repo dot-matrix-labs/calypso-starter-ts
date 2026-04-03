@@ -50,13 +50,18 @@ const helpText = `
 Create or reuse the Google Cloud infrastructure for a Calypso deployment, then
 delegate host initialization to scripts/init-host.sh in remote-Postgres mode.
 
+When --talos-mode is set, host initialization is delegated to
+scripts/init-host-talos.sh instead. The Talos path does not use SSH for
+bootstrapping; it creates a Talos API firewall rule (port 50000) and waits
+for the Talos API port rather than an SSH port.
+
 Required configuration:
   --project / GCP_PROJECT_ID
   --region / GCP_REGION
   --zone / GCP_ZONE
   --environment / CALYPSO_ENV
   --image-tag / CALYPSO_IMAGE_TAG
-  SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE
+  SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE (not required in --talos-mode)
 
 Google auth:
   Preferred: GCP_ACCESS_TOKEN or local OAuth cache via GCP_OAUTH_TOKEN_FILE
@@ -76,14 +81,27 @@ Common optional settings:
   --app-source-ranges / CALYPSO_APP_SOURCE_RANGES  default: 0.0.0.0/0
   --non-interactive / CALYPSO_NON_INTERACTIVE default: false
   --skip-doctor / CALYPSO_SKIP_GCP_DOCTOR    default: false
+  --talos-mode / CALYPSO_TALOS_MODE          default: false
+  --talos-image / GCP_TALOS_IMAGE            Talos custom image URL (required in talos mode)
+  --talos-api-source-ranges / CALYPSO_TALOS_API_SOURCE_RANGES  default: 0.0.0.0/0
 
-Example:
+Example (standard):
   bun run scripts/gcp/provision.ts \\
     --project my-project \\
     --region us-central1 \\
     --zone us-central1-a \\
     --environment demo \\
     --image-tag v1.2.3
+
+Example (Talos):
+  bun run scripts/gcp/provision.ts \\
+    --project my-project \\
+    --region us-central1 \\
+    --zone us-central1-a \\
+    --environment demo \\
+    --image-tag v1.2.3 \\
+    --talos-mode \\
+    --talos-image projects/my-project/global/images/talos-v1-8-0
 `.trim();
 
 export async function main(): Promise<void> {
@@ -93,7 +111,13 @@ export async function main(): Promise<void> {
     return;
   }
 
-  requireCommands(['ssh', 'ssh-add', 'ssh-keygen', 'bash']);
+  const talosMode = resolveBooleanOption(args, 'talos-mode', ['CALYPSO_TALOS_MODE'], false);
+
+  if (talosMode) {
+    requireCommands(['talosctl', 'kubectl', 'bash']);
+  } else {
+    requireCommands(['ssh', 'ssh-add', 'ssh-keygen', 'bash']);
+  }
 
   const projectId = resolveRequiredOption(args, 'project', ['GCP_PROJECT_ID'], 'GCP project');
   const region = resolveRequiredOption(args, 'region', ['GCP_REGION'], 'GCP region');
@@ -214,13 +238,19 @@ export async function main(): Promise<void> {
     ['CALYPSO_NON_INTERACTIVE'],
     false,
   );
+  const talosImage = resolveOption(args, 'talos-image', ['GCP_TALOS_IMAGE'], '')!;
+  const talosApiSourceRanges = resolveOption(
+    args,
+    'talos-api-source-ranges',
+    ['CALYPSO_TALOS_API_SOURCE_RANGES'],
+    '0.0.0.0/0',
+  )!;
 
-  const sshAuth = ensureSshAuthMaterial();
-  const publicKeyFile = createTempFile(
-    'id_ed25519.pub',
-    `${resolveAdminPublicKey(sshAuth)}\n`,
-    0o644,
-  );
+  const sshAuth = talosMode ? null : ensureSshAuthMaterial();
+  const publicKeyFile =
+    sshAuth !== null
+      ? createTempFile('id_ed25519.pub', `${resolveAdminPublicKey(sshAuth)}\n`, 0o644)
+      : null;
 
   try {
     if (!skipDoctor) {
@@ -250,14 +280,26 @@ export async function main(): Promise<void> {
       network.selfLink,
       subnetworkCidr,
     );
-    await ensureFirewallRule(
-      projectId,
-      `calypso-${environment}-ssh`,
-      network.selfLink,
-      targetTag,
-      ['22'],
-      sshSourceRanges,
-    );
+
+    if (talosMode) {
+      await ensureFirewallRule(
+        projectId,
+        `calypso-${environment}-talos-api`,
+        network.selfLink,
+        targetTag,
+        ['50000'],
+        talosApiSourceRanges,
+      );
+    } else {
+      await ensureFirewallRule(
+        projectId,
+        `calypso-${environment}-ssh`,
+        network.selfLink,
+        targetTag,
+        ['22'],
+        sshSourceRanges,
+      );
+    }
     await ensureFirewallRule(
       projectId,
       `calypso-${environment}-app`,
@@ -291,22 +333,37 @@ export async function main(): Promise<void> {
       psaRangeName,
     });
 
-    const hostIp = await ensureVm({
-      projectId,
-      zone,
-      vmName,
-      vmMachineType,
-      vmDiskSizeGb,
-      vmDiskType,
-      vmImageProject,
-      vmImageFamily,
-      subnetworkSelfLink: subnetwork.selfLink,
-      targetTag,
-      publicKey: readKeyFile(publicKeyFile.path),
-    });
-
-    log(`Waiting for SSH on ${hostIp}:22`);
-    await waitForTcpPort(hostIp, 22, 5 * 60_000);
+    let hostIp: string;
+    if (talosMode) {
+      if (!talosImage) {
+        throw new Error('--talos-image / GCP_TALOS_IMAGE is required in Talos mode');
+      }
+      hostIp = await ensureVmTalos({
+        projectId,
+        zone,
+        vmName,
+        vmMachineType,
+        vmDiskSizeGb,
+        vmDiskType,
+        talosImage,
+        subnetworkSelfLink: subnetwork.selfLink,
+        targetTag,
+      });
+    } else {
+      hostIp = await ensureVm({
+        projectId,
+        zone,
+        vmName,
+        vmMachineType,
+        vmDiskSizeGb,
+        vmDiskType,
+        vmImageProject,
+        vmImageFamily,
+        subnetworkSelfLink: subnetwork.selfLink,
+        targetTag,
+        publicKey: readKeyFile(publicKeyFile!.path),
+      });
+    }
 
     const initHostEnv: Record<string, string | undefined> = {
       ...process.env,
@@ -320,15 +377,28 @@ export async function main(): Promise<void> {
       CALYPSO_NON_INTERACTIVE: nonInteractive ? '1' : process.env.CALYPSO_NON_INTERACTIVE,
     };
 
-    log(`Delegating host bootstrap to scripts/init-host.sh for ${hostIp}`);
-    const initHostCommand = ['bash', 'scripts/init-host.sh', hostIp, environment, '--admin-key'];
-    initHostCommand.push(publicKeyFile.path);
-    if (sshAuth.privateKeyPath) {
-      initHostCommand.push('--root-key', sshAuth.privateKeyPath);
+    if (talosMode) {
+      log(`Waiting for Talos API on ${hostIp}:50000`);
+      await waitForTcpPort(hostIp, 50000, 5 * 60_000);
+
+      log(`Delegating host bootstrap to scripts/init-host-talos.sh for ${hostIp}`);
+      runCommand(['bash', 'scripts/init-host-talos.sh', hostIp, environment], {
+        env: initHostEnv,
+      });
+    } else {
+      log(`Waiting for SSH on ${hostIp}:22`);
+      await waitForTcpPort(hostIp, 22, 5 * 60_000);
+
+      log(`Delegating host bootstrap to scripts/init-host.sh for ${hostIp}`);
+      const initHostCommand = ['bash', 'scripts/init-host.sh', hostIp, environment, '--admin-key'];
+      initHostCommand.push(publicKeyFile!.path);
+      if (sshAuth!.privateKeyPath) {
+        initHostCommand.push('--root-key', sshAuth!.privateKeyPath);
+      }
+      runCommand(initHostCommand, {
+        env: initHostEnv,
+      });
     }
-    runCommand(initHostCommand, {
-      env: initHostEnv,
-    });
 
     log('Provisioning complete.');
     console.log('');
@@ -339,9 +409,12 @@ export async function main(): Promise<void> {
     console.log(`AlloyDB instance:  ${alloyInstance}`);
     console.log(`AlloyDB IP:        ${alloy.ipAddress}`);
     console.log(`Namespace:         calypso-${environment}`);
+    if (talosMode) {
+      console.log(`Bootstrap mode:    talos`);
+    }
   } finally {
-    sshAuth.cleanup();
-    publicKeyFile.cleanup();
+    sshAuth?.cleanup();
+    publicKeyFile?.cleanup();
   }
 }
 
@@ -721,6 +794,88 @@ async function ensureVm(config: {
               autoDelete: true,
               initializeParams: {
                 sourceImage: `projects/${config.vmImageProject}/global/images/family/${config.vmImageFamily}`,
+                diskSizeGb: String(config.vmDiskSizeGb),
+                diskType: `zones/${config.zone}/diskTypes/${config.vmDiskType}`,
+              },
+            },
+          ],
+          networkInterfaces: [
+            {
+              subnetwork: config.subnetworkSelfLink,
+              accessConfigs: [
+                {
+                  name: 'External NAT',
+                  type: 'ONE_TO_ONE_NAT',
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    );
+    if (!operation?.name) throw new Error('Compute instance creation did not return an operation');
+    await waitForGoogleOperation(
+      `create Compute Engine VM ${config.vmName}`,
+      computeZonalOperationUrl(config.projectId, config.zone, operation.name),
+      15 * 60_000,
+    );
+    instance = await googleJsonRequest<ComputeInstance>(instanceUrl);
+  }
+
+  if (instance?.status !== 'RUNNING') {
+    log(`Starting Compute Engine VM ${config.vmName}`);
+    const operation = await googleJsonRequest<{ name?: string }>(`${instanceUrl}/start`, {
+      method: 'POST',
+    });
+    if (operation?.name) {
+      await waitForGoogleOperation(
+        `start Compute Engine VM ${config.vmName}`,
+        computeZonalOperationUrl(config.projectId, config.zone, operation.name),
+      );
+    }
+    instance = await googleJsonRequest<ComputeInstance>(instanceUrl);
+  }
+
+  const natIp = instance ? extractNatIp(instance) : undefined;
+  if (!natIp) {
+    throw new Error(`No external IP found on VM ${config.vmName}`);
+  }
+  return natIp;
+}
+
+async function ensureVmTalos(config: {
+  projectId: string;
+  zone: string;
+  vmName: string;
+  vmMachineType: string;
+  vmDiskSizeGb: number;
+  vmDiskType: string;
+  talosImage: string;
+  subnetworkSelfLink: string;
+  targetTag: string;
+}): Promise<string> {
+  const instanceUrl = `https://compute.googleapis.com/compute/v1/projects/${config.projectId}/zones/${config.zone}/instances/${config.vmName}`;
+  let instance = await googleJsonRequest<ComputeInstance>(instanceUrl, {}, { allow404: true });
+
+  if (!instance) {
+    log(`Creating Compute Engine VM ${config.vmName} with Talos image`);
+    const operation = await googleJsonRequest<{ name?: string }>(
+      `https://compute.googleapis.com/compute/v1/projects/${config.projectId}/zones/${config.zone}/instances`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          name: config.vmName,
+          machineType: `zones/${config.zone}/machineTypes/${config.vmMachineType}`,
+          tags: { items: [config.targetTag] },
+          metadata: {
+            items: [{ key: 'enable-oslogin', value: 'FALSE' }],
+          },
+          disks: [
+            {
+              boot: true,
+              autoDelete: true,
+              initializeParams: {
+                sourceImage: config.talosImage,
                 diskSizeGb: String(config.vmDiskSizeGb),
                 diskType: `zones/${config.zone}/diskTypes/${config.vmDiskType}`,
               },

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://compute.googleapis.com/compute/v1/projects/superfield-492115/global/firewalls/calypso-demo-talos-api"
+  },
+  "response": {
+    "body": {
+      "name": "calypso-demo-talos-api"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

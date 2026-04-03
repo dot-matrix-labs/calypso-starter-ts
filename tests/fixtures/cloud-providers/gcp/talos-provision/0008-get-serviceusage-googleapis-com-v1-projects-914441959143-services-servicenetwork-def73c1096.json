@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://serviceusage.googleapis.com/v1/projects/914441959143/services/servicenetworking.googleapis.com"
+  },
+  "response": {
+    "body": {
+      "state": "ENABLED"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

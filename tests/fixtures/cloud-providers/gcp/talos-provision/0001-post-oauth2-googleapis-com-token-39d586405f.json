@@ -1,0 +1,22 @@
+{
+  "request": {
+    "body": {
+      "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      "assertion": "<redacted-jwt>"
+    },
+    "method": "POST",
+    "url": "https://oauth2.googleapis.com/token"
+  },
+  "response": {
+    "body": {
+      "access_token": "fixture-access-token",
+      "expires_in": 3599,
+      "token_type": "Bearer"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

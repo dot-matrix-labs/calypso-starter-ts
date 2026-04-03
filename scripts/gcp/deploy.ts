@@ -38,8 +38,11 @@ interface AlloyInstance {
 }
 
 const helpText = `
-Validate the Google Cloud VM and AlloyDB instance, prepare kube access over SSH,
-run pre-deploy liveness checks, and deploy a given image tag.
+Validate the Google Cloud VM and AlloyDB instance, prepare kube access, run
+pre-deploy liveness checks, and deploy a given image tag.
+
+In standard mode, cluster access is obtained via an SSH tunnel (k3s).
+In --talos-mode, cluster access is obtained via talosctl kubeconfig without SSH.
 
 Required configuration:
   --project / GCP_PROJECT_ID
@@ -50,11 +53,12 @@ Required configuration:
   --alloydb-cluster / GCP_ALLOYDB_CLUSTER
   --alloydb-instance / GCP_ALLOYDB_INSTANCE
   --tag / CALYPSO_IMAGE_TAG
-  SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE
+  SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE (not required in --talos-mode)
 
 Flags:
-  --check-only   Validate liveness and stop before deploy.sh
-  --help         Show this message
+  --check-only          Validate liveness and stop before deploy.sh
+  --talos-mode          Use Talos API path instead of SSH tunnel
+  --help                Show this message
 `.trim();
 
 export async function main(): Promise<void> {
@@ -64,7 +68,13 @@ export async function main(): Promise<void> {
     return;
   }
 
-  requireCommands(['ssh', 'kubectl', 'bash']);
+  const talosMode = resolveBooleanOption(args, 'talos-mode', ['CALYPSO_TALOS_MODE'], false);
+
+  if (talosMode) {
+    requireCommands(['talosctl', 'kubectl', 'bash']);
+  } else {
+    requireCommands(['ssh', 'kubectl', 'bash']);
+  }
 
   const projectId = resolveRequiredOption(args, 'project', ['GCP_PROJECT_ID'], 'GCP project');
   const region = resolveRequiredOption(args, 'region', ['GCP_REGION'], 'GCP region');
@@ -105,8 +115,9 @@ export async function main(): Promise<void> {
     false,
   );
 
-  const sshAuth = ensureSshAuthMaterial();
-  const repoRoot = join(import.meta.dir, '..', '..');
+  const sshAuth = talosMode ? null : ensureSshAuthMaterial();
+  const scriptDir = import.meta.dir ?? join(process.cwd(), 'scripts', 'gcp');
+  const repoRoot = join(scriptDir, '..', '..');
 
   try {
     const doctor = await runDoctor({
@@ -148,99 +159,196 @@ export async function main(): Promise<void> {
       throw new Error(`AlloyDB instance ${alloyInstance} is not READY`);
     }
 
-    await runSsh(sshAuth, sshUser, hostIp, 'true');
-    await verifyDatabasePath(sshAuth, sshUser, hostIp, instance.ipAddress);
-
-    const tunnelProcess = startTunnel(sshAuth, sshUser, hostIp);
-    try {
-      await waitForTcpPort('127.0.0.1', 6443, 15_000);
-
-      const deployToken = (
-        await runSsh(
-          sshAuth,
-          sshUser,
-          hostIp,
-          `kubectl create token ${shellQuote(serviceAccountName)} --namespace ${shellQuote(namespace)} --duration=1h`,
-        )
-      ).trim();
-      const caData = (
-        await runSsh(
-          sshAuth,
-          sshUser,
-          hostIp,
-          `kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
-        )
-      ).trim();
-
-      const kubeconfigFile = createTempFile(
-        'kubeconfig',
-        buildKubeconfig({
-          namespace,
-          token: deployToken,
-          caData,
-        }),
-      );
-
-      try {
-        const kubectlEnv = {
-          KUBECONFIG: kubeconfigFile.path,
-          DEPLOY_HOST: hostIp,
-          DEPLOY_NAMESPACE: namespace,
-          APP_DEPLOYMENT: 'calypso-app',
-          APP_CONTAINER_NAME: 'app',
-          API_URL: `http://${hostIp}:31415/health`,
-        };
-
-        runCommand(['kubectl', 'get', 'namespace', namespace], { env: kubectlEnv });
-        runCommand(['kubectl', 'get', 'secret', 'calypso-api-secrets', '-n', namespace], {
-          env: kubectlEnv,
-        });
-        runCommand(['kubectl', 'get', 'deployment', 'calypso-app', '-n', namespace], {
-          env: kubectlEnv,
-        });
-        runCommand(
-          [
-            'kubectl',
-            'rollout',
-            'status',
-            'deployment/calypso-app',
-            '-n',
-            namespace,
-            '--timeout=60s',
-          ],
-          { env: kubectlEnv },
-        );
-
-        if (!skipHttpCheck) {
-          log(`Checking current app health at http://${hostIp}:31415/health`);
-          const response = await fetch(`http://${hostIp}:31415/health`);
-          if (!response.ok) {
-            throw new Error(`Current deployment health check failed with HTTP ${response.status}`);
-          }
-        }
-
-        if (checkOnly) {
-          log('Pre-deploy checks passed. --check-only set; skipping deploy.sh.');
-          return;
-        }
-
-        log(`Deploying image tag ${imageTag}`);
-        runCommand(['bash', './deploy.sh', imageTag], {
-          cwd: repoRoot,
-          env: kubectlEnv,
-        });
-
-        maybeAnnotateDeployment(kubectlEnv, namespace, imageTag);
-      } finally {
-        kubeconfigFile.cleanup();
-      }
-    } finally {
-      tunnelProcess.kill();
-      await tunnelProcess.exited;
+    if (talosMode) {
+      await runDeployTalos({
+        hostIp,
+        namespace,
+        serviceAccountName,
+        imageTag,
+        checkOnly,
+        skipHttpCheck,
+        repoRoot,
+      });
+    } else {
+      await runDeploySsh({
+        sshAuth: sshAuth!,
+        sshUser,
+        hostIp,
+        alloyIp: instance.ipAddress,
+        namespace,
+        serviceAccountName,
+        imageTag,
+        checkOnly,
+        skipHttpCheck,
+        repoRoot,
+      });
     }
   } finally {
-    sshAuth.cleanup();
+    sshAuth?.cleanup();
   }
+}
+
+async function runDeploySsh(config: {
+  sshAuth: ReturnType<typeof ensureSshAuthMaterial>;
+  sshUser: string;
+  hostIp: string;
+  alloyIp: string;
+  namespace: string;
+  serviceAccountName: string;
+  imageTag: string;
+  checkOnly: boolean;
+  skipHttpCheck: boolean;
+  repoRoot: string;
+}): Promise<void> {
+  const { sshAuth, sshUser, hostIp, alloyIp, namespace, serviceAccountName } = config;
+
+  await runSsh(sshAuth, sshUser, hostIp, 'true');
+  await verifyDatabasePath(sshAuth, sshUser, hostIp, alloyIp);
+
+  const tunnelProcess = startTunnel(sshAuth, sshUser, hostIp);
+  try {
+    await waitForTcpPort('127.0.0.1', 6443, 15_000);
+
+    const deployToken = (
+      await runSsh(
+        sshAuth,
+        sshUser,
+        hostIp,
+        `kubectl create token ${shellQuote(serviceAccountName)} --namespace ${shellQuote(namespace)} --duration=1h`,
+      )
+    ).trim();
+    const caData = (
+      await runSsh(
+        sshAuth,
+        sshUser,
+        hostIp,
+        `kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
+      )
+    ).trim();
+
+    const kubeconfigFile = createTempFile(
+      'kubeconfig',
+      buildKubeconfig({
+        namespace,
+        token: deployToken,
+        caData,
+      }),
+    );
+
+    try {
+      const kubectlEnv = {
+        KUBECONFIG: kubeconfigFile.path,
+        DEPLOY_HOST: hostIp,
+        DEPLOY_NAMESPACE: namespace,
+        APP_DEPLOYMENT: 'calypso-app',
+        APP_CONTAINER_NAME: 'app',
+        API_URL: `http://${hostIp}:31415/health`,
+      };
+
+      runLivenessChecks(kubectlEnv, namespace);
+
+      if (!config.skipHttpCheck) {
+        log(`Checking current app health at http://${hostIp}:31415/health`);
+        const response = await fetch(`http://${hostIp}:31415/health`);
+        if (!response.ok) {
+          throw new Error(`Current deployment health check failed with HTTP ${response.status}`);
+        }
+      }
+
+      if (config.checkOnly) {
+        log('Pre-deploy checks passed. --check-only set; skipping deploy.sh.');
+        return;
+      }
+
+      log(`Deploying image tag ${config.imageTag}`);
+      runCommand(['bash', './deploy.sh', config.imageTag], {
+        cwd: config.repoRoot,
+        env: kubectlEnv,
+      });
+
+      maybeAnnotateDeployment(kubectlEnv, namespace, config.imageTag);
+    } finally {
+      kubeconfigFile.cleanup();
+    }
+  } finally {
+    tunnelProcess.kill();
+    await tunnelProcess.exited;
+  }
+}
+
+async function runDeployTalos(config: {
+  hostIp: string;
+  namespace: string;
+  serviceAccountName: string;
+  imageTag: string;
+  checkOnly: boolean;
+  skipHttpCheck: boolean;
+  repoRoot: string;
+}): Promise<void> {
+  const { hostIp, namespace } = config;
+
+  log(`Fetching kubeconfig via talosctl from ${hostIp}`);
+  const kubeconfigFile = createTempFile('kubeconfig-talos', '');
+  try {
+    runCommand([
+      'talosctl',
+      'kubeconfig',
+      kubeconfigFile.path,
+      '--nodes',
+      hostIp,
+      '--endpoints',
+      hostIp,
+      '--force',
+    ]);
+
+    const kubectlEnv = {
+      KUBECONFIG: kubeconfigFile.path,
+      DEPLOY_HOST: hostIp,
+      DEPLOY_NAMESPACE: namespace,
+      APP_DEPLOYMENT: 'calypso-app',
+      APP_CONTAINER_NAME: 'app',
+      API_URL: `http://${hostIp}:31415/health`,
+    };
+
+    runLivenessChecks(kubectlEnv, namespace);
+
+    if (!config.skipHttpCheck) {
+      log(`Checking current app health at http://${hostIp}:31415/health`);
+      const response = await fetch(`http://${hostIp}:31415/health`);
+      if (!response.ok) {
+        throw new Error(`Current deployment health check failed with HTTP ${response.status}`);
+      }
+    }
+
+    if (config.checkOnly) {
+      log('Pre-deploy checks passed (Talos). --check-only set; skipping deploy.sh.');
+      return;
+    }
+
+    log(`Deploying image tag ${config.imageTag}`);
+    runCommand(['bash', './deploy.sh', config.imageTag], {
+      cwd: config.repoRoot,
+      env: kubectlEnv,
+    });
+
+    maybeAnnotateDeployment(kubectlEnv, namespace, config.imageTag);
+  } finally {
+    kubeconfigFile.cleanup();
+  }
+}
+
+function runLivenessChecks(kubectlEnv: Record<string, string>, namespace: string): void {
+  runCommand(['kubectl', 'get', 'namespace', namespace], { env: kubectlEnv });
+  runCommand(['kubectl', 'get', 'secret', 'calypso-api-secrets', '-n', namespace], {
+    env: kubectlEnv,
+  });
+  runCommand(['kubectl', 'get', 'deployment', 'calypso-app', '-n', namespace], {
+    env: kubectlEnv,
+  });
+  runCommand(
+    ['kubectl', 'rollout', 'status', 'deployment/calypso-app', '-n', namespace, '--timeout=60s'],
+    { env: kubectlEnv },
+  );
 }
 
 async function runSsh(

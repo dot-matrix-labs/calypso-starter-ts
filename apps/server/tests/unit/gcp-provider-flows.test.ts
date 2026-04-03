@@ -172,6 +172,8 @@ describe('Google Cloud provider flow replay coverage', () => {
       'GCP_ALLOYDB_POSTGRES_PASSWORD',
       'CALYPSO_SSH_SOURCE_RANGES',
       'CALYPSO_APP_SOURCE_RANGES',
+      'CALYPSO_TALOS_MODE',
+      'GCP_TALOS_IMAGE',
     ] as const) {
       delete process.env[key];
     }
@@ -247,6 +249,64 @@ describe('Google Cloud provider flow replay coverage', () => {
 
     expect(result.ok).toBe(false);
     expect(result.missingPermissions).toContain('serviceusage.services.enable');
+  });
+
+  test('replays the Talos provision path end to end', async () => {
+    process.env.CALYPSO_TALOS_MODE = '1';
+    process.env.GCP_TALOS_IMAGE = 'projects/superfield-492115/global/images/talos-v1-8-0';
+    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(
+      process.cwd(),
+      'tests',
+      'fixtures',
+      'cloud-providers',
+      'gcp',
+      'talos-provision',
+    );
+    common.clearGoogleHttpFixtureState();
+    process.argv = ['bun', 'scripts/gcp/provision.ts'];
+
+    await expect(runProvisionMain()).resolves.toBeUndefined();
+  });
+
+  test('replays the Talos deploy check-only path', async () => {
+    process.env.CALYPSO_TALOS_MODE = '1';
+    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(
+      process.cwd(),
+      'tests',
+      'fixtures',
+      'cloud-providers',
+      'gcp',
+      'talos-deploy-check-only',
+    );
+    common.clearGoogleHttpFixtureState();
+    vi.spyOn(doctorModule, 'runDoctor').mockResolvedValue({
+      credential: {
+        source: 'mock',
+        type: 'access-token',
+      },
+      disabledServices: [],
+      missingPermissions: [],
+      mode: 'deploy',
+      ok: true,
+      projectId: 'superfield-492115',
+      projectNumber: '914441959143',
+      warnings: [],
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200,
+          statusText: 'OK',
+        }),
+      ),
+    );
+    process.env.GCP_ACCESS_TOKEN = 'fixture-access-token';
+    common.clearGoogleAccessTokenCache();
+    process.argv = ['bun', 'scripts/gcp/deploy.ts', '--check-only'];
+
+    await expect(runDeployMain()).resolves.toBeUndefined();
   });
 });
 
