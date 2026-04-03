@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { spawnSync as nodeSpawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 
@@ -9,6 +10,7 @@ import {
   resolveOAuthTokenFilePath,
   resolveOption,
   resolveRequiredOption,
+  sleep,
   writeLocalOAuthCredentialFile,
 } from './common';
 
@@ -348,7 +350,7 @@ export async function pollDeviceCodeToken(params: {
   let intervalMs = params.intervalMs;
 
   while (Date.now() < deadline) {
-    await Bun.sleep(intervalMs);
+    await sleep(intervalMs);
 
     const response = await fetch(GOOGLE_TOKEN_URL, {
       method: 'POST',
@@ -559,11 +561,10 @@ async function exchangeAuthorizationCode(params: {
 function maybeOpenBrowser(url: string): void {
   const command =
     process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
-  const commandResult = Bun.spawnSync([command, url], {
-    stderr: 'ignore',
-    stdout: 'ignore',
+  const result = nodeSpawnSync(command, [url], {
+    stdio: ['ignore', 'ignore', 'ignore'],
   });
-  if (commandResult.exitCode !== 0) {
+  if (result.status !== 0) {
     console.log(`Unable to auto-open browser with ${command}. Open the URL manually.`);
   }
 }

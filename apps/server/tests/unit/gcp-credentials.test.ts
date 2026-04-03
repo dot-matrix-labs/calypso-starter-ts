@@ -1,8 +1,9 @@
+import { createServer } from 'node:http';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import {
   clearGoogleAccessTokenCache,
@@ -31,7 +32,6 @@ describe('Google credential resolution', () => {
     process.env.GCP_OAUTH_TOKEN_FILE = join(tempDir, 'missing-oauth.json');
     clearGoogleAccessTokenCache();
     clearGoogleHttpFixtureState();
-    vi.restoreAllMocks();
   });
 
   afterEach(() => {
@@ -41,7 +41,6 @@ describe('Google credential resolution', () => {
       delete process.env[key];
     }
     rmSync(tempDir, { recursive: true, force: true });
-    vi.restoreAllMocks();
   });
 
   test('prefers explicit GCP_ACCESS_TOKEN over all other credential sources', async () => {
@@ -106,44 +105,52 @@ describe('Google credential resolution', () => {
     expect(info.projectId).toBe('proj-123');
   });
 
-  test('refreshes expired local OAuth token and persists updated material', async () => {
-    const tokenFile = join(tempDir, 'oauth.json');
-    writeFileSync(
-      tokenFile,
-      JSON.stringify({
-        access_token: 'expired-token',
-        client_id: 'client-id',
-        expires_at_ms: Date.now() - 5_000,
-        refresh_token: 'refresh-token',
-        token_uri: 'https://oauth2.googleapis.com/token',
-      }),
-    );
-    process.env.GCP_OAUTH_TOKEN_FILE = tokenFile;
-
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () =>
+  test('refreshes expired local OAuth token via real HTTP server and persists updated material', async () => {
+    // Stand up a local HTTP server that acts as the OAuth2 token endpoint
+    const tokenServer = createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
         JSON.stringify({
           access_token: 'fresh-token',
           expires_in: 3600,
           scope: 'https://www.googleapis.com/auth/cloud-platform',
           token_type: 'Bearer',
         }),
+      );
     });
-    vi.stubGlobal('fetch', fetchMock);
 
-    const token = await getGoogleAccessToken();
-    expect(token).toBe('fresh-token');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await new Promise<void>((resolve) => tokenServer.listen(0, '127.0.0.1', () => resolve()));
+    const addr = tokenServer.address() as { port: number };
+    const localTokenUri = `http://127.0.0.1:${addr.port}/token`;
 
-    const persisted = JSON.parse(readFileSync(tokenFile, 'utf8')) as {
-      access_token?: string;
-      expires_at_ms?: number;
-      refresh_token?: string;
-    };
-    expect(persisted.access_token).toBe('fresh-token');
-    expect(persisted.refresh_token).toBe('refresh-token');
-    expect(typeof persisted.expires_at_ms).toBe('number');
-    expect((persisted.expires_at_ms ?? 0) > Date.now()).toBe(true);
+    try {
+      const tokenFile = join(tempDir, 'oauth.json');
+      writeFileSync(
+        tokenFile,
+        JSON.stringify({
+          access_token: 'expired-token',
+          client_id: 'client-id',
+          expires_at_ms: Date.now() - 5_000,
+          refresh_token: 'refresh-token',
+          token_uri: localTokenUri,
+        }),
+      );
+      process.env.GCP_OAUTH_TOKEN_FILE = tokenFile;
+
+      const token = await getGoogleAccessToken();
+      expect(token).toBe('fresh-token');
+
+      const persisted = JSON.parse(readFileSync(tokenFile, 'utf8')) as {
+        access_token?: string;
+        expires_at_ms?: number;
+        refresh_token?: string;
+      };
+      expect(persisted.access_token).toBe('fresh-token');
+      expect(persisted.refresh_token).toBe('refresh-token');
+      expect(typeof persisted.expires_at_ms).toBe('number');
+      expect((persisted.expires_at_ms ?? 0) > Date.now()).toBe(true);
+    } finally {
+      tokenServer.close();
+    }
   });
 });

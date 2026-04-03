@@ -1,0 +1,17 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://alloydb.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster"
+  },
+  "response": {
+    "body": {
+      "state": "READY"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

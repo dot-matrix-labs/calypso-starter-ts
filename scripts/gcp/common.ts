@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { spawn as nodeSpawn, spawnSync as nodeSpawnSync } from 'node:child_process';
 import { createHash, createSign } from 'node:crypto';
 import {
   chmodSync,
@@ -221,14 +222,17 @@ export function parseBoolean(value: string, label: string): boolean {
 
 export function requireCommands(names: string[]): void {
   for (const name of names) {
-    const result = Bun.spawnSync(['which', name], {
-      stdout: 'ignore',
-      stderr: 'ignore',
+    const result = nodeSpawnSync('which', [name], {
+      stdio: ['ignore', 'ignore', 'ignore'],
     });
-    if (result.exitCode !== 0) {
+    if (result.status !== 0) {
       throw new Error(`Missing required command: ${name}`);
     }
   }
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function log(message: string): void {
@@ -239,20 +243,19 @@ export function runCommand(
   command: string[],
   options: CommandOptions = {},
 ): { stdout: string; stderr: string; exitCode: number } {
-  const result = Bun.spawnSync(command, {
+  const result = nodeSpawnSync(command[0], command.slice(1), {
     cwd: options.cwd,
     env: {
       ...process.env,
       ...options.env,
     },
-    stdin: options.stdin ? new TextEncoder().encode(options.stdin) : undefined,
-    stdout: 'pipe',
-    stderr: 'pipe',
+    input: options.stdin,
+    stdio: [options.stdin ? 'pipe' : 'ignore', 'pipe', 'pipe'],
   });
 
   const stdout = decodeOutput(result.stdout);
   const stderr = decodeOutput(result.stderr);
-  const exitCode = result.exitCode ?? 0;
+  const exitCode = result.status ?? 0;
 
   if (exitCode !== 0 && !options.allowFailure) {
     const commandLabel = command.join(' ');
@@ -469,7 +472,7 @@ export async function waitForGoogleOperation(
       return;
     }
 
-    await Bun.sleep(3_000);
+    await sleep(3_000);
   }
 
   throw new Error(`Timed out waiting for ${description}`);
@@ -589,7 +592,7 @@ export async function waitForTcpPort(host: string, port: number, timeoutMs: numb
     });
 
     if (reachable) return;
-    await Bun.sleep(2_000);
+    await sleep(2_000);
   }
 
   throw new Error(`Timed out waiting for TCP ${host}:${port}`);

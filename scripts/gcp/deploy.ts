@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { spawn as nodeSpawn } from 'node:child_process';
 import { join } from 'node:path';
 import {
   buildSshOptions,
@@ -188,7 +189,7 @@ export async function main(): Promise<void> {
   }
 }
 
-async function runDeploySsh(config: {
+export async function runDeploySsh(config: {
   sshAuth: ReturnType<typeof ensureSshAuthMaterial>;
   sshUser: string;
   hostIp: string;
@@ -276,7 +277,7 @@ async function runDeploySsh(config: {
   }
 }
 
-async function runDeployTalos(config: {
+export async function runDeployTalos(config: {
   hostIp: string;
   namespace: string;
   serviceAccountName: string;
@@ -337,7 +338,7 @@ async function runDeployTalos(config: {
   }
 }
 
-function runLivenessChecks(kubectlEnv: Record<string, string>, namespace: string): void {
+export function runLivenessChecks(kubectlEnv: Record<string, string>, namespace: string): void {
   runCommand(['kubectl', 'get', 'namespace', namespace], { env: kubectlEnv });
   runCommand(['kubectl', 'get', 'secret', 'calypso-api-secrets', '-n', namespace], {
     env: kubectlEnv,
@@ -351,7 +352,7 @@ function runLivenessChecks(kubectlEnv: Record<string, string>, namespace: string
   );
 }
 
-async function runSsh(
+export async function runSsh(
   sshAuth: ReturnType<typeof ensureSshAuthMaterial>,
   sshUser: string,
   hostIp: string,
@@ -367,7 +368,7 @@ async function runSsh(
   return result.stdout;
 }
 
-async function verifyDatabasePath(
+export async function verifyDatabasePath(
   sshAuth: ReturnType<typeof ensureSshAuthMaterial>,
   sshUser: string,
   hostIp: string,
@@ -377,33 +378,36 @@ async function verifyDatabasePath(
   await runSsh(sshAuth, sshUser, hostIp, `timeout 5 bash -lc 'echo >/dev/tcp/${alloyIp}/5432'`);
 }
 
-function startTunnel(
+export function startTunnel(
   sshAuth: ReturnType<typeof ensureSshAuthMaterial>,
   sshUser: string,
   hostIp: string,
 ) {
-  return Bun.spawn(
-    [
-      ...buildSshOptions(sshAuth),
-      '-o',
-      'ServerAliveInterval=30',
-      '-o',
-      'ServerAliveCountMax=3',
-      '-o',
-      'ExitOnForwardFailure=yes',
-      '-N',
-      '-L',
-      '6443:localhost:6443',
-      sshTarget(sshUser, hostIp),
-    ],
-    {
-      stdout: 'ignore',
-      stderr: 'pipe',
-    },
-  );
+  const args = [
+    ...buildSshOptions(sshAuth),
+    '-o',
+    'ServerAliveInterval=30',
+    '-o',
+    'ServerAliveCountMax=3',
+    '-o',
+    'ExitOnForwardFailure=yes',
+    '-N',
+    '-L',
+    '6443:localhost:6443',
+    sshTarget(sshUser, hostIp),
+  ];
+  const child = nodeSpawn(args[0], args.slice(1), {
+    stdio: ['ignore', 'ignore', 'pipe'],
+  });
+  return {
+    kill: () => child.kill(),
+    exited: new Promise<number>((resolve) => {
+      child.on('exit', (code) => resolve(code ?? 1));
+    }),
+  };
 }
 
-function maybeAnnotateDeployment(
+export function maybeAnnotateDeployment(
   kubectlEnv: Record<string, string>,
   namespace: string,
   imageTag: string,
@@ -429,7 +433,11 @@ function maybeAnnotateDeployment(
   );
 }
 
-function buildKubeconfig(config: { namespace: string; token: string; caData: string }): string {
+export function buildKubeconfig(config: {
+  namespace: string;
+  token: string;
+  caData: string;
+}): string {
   return `apiVersion: v1
 kind: Config
 clusters:

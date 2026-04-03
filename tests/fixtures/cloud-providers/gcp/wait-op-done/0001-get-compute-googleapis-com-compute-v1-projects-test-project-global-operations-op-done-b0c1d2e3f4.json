@@ -1,0 +1,17 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-done"
+  },
+  "response": {
+    "body": {
+      "status": "DONE"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://alloydb.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/instances/test-instance"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "code": 404,
+        "message": "not found"
+      }
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 404,
+    "statusText": "Not Found"
+  }
+}

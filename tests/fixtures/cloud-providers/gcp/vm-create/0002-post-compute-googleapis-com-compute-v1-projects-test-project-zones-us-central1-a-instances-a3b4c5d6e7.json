@@ -1,0 +1,57 @@
+{
+  "request": {
+    "body": {
+      "disks": [
+        {
+          "autoDelete": true,
+          "boot": true,
+          "initializeParams": {
+            "diskSizeGb": "50",
+            "diskType": "zones/us-central1-a/diskTypes/pd-balanced",
+            "sourceImage": "projects/ubuntu-os-cloud/global/images/family/ubuntu-2404-lts-amd64"
+          }
+        }
+      ],
+      "machineType": "zones/us-central1-a/machineTypes/e2-standard-4",
+      "metadata": {
+        "items": [
+          {
+            "key": "enable-oslogin",
+            "value": "FALSE"
+          },
+          {
+            "key": "startup-script",
+            "value": "#!/usr/bin/env bash\nset -euo pipefail\ninstall -d -m 700 /root/.ssh\ncat >/root/.ssh/authorized_keys <<'EOF'\nssh-ed25519 AAAA test@test\nEOF\nchmod 600 /root/.ssh/authorized_keys\n"
+          }
+        ]
+      },
+      "name": "test-vm",
+      "networkInterfaces": [
+        {
+          "accessConfigs": [
+            {
+              "name": "External NAT",
+              "type": "ONE_TO_ONE_NAT"
+            }
+          ],
+          "subnetwork": "https://sub/self"
+        }
+      ],
+      "tags": {
+        "items": ["tag"]
+      }
+    },
+    "method": "POST",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/zones/us-central1-a/instances"
+  },
+  "response": {
+    "body": {
+      "name": "op-create-vm"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "request": {
+    "body": {
+      "availabilityType": "ZONAL",
+      "gceZone": "us-central1-a",
+      "instanceType": "PRIMARY",
+      "machineConfig": {
+        "cpuCount": 2
+      }
+    },
+    "method": "POST",
+    "url": "https://alloydb.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/instances?instanceId=test-instance"
+  },
+  "response": {
+    "body": {
+      "name": "operations/create-instance"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

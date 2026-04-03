@@ -1,0 +1,22 @@
+{
+  "request": {
+    "body": {
+      "network": "projects/123456/global/networks/test-network",
+      "reservedPeeringRanges": ["test-psa"]
+    },
+    "method": "POST",
+    "url": "https://servicenetworking.googleapis.com/v1/services/servicenetworking.googleapis.com/connections"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "message": "Cannot modify allocated ranges in CreateConnection"
+      }
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 400,
+    "statusText": "Bad Request"
+  }
+}

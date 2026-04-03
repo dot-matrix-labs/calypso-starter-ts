@@ -1,0 +1,21 @@
+{
+  "request": {
+    "body": {
+      "ipCidrRange": "10.42.0.0/24",
+      "name": "test-subnet",
+      "network": "https://www.googleapis.com/compute/v1/projects/test-project/global/networks/test-network"
+    },
+    "method": "POST",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/regions/us-central1/subnetworks"
+  },
+  "response": {
+    "body": {
+      "name": "op-create-subnet"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

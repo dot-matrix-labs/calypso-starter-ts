@@ -1,0 +1,21 @@
+{
+  "request": {
+    "body": {
+      "autoCreateSubnetworks": false,
+      "name": "test-network",
+      "routingConfig": {
+        "routingMode": "REGIONAL"
+      }
+    },
+    "method": "POST",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/global/networks"
+  },
+  "response": {
+    "body": {},
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

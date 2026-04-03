@@ -1,0 +1,24 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-error"
+  },
+  "response": {
+    "body": {
+      "status": "DONE",
+      "error": {
+        "errors": [
+          {
+            "message": "QUOTA_EXCEEDED: Insufficient quota"
+          }
+        ]
+      }
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}
