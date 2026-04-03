@@ -20,6 +20,26 @@ the same runtime env input order:
 Standard API keys are not sufficient for IAM-authorized provisioning calls.
 
 Use `bun run gcp:login` to create the local OAuth token file without `gcloud`.
+Two login modes are available:
+
+- **Device code flow** (recommended for terminal use and fixture recording):
+
+  ```sh
+  bun run gcp:login --client-id "$GCP_OAUTH_CLIENT_ID" --device-code
+  ```
+
+  No localhost callback listener required. The developer visits a URL on any
+  device and enters a short code.
+
+- **Localhost callback flow** (default, requires a browser on the same machine):
+  ```sh
+  bun run gcp:login --client-id "$GCP_OAUTH_CLIENT_ID"
+  ```
+
+Both flows store refreshable token material at the same local token file path
+(`~/.config/calypso/gcp-oauth-token.json` by default). All GCP scripts consume
+the same credential file automatically.
+
 CI deploy uses Workload Identity Federation and passes the minted short-lived
 token to scripts as `GCP_ACCESS_TOKEN`.
 
@@ -113,16 +133,9 @@ infrastructure provisioning from GitHub Actions.
 
 Required env:
 
-- `SSH_AUTH_SOCK` or `CALYPSO_SSH_PRIVATE_KEY_FILE`
+- `CALYPSO_SSH_PRIVATE_KEY` or `CALYPSO_SSH_PRIVATE_KEY_FILE`
 - `GCP_ALLOYDB_POSTGRES_PASSWORD`
 - `MNEMONIC` or interactive input for the superuser bootstrap
-
-SSH contract:
-
-- local and CI SSH access prefer ambient `ssh-agent`
-- local manual fallback is `CALYPSO_SSH_PRIVATE_KEY_FILE`
-- provisioning resolves the admin public key from the agent identity when
-  possible, or from the fallback key file
 
 ## Deploy
 
@@ -158,5 +171,4 @@ GitHub Actions deploy flow:
 - Uses OIDC + Workload Identity Federation (`google-github-actions/auth`) to mint
   a short-lived Google access token.
 - Exports that token as `GCP_ACCESS_TOKEN` for `scripts/gcp/deploy.ts`.
-- Loads `DEPLOY_SSH_KEY` into `ssh-agent` and relies on `SSH_AUTH_SOCK` for SSH.
 - Does not require storing a long-lived service-account JSON key in GitHub secrets.

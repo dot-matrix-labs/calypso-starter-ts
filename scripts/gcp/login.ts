@@ -15,6 +15,27 @@ import {
 const DEFAULT_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 const CALLBACK_PATH = '/oauth2/callback';
 
+/**
+ * Google OAuth device code flow endpoint.
+ *
+ * Canonical reference:
+ * https://developers.google.com/identity/protocols/oauth2/limited-input-device
+ *
+ * The device code flow:
+ * 1. POST /device/code with client_id + scope → device_code, user_code,
+ *    verification_url, interval, expires_in
+ * 2. Display verification_url and user_code to the developer.
+ * 3. Poll /token with grant_type=device_code + device_code.
+ *    - 'authorization_pending' → keep polling at interval
+ *    - 'slow_down' → increase interval by 5 s
+ *    - any other error → fail
+ * 4. On success, store access_token + refresh_token as a local credential file
+ *    via writeLocalOAuthCredentialFile so that all GCP scripts can consume it
+ *    through the existing credential resolution chain in common.ts.
+ */
+const GOOGLE_DEVICE_CODE_URL = 'https://oauth2.googleapis.com/device/code';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
 interface OAuthCallbackPayload {
   code?: string;
   error?: string;
@@ -30,24 +51,59 @@ interface OAuthTokenResponse {
   token_type?: string;
 }
 
+interface DeviceCodeResponse {
+  device_code: string;
+  user_code: string;
+  verification_url: string;
+  expires_in: number;
+  interval: number;
+}
+
+interface DeviceTokenPollResponse {
+  access_token?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  scope?: string;
+  token_type?: string;
+  error?: string;
+  error_description?: string;
+}
+
 const helpText = `
 Run a repository-owned local Google OAuth login flow (without gcloud), then
 write refreshable token material for Calypso Google scripts.
+
+Two login modes are supported:
+
+  Default (localhost callback):
+    Starts a local HTTP server to receive the OAuth redirect. Suitable for
+    developer machines with a browser.
+
+  Device code (--device-code):
+    Uses the OAuth 2.0 device authorization grant (RFC 8628). No localhost
+    callback server is required. The developer visits a URL and enters a short
+    code on any device with a browser. Preferred for terminal-only environments
+    and fixture recording sessions.
 
 Required:
   --client-id / GCP_OAUTH_CLIENT_ID
 
 Optional:
+  --device-code                              use device code flow (no localhost callback)
   --client-secret / GCP_OAUTH_CLIENT_SECRET
   --scopes / GCP_OAUTH_SCOPES                default: cloud-platform
   --token-file / GCP_OAUTH_TOKEN_FILE        default: ~/.config/calypso/gcp-oauth-token.json
-  --listen-host / GCP_OAUTH_LISTEN_HOST      default: 127.0.0.1
-  --listen-port / GCP_OAUTH_LISTEN_PORT      default: 0 (ephemeral)
-  --timeout-seconds / GCP_OAUTH_TIMEOUT_SECONDS default: 180
-  --no-browser                               only print the authorization URL
+  --listen-host / GCP_OAUTH_LISTEN_HOST      default: 127.0.0.1  (localhost flow only)
+  --listen-port / GCP_OAUTH_LISTEN_PORT      default: 0 (ephemeral)  (localhost flow only)
+  --timeout-seconds / GCP_OAUTH_TIMEOUT_SECONDS default: 300  (device code flow only: total wait)
+  --no-browser                               only print the authorization URL  (localhost flow only)
 
-Example:
+Examples:
+  # localhost callback flow (default):
   bun run scripts/gcp/login.ts --client-id <oauth-client-id>
+
+  # device code flow (no localhost listener):
+  bun run scripts/gcp/login.ts --client-id <oauth-client-id> --device-code
 `.trim();
 
 async function main(): Promise<void> {
@@ -71,6 +127,42 @@ async function main(): Promise<void> {
     ['GCP_OAUTH_TOKEN_FILE'],
     resolveOAuthTokenFilePath(),
   )!;
+  const useDeviceCode = args.flags.has('device-code');
+
+  if (useDeviceCode) {
+    const timeoutSeconds = Number(
+      resolveOption(args, 'timeout-seconds', ['GCP_OAUTH_TIMEOUT_SECONDS'], '300'),
+    );
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+      throw new Error('timeout-seconds must be a positive number');
+    }
+
+    const tokenResponse = await runDeviceCodeFlow({
+      clientId,
+      clientSecret,
+      scope: scopes,
+      timeoutMs: timeoutSeconds * 1_000,
+    });
+
+    writeLocalOAuthCredentialFile(
+      {
+        access_token: tokenResponse.access_token,
+        client_id: clientId,
+        ...(clientSecret ? { client_secret: clientSecret } : {}),
+        expires_at_ms: Date.now() + tokenResponse.expires_in * 1_000,
+        refresh_token: tokenResponse.refresh_token,
+        scope: tokenResponse.scope ?? scopes,
+        token_uri: GOOGLE_TOKEN_URL,
+        type: tokenResponse.token_type ?? 'Bearer',
+      },
+      tokenFile,
+    );
+
+    console.log(`OAuth token cache written: ${tokenFile}`);
+    console.log('Google scripts will now auto-refresh from this credential file.');
+    return;
+  }
+
   const listenHost = resolveOption(args, 'listen-host', ['GCP_OAUTH_LISTEN_HOST'], '127.0.0.1')!;
   const listenPort = Number(resolveOption(args, 'listen-port', ['GCP_OAUTH_LISTEN_PORT'], '0'));
   const timeoutSeconds = Number(
@@ -153,6 +245,172 @@ async function main(): Promise<void> {
 
   console.log(`OAuth token cache written: ${tokenFile}`);
   console.log('Google scripts will now auto-refresh from this credential file.');
+}
+
+/**
+ * Runs the full OAuth 2.0 device authorization grant (RFC 8628).
+ *
+ * Steps:
+ *   1. Request a device code from GOOGLE_DEVICE_CODE_URL.
+ *   2. Display verification_url and user_code for the developer.
+ *   3. Poll GOOGLE_TOKEN_URL until the user completes authorization or the
+ *      device code expires.
+ *
+ * Returns a completed token response with access_token, refresh_token, etc.
+ * Throws if the code expires, the user denies access, or an unrecoverable
+ * error is returned by the token endpoint.
+ */
+export async function runDeviceCodeFlow(params: {
+  clientId: string;
+  clientSecret?: string;
+  scope: string;
+  timeoutMs: number;
+}): Promise<
+  Required<Pick<DeviceTokenPollResponse, 'access_token' | 'expires_in' | 'refresh_token'>> &
+    DeviceTokenPollResponse
+> {
+  const deviceCodeResponse = await requestDeviceCode({
+    clientId: params.clientId,
+    scope: params.scope,
+  });
+
+  console.log('');
+  console.log('Visit the following URL to authorize Calypso Google Cloud access:');
+  console.log(`  ${deviceCodeResponse.verification_url}`);
+  console.log('');
+  console.log(`Enter this code when prompted: ${deviceCodeResponse.user_code}`);
+  console.log('');
+  console.log('Waiting for authorization...');
+
+  return pollDeviceCodeToken({
+    clientId: params.clientId,
+    clientSecret: params.clientSecret,
+    deviceCode: deviceCodeResponse.device_code,
+    intervalMs: deviceCodeResponse.interval * 1_000,
+    timeoutMs: params.timeoutMs,
+  });
+}
+
+async function requestDeviceCode(params: {
+  clientId: string;
+  scope: string;
+}): Promise<DeviceCodeResponse> {
+  const response = await fetch(GOOGLE_DEVICE_CODE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: params.clientId,
+      scope: params.scope,
+    }),
+  });
+
+  const bodyText = await response.text();
+  if (!response.ok) {
+    throw new Error(`Device code request failed: ${bodyText}`);
+  }
+
+  const parsed = JSON.parse(bodyText) as Partial<DeviceCodeResponse>;
+  if (
+    !parsed.device_code ||
+    !parsed.user_code ||
+    !parsed.verification_url ||
+    typeof parsed.expires_in !== 'number' ||
+    typeof parsed.interval !== 'number'
+  ) {
+    throw new Error(`Device code response is missing required fields: ${bodyText}`);
+  }
+
+  return parsed as DeviceCodeResponse;
+}
+
+/**
+ * Polls the token endpoint according to the device code spec (RFC 8628 §3.5).
+ *
+ * - authorization_pending: continue polling at the current interval
+ * - slow_down: increase the polling interval by 5 s, then continue
+ * - access_denied: user denied — throw immediately
+ * - expired_token: device code expired — throw immediately
+ * - any other error: throw immediately
+ */
+export async function pollDeviceCodeToken(params: {
+  clientId: string;
+  clientSecret?: string;
+  deviceCode: string;
+  intervalMs: number;
+  timeoutMs: number;
+}): Promise<
+  Required<Pick<DeviceTokenPollResponse, 'access_token' | 'expires_in' | 'refresh_token'>> &
+    DeviceTokenPollResponse
+> {
+  const deadline = Date.now() + params.timeoutMs;
+  let intervalMs = params.intervalMs;
+
+  while (Date.now() < deadline) {
+    await Bun.sleep(intervalMs);
+
+    const response = await fetch(GOOGLE_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: params.clientId,
+        ...(params.clientSecret ? { client_secret: params.clientSecret } : {}),
+        device_code: params.deviceCode,
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+      }),
+    });
+
+    const bodyText = await response.text();
+    const parsed = JSON.parse(bodyText) as DeviceTokenPollResponse;
+
+    if (response.ok && parsed.access_token) {
+      if (!parsed.refresh_token) {
+        throw new Error(
+          'Device code token response did not include refresh_token. ' +
+            'Ensure the OAuth client is configured for offline access.',
+        );
+      }
+      if (typeof parsed.expires_in !== 'number') {
+        throw new Error('Device code token response is missing expires_in');
+      }
+      return parsed as Required<
+        Pick<DeviceTokenPollResponse, 'access_token' | 'expires_in' | 'refresh_token'>
+      > &
+        DeviceTokenPollResponse;
+    }
+
+    const errorCode = parsed.error;
+
+    if (errorCode === 'authorization_pending') {
+      // Normal: user has not yet authorized. Continue polling.
+      continue;
+    }
+
+    if (errorCode === 'slow_down') {
+      // Server requests slower polling: increase interval by 5 s per spec.
+      intervalMs += 5_000;
+      continue;
+    }
+
+    if (errorCode === 'access_denied') {
+      throw new Error('Device code authorization was denied by the user.');
+    }
+
+    if (errorCode === 'expired_token') {
+      throw new Error('Device code has expired. Re-run the login command to obtain a new code.');
+    }
+
+    throw new Error(
+      `Device code token poll failed: ${parsed.error_description ?? errorCode ?? bodyText}`,
+    );
+  }
+
+  throw new Error(
+    `Timed out waiting for device code authorization after ${Math.round(params.timeoutMs / 1_000)} seconds.`,
+  );
 }
 
 function buildAuthorizationUrl(params: {

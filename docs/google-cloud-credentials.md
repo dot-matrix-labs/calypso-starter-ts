@@ -27,17 +27,49 @@ this order:
 
 ## Local developer auth (OAuth)
 
-Create or refresh local terminal credentials:
+Two login modes are available.
+
+### Device code flow (preferred for terminal environments)
+
+Uses the OAuth 2.0 device authorization grant (RFC 8628). No localhost
+callback server is required. Suitable for terminal-only environments,
+fixture recording sessions, and any situation where opening a browser
+on the same machine is inconvenient.
+
+```sh
+bun run gcp:login --client-id "$GCP_OAUTH_CLIENT_ID" --device-code
+```
+
+The script:
+
+1. Requests a device code from Google.
+2. Prints a short URL and a user code to the terminal.
+3. The developer visits the URL on any device and enters the code.
+4. The script polls Google until authorization is complete, then stores
+   refreshable token material in the local token file.
+
+For fixture recording, run this login once before recording:
+
+```sh
+GCP_OAUTH_CLIENT_ID=<client-id> bun run gcp:login --device-code
+```
+
+The resulting credential file is used automatically by `CALYPSO_CLOUD_PROVIDER_HTTP_MODE=record`
+runs via the existing token file resolution chain.
+
+### Localhost callback flow (default)
+
+Starts a local HTTP server to receive the OAuth redirect. Requires a browser
+on the same machine.
 
 ```sh
 bun run gcp:login --client-id "$GCP_OAUTH_CLIENT_ID"
 ```
 
-Optional flags:
+Optional flags (localhost flow only):
 
-- `--client-secret` or `GCP_OAUTH_CLIENT_SECRET`
-- `--token-file` or `GCP_OAUTH_TOKEN_FILE`
-- `--scopes` or `GCP_OAUTH_SCOPES`
+- `--listen-host` or `GCP_OAUTH_LISTEN_HOST`
+- `--listen-port` or `GCP_OAUTH_LISTEN_PORT`
 - `--no-browser` to copy/paste URL manually
 
 The login script:
@@ -45,6 +77,14 @@ The login script:
 - starts a localhost callback server
 - runs OAuth authorization code flow with PKCE
 - stores refreshable token material in the token file
+
+### Shared options (both flows)
+
+- `--client-secret` or `GCP_OAUTH_CLIENT_SECRET`
+- `--token-file` or `GCP_OAUTH_TOKEN_FILE`
+- `--scopes` or `GCP_OAUTH_SCOPES`
+- `--timeout-seconds` or `GCP_OAUTH_TIMEOUT_SECONDS`
+  (default 300 s for device code, 180 s for localhost callback)
 
 At runtime, scripts refresh access tokens automatically from that local token
 file when needed.
