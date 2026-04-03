@@ -1,0 +1,405 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://serviceusage.googleapis.com/v1/projects/914441959143/services/servicenetworking.googleapis.com"
+  },
+  "response": {
+    "body": {
+      "name": "projects/914441959143/services/servicenetworking.googleapis.com",
+      "config": {
+        "name": "servicenetworking.googleapis.com",
+        "title": "Service Networking API",
+        "apis": [
+          {
+            "name": "google.longrunning.Operations",
+            "methods": [
+              {
+                "name": "ListOperations"
+              },
+              {
+                "name": "GetOperation"
+              },
+              {
+                "name": "DeleteOperation"
+              },
+              {
+                "name": "CancelOperation"
+              },
+              {
+                "name": "WaitOperation"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.cloud.servicenetworking.v1.ServicePeeringManager",
+            "methods": [
+              {
+                "name": "ListConnections"
+              },
+              {
+                "name": "CreateConnection"
+              },
+              {
+                "name": "DeleteConnection"
+              },
+              {
+                "name": "UpdateConnection"
+              },
+              {
+                "name": "DisableVpcServiceControls"
+              },
+              {
+                "name": "EnableVpcServiceControls"
+              },
+              {
+                "name": "GetVpcServiceControls"
+              },
+              {
+                "name": "AddSubnetwork"
+              },
+              {
+                "name": "SearchRange"
+              },
+              {
+                "name": "ValidateConsumerConfig"
+              },
+              {
+                "name": "UpdateConsumerConfig"
+              },
+              {
+                "name": "GetConsumerConfig"
+              },
+              {
+                "name": "AddRoles"
+              },
+              {
+                "name": "AddDnsZone"
+              },
+              {
+                "name": "RemoveDnsZone"
+              },
+              {
+                "name": "ListDnsZones"
+              },
+              {
+                "name": "GetDnsZone"
+              },
+              {
+                "name": "AddDnsRecordSet"
+              },
+              {
+                "name": "RemoveDnsRecordSet"
+              },
+              {
+                "name": "UpdateDnsRecordSet"
+              },
+              {
+                "name": "GetDnsRecordSet"
+              },
+              {
+                "name": "ListDnsRecordSets"
+              },
+              {
+                "name": "CreatePeeredDnsDomain"
+              },
+              {
+                "name": "DeletePeeredDnsDomain"
+              },
+              {
+                "name": "ListPeeredDnsDomains"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.cloud.servicenetworking.v1beta.ServicePeeringManager",
+            "methods": [
+              {
+                "name": "ListConnections"
+              },
+              {
+                "name": "CreateConnection"
+              },
+              {
+                "name": "UpdateConnection"
+              },
+              {
+                "name": "AddSubnetwork"
+              },
+              {
+                "name": "SearchRange"
+              }
+            ],
+            "version": "v1beta"
+          },
+          {
+            "name": "google.discovery.Discovery",
+            "methods": [
+              {
+                "name": "GetDiscovery"
+              },
+              {
+                "name": "GetDiscoveryRest"
+              }
+            ],
+            "version": "v1"
+          }
+        ],
+        "documentation": {
+          "summary": "Provides automatic management of network configurations necessary for certain services."
+        },
+        "quota": {
+          "limits": [
+            {
+              "name": "DefaultRequestsPerMinutePerProject",
+              "metric": "servicenetworking.googleapis.com/default_requests",
+              "unit": "1/min/{project}",
+              "values": {
+                "DEFAULT": "120"
+              }
+            },
+            {
+              "name": "MutateRequestsPerMinutePerProject",
+              "metric": "servicenetworking.googleapis.com/mutate_requests",
+              "unit": "1/min/{project}",
+              "values": {
+                "DEFAULT": "30"
+              }
+            }
+          ]
+        },
+        "authentication": {
+          "rules": [
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/service.management, https://www.googleapis.com/auth/cloud-platform"
+              }
+            }
+          ]
+        },
+        "usage": {
+          "requirements": ["serviceusage.googleapis.com/tos/cloud"]
+        },
+        "endpoints": [
+          {
+            "name": "servicenetworking.googleapis.com"
+          },
+          {
+            "name": "servicenetworking.clients6.google.com"
+          },
+          {
+            "name": "content-servicenetworking.googleapis.com"
+          },
+          {
+            "name": "servicenetworking.mtls.googleapis.com"
+          },
+          {
+            "name": "servicenetworking.mtls.clients6.google.com"
+          },
+          {
+            "name": "content-servicenetworking.mtls.googleapis.com"
+          }
+        ],
+        "monitoring": {}
+      },
+      "state": "DISABLED",
+      "parent": "projects/914441959143"
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "content-encoding": "gzip",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Thu, 02 Apr 2026 18:32:37 GMT",
+      "server": "ESF",
+      "transfer-encoding": "chunked",
+      "vary": "Origin, X-Origin, Referer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "0"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   createTempFile,
@@ -56,7 +57,7 @@ Flags:
   --help         Show this message
 `.trim();
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const args = parseArgs();
   if (args.flags.has('help')) {
     printHelp('scripts/gcp/deploy.ts', helpText);
@@ -105,7 +106,7 @@ async function main(): Promise<void> {
   );
 
   const privateKeyFile = ensurePrivateKeyFile();
-  const repoRoot = join(import.meta.dir, '..', '..');
+  const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 
   try {
     const doctor = await runDoctor({
@@ -346,7 +347,9 @@ users:
 `;
 }
 
-main().catch((error) => {
-  console.error(`\n❌ ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((error) => {
+    console.error(`\n❌ ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  });
+}

@@ -1,0 +1,3849 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://serviceusage.googleapis.com/v1/projects/914441959143/services/alloydb.googleapis.com"
+  },
+  "response": {
+    "body": {
+      "name": "projects/914441959143/services/alloydb.googleapis.com",
+      "config": {
+        "name": "alloydb.googleapis.com",
+        "title": "AlloyDB API",
+        "apis": [
+          {
+            "name": "google.longrunning.Operations",
+            "methods": [
+              {
+                "name": "ListOperations"
+              },
+              {
+                "name": "GetOperation"
+              },
+              {
+                "name": "DeleteOperation"
+              },
+              {
+                "name": "CancelOperation"
+              },
+              {
+                "name": "WaitOperation"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.cloud.alloydb.v1alpha.AlloyDBCSQLAdmin",
+            "methods": [
+              {
+                "name": "RestoreFromCloudSQL"
+              }
+            ],
+            "version": "v1alpha"
+          },
+          {
+            "name": "google.cloud.alloydb.v1beta.AlloyDBCSQLAdmin",
+            "methods": [
+              {
+                "name": "RestoreFromCloudSQL"
+              }
+            ],
+            "version": "v1beta"
+          },
+          {
+            "name": "google.cloud.alloydb.v1.AlloyDBCSQLAdmin",
+            "methods": [
+              {
+                "name": "RestoreFromCloudSQL"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.cloud.alloydb.v1alpha.AlloyDBEndpointAdmin",
+            "methods": [
+              {
+                "name": "GetEndpoint"
+              },
+              {
+                "name": "ListEndpoints"
+              },
+              {
+                "name": "CreateEndpoint"
+              },
+              {
+                "name": "UpdateEndpoint"
+              },
+              {
+                "name": "DeleteEndpoint"
+              }
+            ],
+            "version": "v1alpha"
+          },
+          {
+            "name": "google.cloud.alloydb.v1beta.AlloyDBEndpointAdmin",
+            "methods": [
+              {
+                "name": "GetEndpoint"
+              },
+              {
+                "name": "ListEndpoints"
+              },
+              {
+                "name": "CreateEndpoint"
+              },
+              {
+                "name": "UpdateEndpoint"
+              },
+              {
+                "name": "DeleteEndpoint"
+              }
+            ],
+            "version": "v1beta"
+          },
+          {
+            "name": "google.cloud.alloydb.v1alpha.AlloyDBAdmin",
+            "methods": [
+              {
+                "name": "ListClusters"
+              },
+              {
+                "name": "GetCluster"
+              },
+              {
+                "name": "CreateCluster"
+              },
+              {
+                "name": "UpdateCluster"
+              },
+              {
+                "name": "ExportCluster"
+              },
+              {
+                "name": "ImportCluster"
+              },
+              {
+                "name": "UpgradeCluster"
+              },
+              {
+                "name": "DeleteCluster"
+              },
+              {
+                "name": "PromoteCluster"
+              },
+              {
+                "name": "SwitchoverCluster"
+              },
+              {
+                "name": "RestoreCluster"
+              },
+              {
+                "name": "CreateSecondaryCluster"
+              },
+              {
+                "name": "ListInstances"
+              },
+              {
+                "name": "GetInstance"
+              },
+              {
+                "name": "CreateInstance"
+              },
+              {
+                "name": "CreateSecondaryInstance"
+              },
+              {
+                "name": "BatchCreateInstances"
+              },
+              {
+                "name": "UpdateInstance"
+              },
+              {
+                "name": "DeleteInstance"
+              },
+              {
+                "name": "FailoverInstance"
+              },
+              {
+                "name": "InjectFault"
+              },
+              {
+                "name": "RestartInstance"
+              },
+              {
+                "name": "ExecuteSql"
+              },
+              {
+                "name": "ExecuteSqlReadOnly"
+              },
+              {
+                "name": "ListBackups"
+              },
+              {
+                "name": "GetBackup"
+              },
+              {
+                "name": "CreateBackup"
+              },
+              {
+                "name": "UpdateBackup"
+              },
+              {
+                "name": "DeleteBackup"
+              },
+              {
+                "name": "ListSupportedDatabaseFlags"
+              },
+              {
+                "name": "GenerateClientCertificate"
+              },
+              {
+                "name": "GetConnectionInfo"
+              },
+              {
+                "name": "ListUsers"
+              },
+              {
+                "name": "GetUser"
+              },
+              {
+                "name": "CreateUser"
+              },
+              {
+                "name": "UpdateUser"
+              },
+              {
+                "name": "DeleteUser"
+              },
+              {
+                "name": "ListDatabases"
+              },
+              {
+                "name": "CreateDatabase"
+              }
+            ],
+            "version": "v1alpha"
+          },
+          {
+            "name": "google.cloud.alloydb.v1beta.AlloyDBAdmin",
+            "methods": [
+              {
+                "name": "ListClusters"
+              },
+              {
+                "name": "GetCluster"
+              },
+              {
+                "name": "CreateCluster"
+              },
+              {
+                "name": "UpdateCluster"
+              },
+              {
+                "name": "ExportCluster"
+              },
+              {
+                "name": "ImportCluster"
+              },
+              {
+                "name": "UpgradeCluster"
+              },
+              {
+                "name": "DeleteCluster"
+              },
+              {
+                "name": "PromoteCluster"
+              },
+              {
+                "name": "SwitchoverCluster"
+              },
+              {
+                "name": "RestoreCluster"
+              },
+              {
+                "name": "CreateSecondaryCluster"
+              },
+              {
+                "name": "ListInstances"
+              },
+              {
+                "name": "GetInstance"
+              },
+              {
+                "name": "CreateInstance"
+              },
+              {
+                "name": "CreateSecondaryInstance"
+              },
+              {
+                "name": "BatchCreateInstances"
+              },
+              {
+                "name": "UpdateInstance"
+              },
+              {
+                "name": "DeleteInstance"
+              },
+              {
+                "name": "FailoverInstance"
+              },
+              {
+                "name": "InjectFault"
+              },
+              {
+                "name": "RestartInstance"
+              },
+              {
+                "name": "ExecuteSql"
+              },
+              {
+                "name": "ExecuteSqlReadOnly"
+              },
+              {
+                "name": "ListBackups"
+              },
+              {
+                "name": "GetBackup"
+              },
+              {
+                "name": "CreateBackup"
+              },
+              {
+                "name": "UpdateBackup"
+              },
+              {
+                "name": "DeleteBackup"
+              },
+              {
+                "name": "ListSupportedDatabaseFlags"
+              },
+              {
+                "name": "GenerateClientCertificate"
+              },
+              {
+                "name": "GetConnectionInfo"
+              },
+              {
+                "name": "ListUsers"
+              },
+              {
+                "name": "GetUser"
+              },
+              {
+                "name": "CreateUser"
+              },
+              {
+                "name": "UpdateUser"
+              },
+              {
+                "name": "DeleteUser"
+              },
+              {
+                "name": "ListDatabases"
+              },
+              {
+                "name": "CreateDatabase"
+              }
+            ],
+            "version": "v1beta"
+          },
+          {
+            "name": "google.cloud.alloydb.v1.AlloyDBAdmin",
+            "methods": [
+              {
+                "name": "ListClusters"
+              },
+              {
+                "name": "GetCluster"
+              },
+              {
+                "name": "CreateCluster"
+              },
+              {
+                "name": "UpdateCluster"
+              },
+              {
+                "name": "ExportCluster"
+              },
+              {
+                "name": "ImportCluster"
+              },
+              {
+                "name": "UpgradeCluster"
+              },
+              {
+                "name": "DeleteCluster"
+              },
+              {
+                "name": "PromoteCluster"
+              },
+              {
+                "name": "SwitchoverCluster"
+              },
+              {
+                "name": "RestoreCluster"
+              },
+              {
+                "name": "CreateSecondaryCluster"
+              },
+              {
+                "name": "ListInstances"
+              },
+              {
+                "name": "GetInstance"
+              },
+              {
+                "name": "CreateInstance"
+              },
+              {
+                "name": "CreateSecondaryInstance"
+              },
+              {
+                "name": "BatchCreateInstances"
+              },
+              {
+                "name": "UpdateInstance"
+              },
+              {
+                "name": "DeleteInstance"
+              },
+              {
+                "name": "FailoverInstance"
+              },
+              {
+                "name": "InjectFault"
+              },
+              {
+                "name": "RestartInstance"
+              },
+              {
+                "name": "ExecuteSql"
+              },
+              {
+                "name": "ExecuteSqlReadOnly"
+              },
+              {
+                "name": "ListBackups"
+              },
+              {
+                "name": "GetBackup"
+              },
+              {
+                "name": "CreateBackup"
+              },
+              {
+                "name": "UpdateBackup"
+              },
+              {
+                "name": "DeleteBackup"
+              },
+              {
+                "name": "ListSupportedDatabaseFlags"
+              },
+              {
+                "name": "GenerateClientCertificate"
+              },
+              {
+                "name": "GetConnectionInfo"
+              },
+              {
+                "name": "ListUsers"
+              },
+              {
+                "name": "GetUser"
+              },
+              {
+                "name": "CreateUser"
+              },
+              {
+                "name": "UpdateUser"
+              },
+              {
+                "name": "DeleteUser"
+              },
+              {
+                "name": "ListDatabases"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.cloud.location.Locations",
+            "methods": [
+              {
+                "name": "ListLocations"
+              },
+              {
+                "name": "GetLocation"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.iam.v1.IAMPolicy",
+            "methods": [
+              {
+                "name": "SetIamPolicy"
+              },
+              {
+                "name": "GetIamPolicy"
+              },
+              {
+                "name": "TestIamPermissions"
+              }
+            ],
+            "version": "v1"
+          },
+          {
+            "name": "google.discovery.Discovery",
+            "methods": [
+              {
+                "name": "GetDiscovery"
+              },
+              {
+                "name": "GetDiscoveryRest"
+              }
+            ],
+            "version": "v1"
+          }
+        ],
+        "documentation": {
+          "summary": "AlloyDB for PostgreSQL is an open source-compatible database service that provides a powerful option for migrating, modernizing, or building commercial-grade applications. It offers full compatibility with standard PostgreSQL, and is more than 4x faster for transactional workloads and up to 100x faster for analytical queries than standard PostgreSQL in our performance tests. AlloyDB for PostgreSQL offers a 99.99 percent availability SLA inclusive of maintenance.\n<br><br>\nAlloyDB is optimized for the most demanding use cases, allowing you to build new applications that require high transaction throughput, large database sizes, or multiple read resources; scale existing PostgreSQL workloads with no application changes; and modernize legacy proprietary databases.\n"
+        },
+        "quota": {
+          "limits": [
+            {
+              "description": "Storage used per cluster",
+              "name": "StorageUsagePerCluster",
+              "metric": "alloydb.googleapis.com/storage_usage_per_cluster",
+              "unit": "1/{project}/{region}/{cluster}",
+              "values": {
+                "DEFAULT": "17592186044416"
+              },
+              "displayName": "Storage used per cluster (bytes)"
+            },
+            {
+              "name": "ClustersPerProjectPerRegion",
+              "metric": "alloydb.googleapis.com/quota/cluster_count",
+              "unit": "1/{project}/{region}",
+              "values": {
+                "DEFAULT": "5"
+              }
+            },
+            {
+              "name": "VCPUsUsedPerProjectPerRegion",
+              "metric": "alloydb.googleapis.com/quota/vcpu_count",
+              "unit": "1/{project}/{region}",
+              "values": {
+                "DEFAULT": "10000"
+              }
+            },
+            {
+              "name": "GetRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/get_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "500"
+              }
+            },
+            {
+              "name": "ConnectRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/connect_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "1000"
+              }
+            },
+            {
+              "name": "GetOperationRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/get_operation_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "950"
+              }
+            },
+            {
+              "name": "ListRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/list_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "500"
+              }
+            },
+            {
+              "name": "ListOperationsRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/list_operations_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "2200"
+              }
+            },
+            {
+              "name": "MutateRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/mutate_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "180"
+              }
+            },
+            {
+              "name": "ExportRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/export_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "30"
+              }
+            },
+            {
+              "name": "ImportRequestsPerMinutePerProjectPerUserPerRegion",
+              "metric": "alloydb.googleapis.com/quota/api/import_requests",
+              "unit": "1/min/{project}/{user}/{region}",
+              "values": {
+                "DEFAULT": "30"
+              }
+            }
+          ]
+        },
+        "authentication": {
+          "rules": [
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            },
+            {
+              "oauth": {
+                "canonicalScopes": "https://www.googleapis.com/auth/cloud-platform"
+              }
+            }
+          ]
+        },
+        "usage": {
+          "requirements": ["serviceusage.googleapis.com/tos/cloud"]
+        },
+        "endpoints": [
+          {
+            "name": "alloydb.googleapis.com"
+          },
+          {
+            "name": "alloydb.clients6.google.com"
+          },
+          {
+            "name": "content-alloydb.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-central2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-central2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-central2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-central2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east7.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east7.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east7.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east7.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.northamerica-northeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.northamerica-northeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.northamerica-northeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.northamerica-northeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.northamerica-northeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.northamerica-northeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.northamerica-northeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.northamerica-northeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.northamerica-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.northamerica-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.northamerica-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.northamerica-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.southamerica-east1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.southamerica-east1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.southamerica-east1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.southamerica-east1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.southamerica-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.southamerica-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.southamerica-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.southamerica-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-central1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-central1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-central1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-central1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east4.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east4.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east4.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east4.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east5.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east5.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-east5.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-east5.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west3.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west3.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west3.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west3.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west4.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west4.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.us-west4.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.us-west4.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-central2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-central2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-central2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-central2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-southwest1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-southwest1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-southwest1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-southwest1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-north1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-north1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-north1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-north1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-north2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-north2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-north2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-north2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west3.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west3.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west3.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west3.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west4.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west4.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west4.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west4.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west6.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west6.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west6.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west6.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west8.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west8.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west8.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west8.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west9.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west9.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west9.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west9.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west10.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west10.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west10.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west10.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west12.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west12.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.europe-west12.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.europe-west12.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-east1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-east1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-east1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-east1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-east2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-east2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-east2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-east2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-northeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-northeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-northeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-northeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-northeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-northeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-northeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-northeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-northeast3.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-northeast3.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-northeast3.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-northeast3.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-south2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-south2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-south2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-south2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-southeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-southeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-southeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-southeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-southeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-southeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.asia-southeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.asia-southeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.australia-southeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.australia-southeast1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.australia-southeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.australia-southeast1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.australia-southeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.australia-southeast2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.australia-southeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.australia-southeast2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.me-central1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.me-central1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.me-central1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.me-central1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.me-central2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.me-central2.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.me-central2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.me-central2.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.me-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.me-west1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.me-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.me-west1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.africa-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.africa-south1.rep.googleapis.com"
+          },
+          {
+            "name": "content-alloydb.africa-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.africa-south1.rep.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.mtls.googleapis.com"
+          },
+          {
+            "name": "alloydb.mtls.clients6.google.com"
+          },
+          {
+            "name": "content-alloydb.mtls.googleapis.com"
+          }
+        ],
+        "monitoredResources": [
+          {
+            "type": "alloydb.googleapis.com/InternalInstanceNode",
+            "displayName": "Internal monitored resource representing a physical node in AlloyDB instance.",
+            "description": "Internal monitored resource representing a physical node in AlloyDB instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "instance_type",
+                "description": "AlloyDB instance type (READ or PRIMARY)."
+              },
+              {
+                "key": "node_id",
+                "description": "AlloyDB physical node identifier within the AlloyDB instance."
+              },
+              {
+                "key": "service",
+                "description": "Service name."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/InternalInstance",
+            "displayName": "Instance identified by UUID. If the node_id metric label is present, then the metric refers to a specific VM of the instance.",
+            "description": "Dual-use schema for both instance and VM-level metrics. Adding node_id as a metric field (rather than a target field) guarantees that all metric streams relevant to the same instance will be on the same Monarch leaf node.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "instance_uuid",
+                "description": "CCFE UUID of the AlloyDB instance."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "service",
+                "description": "Service name."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/InternalOmniInstanceNode",
+            "displayName": "Internal monitored resource representing a physical node in AlloyDB Omni instance.",
+            "description": "Internal monitored resource representing a physical node in AlloyDB Omni instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB Omni instance is registered."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB Omni cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB Omni instance identifier."
+              },
+              {
+                "key": "instance_type",
+                "description": "AlloyDB Omni instance type (READ or PRIMARY)."
+              },
+              {
+                "key": "node_id",
+                "description": "AlloyDB Omni physical node identifier within the AlloyDB Omni instance."
+              },
+              {
+                "key": "node_type",
+                "description": "AlloyDB Omni physical node type. (PRIMARY or STANDBY OR READ)."
+              },
+              {
+                "key": "service",
+                "description": "Service name."
+              }
+            ],
+            "launchStage": "DEPRECATED"
+          },
+          {
+            "type": "alloydb.googleapis.com/InstanceNode",
+            "displayName": "AlloyDB node",
+            "description": "Monitored resource representing a physical node in AlloyDB instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "node_id",
+                "description": "AlloyDB physical node identifier within the AlloyDB instance."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/Instance",
+            "displayName": "AlloyDB instance",
+            "description": "Monitored resource representing an AlloyDB instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/InstanceClient",
+            "displayName": "AlloyDB Instance Client",
+            "description": "A client connection to an AlloyDB instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "client_uid",
+                "description": "A unique identifier for the particular client."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/InternalDatabase",
+            "displayName": "Database level metrics collected from one physical node of AlloyDB instance.",
+            "description": "Database level metrics collected from one physical node of AlloyDB instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "instance_type",
+                "description": "AlloyDB instance type (READ or PRIMARY)."
+              },
+              {
+                "key": "node_id",
+                "description": "AlloyDB physical node identifier within the AlloyDB instance."
+              },
+              {
+                "key": "database",
+                "description": "The name of database schema associated with the AlloyDB engine."
+              },
+              {
+                "key": "service",
+                "description": "Service name."
+              }
+            ],
+            "launchStage": "PRELAUNCH"
+          },
+          {
+            "type": "alloydb.googleapis.com/InternalOmniDatabase",
+            "displayName": "Database level metrics collected from one physical node of AlloyDB Omni instance.",
+            "description": "Database level metrics collected from one physical node of AlloyDB Omni instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB Omni instance is registered."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB Omni cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB Omni instance identifier."
+              },
+              {
+                "key": "instance_type",
+                "description": "AlloyDB Omni instance type (READ or PRIMARY)."
+              },
+              {
+                "key": "node_id",
+                "description": "AlloyDB Omni physical node identifier within the AlloyDB Omni instance."
+              },
+              {
+                "key": "node_type",
+                "description": "AlloyDB Omni physical node type. (PRIMARY or STANDBY or READ)."
+              },
+              {
+                "key": "database",
+                "description": "The name of database schema associated with the AlloyDB Omni engine."
+              },
+              {
+                "key": "service",
+                "description": "Service name."
+              }
+            ],
+            "launchStage": "DEPRECATED"
+          },
+          {
+            "type": "alloydb.googleapis.com/Database",
+            "displayName": "AlloyDB database",
+            "description": "Monitored resource representing a database on AlloyDB instance.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "database",
+                "description": "The name of database schema associated with the AlloyDB engine."
+              }
+            ],
+            "launchStage": "PRELAUNCH"
+          },
+          {
+            "type": "alloydb.googleapis.com/Cluster",
+            "displayName": "AlloyDB cluster",
+            "description": "Monitored resource representing an AlloyDB cluster.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB cluster is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/Backup",
+            "displayName": "AlloyDB backup",
+            "description": "Monitored resource representing an AlloyDB backup.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB backup is stored."
+              },
+              {
+                "key": "backup_id",
+                "description": "AlloyDB backup identifier."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "saas_instance",
+            "labels": [
+              {
+                "key": "cloud.googleapis.com/project"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/service_name"
+              },
+              {
+                "key": "cloud.googleapis.com/location"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/consumer_project"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/instance_id"
+              },
+              {
+                "key": "cloud.googleapis.com/uid"
+              }
+            ]
+          },
+          {
+            "type": "saas_instance_node",
+            "labels": [
+              {
+                "key": "cloud.googleapis.com/project"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/service_name"
+              },
+              {
+                "key": "cloud.googleapis.com/location"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/consumer_project"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/instance_id"
+              },
+              {
+                "key": "saasaccelerator.googleapis.com/node_id"
+              },
+              {
+                "key": "cloud.googleapis.com/uid"
+              }
+            ]
+          },
+          {
+            "type": "alloydb.googleapis.com/Location",
+            "displayName": "AlloyDB Location",
+            "description": "A location in the AlloyDB API.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP resource container associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The location in the API."
+              }
+            ],
+            "launchStage": "BETA"
+          },
+          {
+            "type": "alloydb.googleapis.com/NodeDatabase",
+            "displayName": "AlloyDB Node Database",
+            "description": "Monitored resource to capture database metrics reported by a specific AlloyDB node.",
+            "labels": [
+              {
+                "key": "resource_container",
+                "description": "The identifier of the GCP project associated with this resource."
+              },
+              {
+                "key": "location",
+                "description": "The Google Cloud region in which the AlloyDB instance is running."
+              },
+              {
+                "key": "cluster_id",
+                "description": "AlloyDB cluster identifier."
+              },
+              {
+                "key": "instance_id",
+                "description": "AlloyDB instance identifier."
+              },
+              {
+                "key": "node_id",
+                "description": "AlloyDB physical node identifier within the AlloyDB instance."
+              },
+              {
+                "key": "database",
+                "description": "The name of database schema associated with the AlloyDB engine."
+              }
+            ],
+            "launchStage": "BETA"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "monitoredResource": "alloydb.googleapis.com/InternalInstanceNode",
+              "metrics": [
+                "alloydb.googleapis.com/internal/database/postgresql/block_storage_writes_count",
+                "alloydb.googleapis.com/internal/database/postgresql/aggregate/lock_time_count",
+                "alloydb.googleapis.com/internal/database/postgresql/recovery_conflicts",
+                "alloydb.googleapis.com/internal/database/postgresql/primary_wal_stat_count",
+                "alloydb.googleapis.com/internal/grpc/client/canonical_status_count",
+                "alloydb.googleapis.com/internal/grpc/client/completed_rpcs",
+                "alloydb.googleapis.com/internal/grpc/client/received_bytes_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/client/received_messages_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/client/roundtrip_latency",
+                "alloydb.googleapis.com/internal/grpc/client/sent_bytes_per_rpc",
+                "alloydb.googleapis.com/internal/proc/memory/private_size",
+                "alloydb.googleapis.com/internal/proc/memory/resident_size",
+                "alloydb.googleapis.com/internal/proc/memory/shared_size",
+                "alloydb.googleapis.com/internal/proc/memory/virtual_size",
+                "alloydb.googleapis.com/internal/proc/cpu/usage",
+                "alloydb.googleapis.com/internal/proc/cpu_usage",
+                "alloydb.googleapis.com/internal/grpc/client/sent_messages_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/client/started_rpcs",
+                "alloydb.googleapis.com/internal/grpc/internal/core/experimental_transport_latency",
+                "alloydb.googleapis.com/internal/grpc/server/active_channels",
+                "alloydb.googleapis.com/internal/grpc/server/canonical_status_count",
+                "alloydb.googleapis.com/internal/grpc/server/completed_rpcs",
+                "alloydb.googleapis.com/internal/grpc/server/received_bytes_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/server/received_messages_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/server/server_latency",
+                "alloydb.googleapis.com/internal/grpc/server/sent_bytes_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/server/sent_messages_per_rpc",
+                "alloydb.googleapis.com/internal/grpc/server/started_rpcs",
+                "alloydb.googleapis.com/internal/container/cpu_usage",
+                "alloydb.googleapis.com/internal/container/cpu_throttled",
+                "alloydb.googleapis.com/internal/container/cpu_throttled_periods",
+                "alloydb.googleapis.com/internal/container/cpu_total_periods",
+                "alloydb.googleapis.com/internal/container/memory_stat",
+                "alloydb.googleapis.com/internal/container/memory_used",
+                "alloydb.googleapis.com/internal/container/heap_used",
+                "alloydb.googleapis.com/internal/container/memory_limit",
+                "alloydb.googleapis.com/internal/container/swap_used",
+                "alloydb.googleapis.com/internal/container/uptime",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/rpc/client/count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/rpc/client/roundtrip_latencies",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/volume",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/process_buffer_capacity",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/replica_latency_tracker",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/replica_ewma_latency_tracker",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/replica_ewmv_latency_tracker",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/replica_timeout_latency_tracker",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/replica_latency_ewmvariance",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/replica_latency_ewma",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/stale_backup_snapshots",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/uninitialized_block_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/wal_progress",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/last_process_pos_advance_time",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/last_quorum_advance_time",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/local_shard_trim_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/global_shard_repd_trim_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/archiver_checkpoint_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/checkpoint_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/shard_push_back_time",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/checkpoint_queue/volume_push_back_time",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/replica_rpcs",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/records_per_write_rpc",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/logical_lsn_bytes_per_write_rpcs",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/records_added",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/records_accepted_for_replay",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/shard_in_reconfiguration",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/thread_latencies",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/parse_time_per_log",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/parse_fraction_blocked",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/parse_batch_size",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/record_expander/records_seen_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/record_info_queue_size",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_archiver/consume_time_per_log",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/cache_lsn_range",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/cache_lsn_range_min",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/cache_time_range",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/cache_time_range_min",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/read_block_state_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/wrong_eviction_read_lsn_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/in_local_cache_read_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/read_blocks_latency",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/read_blocks_latency_total",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/rpcs_per_read_request",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/prefetch_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/prefetch_block_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/read_miss_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/evict_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/evict_before_use_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/invalidate_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/out_of_buffers_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/purge_cache_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/read_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/read_hit_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/read_wait_times",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/block_cache/prefetch_cache/response_receive_times",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/hit_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/miss_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/get_shard_max_latency",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/get_shard_max_visited_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/bucket_chain_size",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/num_entries",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/num_free_entries",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/request_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/requests_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/fallback_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/hedge_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/hedging_success_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/hedge_success_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/latencies_per_replica",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/replica_latencies",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/sequential_rpc_router/rpc_cancel_times",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/failed_readblock_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/client/num_chunks",
+                "alloydb.googleapis.com/internal/database/logging/backlog",
+                "alloydb.googleapis.com/internal/database/logging/log_lines_count",
+                "alloydb.googleapis.com/internal/database/logging/ccc_log_lines_count",
+                "alloydb.googleapis.com/internal/database/logging/log_streams",
+                "alloydb.googleapis.com/internal/database/logging/chemist_pre_send_latencies",
+                "alloydb.googleapis.com/internal/database/logging/bytes_uploaded_count",
+                "alloydb.googleapis.com/internal/database/logging/chemist_upload_latencies",
+                "alloydb.googleapis.com/internal/database/service/events_count",
+                "alloydb.googleapis.com/internal/database/service/errors_count",
+                "alloydb.googleapis.com/internal/database/postgresql/uptime",
+                "alloydb.googleapis.com/internal/database/postgresql/max_connections",
+                "alloydb.googleapis.com/internal/database/postgresql/failed_connections_count",
+                "alloydb.googleapis.com/internal/database/postgresql/shared_buffers",
+                "alloydb.googleapis.com/internal/database/postgresql/temp_buffers",
+                "alloydb.googleapis.com/internal/database/postgresql/buffers",
+                "alloydb.googleapis.com/internal/database/postgresql/buffer_replacement_count",
+                "alloydb.googleapis.com/internal/database/postgresql/aio_request_count",
+                "alloydb.googleapis.com/internal/database/postgresql/free_buffer_worker_sleep_time",
+                "alloydb.googleapis.com/internal/database/postgresql/wal_size",
+                "alloydb.googleapis.com/internal/database/postgresql/collations_used_by_indexes",
+                "alloydb.googleapis.com/internal/database/postgresql/collations",
+                "alloydb.googleapis.com/internal/database/postgresql/pgaudit_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/valid_entries",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/zero_entries",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/num_reads",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/num_writes",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/num_hits",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/get_entry_calls",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/be_read_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/bg_read_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/verifier_status_count",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/verifier_run_count",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/prewarm/checkpoint/count",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/prewarm/checkpoint/rows",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/prewarm/checkpoint/size",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/prewarm/checkpoint/create_duration",
+                "alloydb.googleapis.com/internal/database/postgresql/chill_cache/prewarm/restore/workers",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/memory_used",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/memory_available",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/bg_process_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/manual_population_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_error_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/cached_indexes",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_pool_available_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_pool_total_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_pool_used_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_pool_used_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/hypothetical_units_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/columnar_cache_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/column_set_used_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/memory_total",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_alg_time",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_alg_quality",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_pool_used_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/job_scheduler/job_durations",
+                "alloydb.googleapis.com/internal/database/postgresql/job_scheduler/job_durations",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_time",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/refresh_threshold_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/work_pool_used_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/main_pool_used_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/cached_table_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/invalidated_block_ratio",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_invalidated_block_ratio",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/memory_uncompressed_size",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/num_column_sets",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/num_whatif",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/columns",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/column_size",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/ce_knn_query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/columnar_unit_spill_over_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/work_pool_total_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/work_pool_available_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/work_pool_used_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_pool_total_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_pool_available_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/recommendation_pool_used_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/main_pool_total_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/main_pool_available_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/main_pool_used_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/column_set_total_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/column_set_available_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/column_set_used_memory",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/local_storage_configured_size",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/local_storage_used_size",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/read_bytes_cached_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_read_bytes_cached_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/read_bytes_swapped_in_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_read_bytes_swapped_in_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/columnar_unit_shared_mem_read_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/columnar_unit_storage_cache_read_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/swap_in_jobs_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/swap_out_jobs_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/query_error",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/errors",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/columnar_unit_scan_counts",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/vj_eligible_hash_join_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/postgres_joins_when_ce_enabled_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/is_vj_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/is_vp_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/join_memory_usages",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/vj_rows_projected_or_processed",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/vj_runtimes",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/num_joins_in_join_tree",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/avg_join_tree_depth",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/max_join_tree_depth",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/vectorizedjoin/fallback_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/database_advisor_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/statement_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/index_selection_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/indexable_column_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/explain_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/index_selection_iteration_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/selected_index_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/index_selection_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/workload_cost_reduction_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_total_index_selections",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_success_index_selections",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/total_num_statements",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_statements",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_explainable_statements",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_indexable_columns",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/total_num_explains",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_cached_explains",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_skipped_explains",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/max_num_cached_query_costs",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_index_selection_iterations",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_selected_indexes",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/index_selection_startup_time",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/index_selection_runtime",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/workload_cost_reduction_percent",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_column_selection_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_column_selection_latency",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_columnarizable_columns_size_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_columnarizable_columns_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_selected_columns_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_workload_cost_reduction_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_recommended_size_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/selected_index_created_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ce_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/auto_ce_criteria",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/auto_enable",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/auto_enable_size",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/query_tuning_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/query_advice_count",
+                "alloydb.googleapis.com/internal/database/postgresql/parameterized_views/parameterized_views_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/parameterized_views/parameterized_views_count",
+                "alloydb.googleapis.com/internal/database/postgresql/parameterized_views/execute_count",
+                "alloydb.googleapis.com/internal/database/postgresql/schema/index/index_state",
+                "alloydb.googleapis.com/internal/database/postgresql/schema/index/unused_indexes",
+                "alloydb.googleapis.com/internal/database/postgresql/schema/index/indexes",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/query/query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/join/join_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/scan/unsupported_expr_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/scan/unsupported_func_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/agg/unsupported_expr_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/agg/unsupported_func_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/scan/scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/partitioning_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/partitioning_spilled_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/materialized_view_scanned_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/materialized_view_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/invalid_externally_toasted_cu_scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/auto_refresh_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/distinct_optimization_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/planner/hints_planned_query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/planner/ri_based_join_elimination_query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_split_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/parent_operator_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/row_counts",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_pages_gc_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_pages_gc_skipped_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/lpdead_tuples_gc_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/lpdead_tuples_vacuum_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/lpdead_tuples_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_gc_queue_push_success_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_gc_queue_push_failure_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_gc_worker_dbs_processed_counts",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_gc_worker_cycle_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_create_scan_speed",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_create_sort_speed",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_create_load_speed",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_create_scan_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_create_sort_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/btree_create_load_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_ptn_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_ptn_failed_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_ptn_rows_moved_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_ptn_rows_processed_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_ptn_total_time_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/bitmap_gen_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/adaptive_executions",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/streaming_scans",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/query/execution_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/pgsnap/auto_snapshots_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/pgsnap/default_version",
+                "alloydb.googleapis.com/internal/database/postgresql/pgsnap/installed_version",
+                "alloydb.googleapis.com/internal/database/postgresql/pgsnap/snapshots",
+                "alloydb.googleapis.com/internal/database/postgresql/perfsnap/snap_query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/perfsnap/report_query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/repo/managed_plans",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/repo/managed_plans_api_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/repo/plan_id_generation_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/repo/sync_plans_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/repo/track_plans",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/repo/track_plans_request_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/join_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/grouping_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/partial_grouping_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/distinct_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/orderby_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/steering/window_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/spec/query_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/spec/subquery_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/spec/unsupported_path_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/spec/unsupported_rel_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/spec/unexpected_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/verify/plan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/verify/pathlist_stage_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planmgmt/verify/partial_pathlist_stage_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planner/query_plan_patch_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/planner/cache_aware_costing_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/checkpoint/duration",
+                "alloydb.googleapis.com/internal/database/postgresql/checkpoint/redo_lsn",
+                "alloydb.googleapis.com/internal/database/postgresql/checkpoint/flush_lsn",
+                "alloydb.googleapis.com/internal/database/postgresql/checkpoint/interval",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/ml_integration_extension_installed",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_models",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/roundtrip_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/temp_on_demand/wait_times",
+                "alloydb.googleapis.com/internal/database/postgresql/read_throttling_count",
+                "alloydb.googleapis.com/internal/database/postgresql/log_records_to_replay_count",
+                "alloydb.googleapis.com/internal/database/postgresql/log_records_skipped_count",
+                "alloydb.googleapis.com/internal/database/postgresql/blocks_affected_by_replay_count",
+                "alloydb.googleapis.com/internal/database/postgresql/blocks_skipped_by_replay_count",
+                "alloydb.googleapis.com/internal/database/postgresql/eviction_window/duration",
+                "alloydb.googleapis.com/internal/database/postgresql/eviction_window/replay_lsn",
+                "alloydb.googleapis.com/internal/database/postgresql/eviction_window/max_eviction_lsn",
+                "alloydb.googleapis.com/internal/health_agent/status_count",
+                "alloydb.googleapis.com/internal/health_insights/vm/probing/memoized_probe/call_count",
+                "alloydb.googleapis.com/internal/health_insights/vm/probing/memoized_probe/cache_hit_count",
+                "alloydb.googleapis.com/internal/health_insights/vm/probing/memoized_probe/cache_miss_count",
+                "alloydb.googleapis.com/internal/health_insights/database/postgresql/read_latency",
+                "alloydb.googleapis.com/internal/health_insights/database/postgresql/write_latency",
+                "alloydb.googleapis.com/internal/health_insights/database/postgresql/tcp_connect_latency",
+                "alloydb.googleapis.com/internal/health_insights/database/postgresql/heartbeat_latency",
+                "alloydb.googleapis.com/internal/health_insights/database/postgresql/broadcast_lsn",
+                "alloydb.googleapis.com/internal/authproxy/cert_valid_duration",
+                "alloydb.googleapis.com/internal/authproxy/connect_latencies",
+                "alloydb.googleapis.com/internal/authproxy/open_connections",
+                "alloydb.googleapis.com/internal/authproxy/sqlgrpc_connect_latencies",
+                "alloydb.googleapis.com/internal/authproxy/sqlgrpc_open_connections_count",
+                "alloydb.googleapis.com/internal/authproxy/sqlgrpc_received_bytes",
+                "alloydb.googleapis.com/internal/authproxy/sqlgrpc_sent_bytes",
+                "alloydb.googleapis.com/internal/authproxy/sqlgrpc_stream_process_times",
+                "alloydb.googleapis.com/internal/authproxy/status_count",
+                "alloydb.googleapis.com/internal/conn_pool/client_connections",
+                "alloydb.googleapis.com/internal/conn_pool/server_connections",
+                "alloydb.googleapis.com/internal/database/iam/login/error_count",
+                "alloydb.googleapis.com/internal/database/iam/login/iam_authentication_enabled",
+                "alloydb.googleapis.com/internal/database/iam/login/latencies",
+                "alloydb.googleapis.com/internal/database/iam/report/error_count",
+                "alloydb.googleapis.com/internal/database/iam/report/latencies",
+                "alloydb.googleapis.com/internal/database/password/expiration_enabled",
+                "alloydb.googleapis.com/internal/database/password/complexity_enabled",
+                "alloydb.googleapis.com/internal/database/password/contains_username_enabled",
+                "alloydb.googleapis.com/internal/database/password/result_count",
+                "alloydb.googleapis.com/internal/instance/cmek/kms_key_disabled",
+                "alloydb.googleapis.com/internal/instance/postgresql/conntrack_event_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/conntrack_netlink_overrun_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/conntrack_new_events",
+                "alloydb.googleapis.com/internal/instance/postgresql/max_conntrack_new_event_rate",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/sent_bytes_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/write_bytes_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/flush_bytes_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/replay_bytes_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/state",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/slot_status",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/sent_bytes",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/write_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/flush_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/replay_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/replay_lsn",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/receive_lsn",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/max_standby_streaming_delay",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/wal_replay_paused",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/recovery_conflicts_in_progress",
+                "alloydb.googleapis.com/internal/instance/postgresql/internal_wait_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/internal_wait_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/logical_replication/flush_bytes_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/logical_replication/wal_status",
+                "alloydb.googleapis.com/internal/instance/postgresql/logical_replication/safe_wal_size",
+                "alloydb.googleapis.com/internal/instance/postgresql/logical_replication/active",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/parallel_log_replay_enabled",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/io_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/large_commit_abort_active",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/large_commit_abort_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/large_commit_abort_duration",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/redo_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/replay_latency",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/redo_overhead_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_by_state",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_by_type",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_for_top_applications",
+                "alloydb.googleapis.com/internal/instance/postgresql/tuples_returned_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/tuples_fetched_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/tuples_inserted_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/tuples_deleted_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/tuples_updated_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/new_connections_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_created_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_initialized_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_terminated_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/prespawned_backend_miss_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_spawn_time_total",
+                "alloydb.googleapis.com/internal/instance/postgresql/backends_init_time_total",
+                "alloydb.googleapis.com/internal/instance/postgresql/backend_spawn_wait_time",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/g_alloydb_vacuum_duration",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/g_alloydb_vacuum_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/deadlock_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/dbs",
+                "alloydb.googleapis.com/internal/instance/postgresql/committed_transactions_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/rolledback_transactions_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/blks_read_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/blks_hit_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/temp_bytes_written_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/temp_files_written_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/wait_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/wait_time_latencies",
+                "alloydb.googleapis.com/internal/instance/postgresql/wait_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/hit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/buf_hit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/chill_hit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/miss_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/replay_hit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/replay_buf_hit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/replay_chill_hit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/replay_miss_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/index_scan_reads_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/transaction_id_utilization",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/pct_transaction_id_utilization",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/transaction_id_utilization_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/multixact_utilization_percentage",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/oldest_transaction_age",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/transaction_id_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/mintxid_skipped_pages_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/unsuccessful_autovacuums_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/longest_running_autovacuum",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/maximum_subtransactions",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/vacuums_in_user_dbs_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/hnsw_indexes_undergoing_vacuum",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/bloated_tables",
+                "alloydb.googleapis.com/internal/instance/lro/start_count",
+                "alloydb.googleapis.com/internal/instance/lro/durations",
+                "alloydb.googleapis.com/internal/memagent/memory_available",
+                "alloydb.googleapis.com/internal/memagent/terminated_backends",
+                "alloydb.googleapis.com/internal/memagent/unresponsive_terminated_backends",
+                "alloydb.googleapis.com/internal/memagent/unresponsive_terminated_backends_size",
+                "alloydb.googleapis.com/internal/memagent/shared_buffers_active",
+                "alloydb.googleapis.com/internal/memagent/min_shared_buffers_active",
+                "alloydb.googleapis.com/internal/memagent/max_shared_buffers_active",
+                "alloydb.googleapis.com/internal/memagent/static_shared",
+                "alloydb.googleapis.com/internal/memagent/grow_ops_count",
+                "alloydb.googleapis.com/internal/memagent/shrink_ops_count",
+                "alloydb.googleapis.com/internal/memagent/shrink_pause_durations",
+                "alloydb.googleapis.com/internal/memagent/temp_override",
+                "alloydb.googleapis.com/internal/memagent/metadata_server/rpc_count",
+                "alloydb.googleapis.com/internal/memagent/disk_space_shortage_count",
+                "alloydb.googleapis.com/internal/memagent/buffer_pool_evicted_pages_count",
+                "alloydb.googleapis.com/internal/memagent/buffer_pool_accessed_pages",
+                "alloydb.googleapis.com/internal/memagent/buffer_pool_hugepage_shrink_count",
+                "alloydb.googleapis.com/internal/memagent/buffer_pool_hugepage_shrink_time_total",
+                "alloydb.googleapis.com/internal/memagent/chill_out_cache_attempt_count",
+                "alloydb.googleapis.com/internal/memagent/chill_out_cache_time",
+                "alloydb.googleapis.com/internal/vm/cpu_count",
+                "alloydb.googleapis.com/internal/vm/cpu_model",
+                "alloydb.googleapis.com/internal/vm/cpu_usage",
+                "alloydb.googleapis.com/internal/vm/zone",
+                "alloydb.googleapis.com/internal/vm/tenant_project_id",
+                "alloydb.googleapis.com/internal/vm/dogfish_sns_endpoint",
+                "alloydb.googleapis.com/internal/vm/dogfish_sns_sandbox_bns_address",
+                "alloydb.googleapis.com/internal/vm/metadata_service_uri",
+                "alloydb.googleapis.com/internal/vm/metadata_service_sandbox_bns_address",
+                "alloydb.googleapis.com/internal/vm/directpath_address",
+                "alloydb.googleapis.com/internal/vm/is_standby",
+                "alloydb.googleapis.com/internal/vm/maintenance_event",
+                "alloydb.googleapis.com/internal/vm/meminfo",
+                "alloydb.googleapis.com/internal/vm/memory_total",
+                "alloydb.googleapis.com/internal/vm/memory_used",
+                "alloydb.googleapis.com/internal/vm/memory_available",
+                "alloydb.googleapis.com/internal/vm/swap_cached",
+                "alloydb.googleapis.com/internal/vm/swap_total",
+                "alloydb.googleapis.com/internal/vm/swap_used",
+                "alloydb.googleapis.com/internal/vm/uptime",
+                "alloydb.googleapis.com/internal/vm/oom_count",
+                "alloydb.googleapis.com/internal/vm/pages_swapped_in_count",
+                "alloydb.googleapis.com/internal/vm/pages_swapped_out_count",
+                "alloydb.googleapis.com/internal/vm/core_dumps",
+                "alloydb.googleapis.com/internal/vm/binary_core_dumps",
+                "alloydb.googleapis.com/internal/vm/auto_conf_entries",
+                "alloydb.googleapis.com/internal/vm/auto_conf_parameters",
+                "alloydb.googleapis.com/internal/vm/chill_out_cache/placement_distance",
+                "alloydb.googleapis.com/internal/vm/chill_out_cache/machine_type",
+                "alloydb.googleapis.com/internal/vm/chill_out_cache/virtual_hosts",
+                "alloydb.googleapis.com/internal/vm/chill_out_cache/physical_hosts",
+                "alloydb.googleapis.com/internal/vm/chill_out_cache/latency",
+                "alloydb.googleapis.com/internal/vm/disk/iops",
+                "alloydb.googleapis.com/internal/vm/disk/io_in_progress",
+                "alloydb.googleapis.com/internal/vm/disk/max_iops",
+                "alloydb.googleapis.com/internal/vm/disk/max_io_in_progress",
+                "alloydb.googleapis.com/internal/vm/disk/max_throughput",
+                "alloydb.googleapis.com/internal/vm/disk/read",
+                "alloydb.googleapis.com/internal/vm/disk/read_ops",
+                "alloydb.googleapis.com/internal/vm/disk/read_time",
+                "alloydb.googleapis.com/internal/vm/disk/throughput",
+                "alloydb.googleapis.com/internal/vm/disk/write_ops",
+                "alloydb.googleapis.com/internal/vm/disk/write_time",
+                "alloydb.googleapis.com/internal/vm/disk/written",
+                "alloydb.googleapis.com/internal/vm/disk/utilization_by_data_type",
+                "alloydb.googleapis.com/internal/vm/fs/size",
+                "alloydb.googleapis.com/internal/vm/fs/free",
+                "alloydb.googleapis.com/internal/vm/fs/available",
+                "alloydb.googleapis.com/internal/vm/fs/spill_files_usage",
+                "alloydb.googleapis.com/internal/vm/pressure_stall_count",
+                "alloydb.googleapis.com/internal/vm/version",
+                "alloydb.googleapis.com/internal/database/postgresql/migration/source_instance_size",
+                "alloydb.googleapis.com/internal/database/postgresql/migration/source_database_size",
+                "alloydb.googleapis.com/internal/opagent/metadata_service/requests",
+                "alloydb.googleapis.com/internal/opagent/metadata_server/requests",
+                "alloydb.googleapis.com/internal/opagent/migration/largest_subscription_size",
+                "alloydb.googleapis.com/internal/opagent/migration/subscriptions",
+                "alloydb.googleapis.com/internal/opagent/migration/migration_time",
+                "alloydb.googleapis.com/internal/opagent/migration/configure_logical_replication_rpc_count",
+                "alloydb.googleapis.com/internal/opagent/migration/migration_error_count",
+                "alloydb.googleapis.com/internal/opagent/grpc/server/started_rpc_count",
+                "alloydb.googleapis.com/internal/opagent/grpc/server/completed_rpc_count",
+                "alloydb.googleapis.com/internal/opagent/grpc/server/rpc_latencies",
+                "alloydb.googleapis.com/internal/obsagent/grpc/server/started_rpc_count",
+                "alloydb.googleapis.com/internal/obsagent/grpc/server/completed_rpc_count",
+                "alloydb.googleapis.com/internal/obsagent/grpc/server/rpc_latencies",
+                "alloydb.googleapis.com/internal/obsagent/recommendation/database/connections",
+                "alloydb.googleapis.com/internal/obsagent/recommendation/database/returned_rows",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/select_bytes_call_latencies",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/select_bytes_payload_sizes",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/select_bytes_call_count",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/reset_bytes_call_latencies",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/reset_bytes_call_count",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/insert_bytes_call_latencies",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/insert_bytes_payload_sizes",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/insert_bytes_call_count",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/send_telemetry_call_latencies",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/send_telemetry_payload_sizes",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/send_telemetry_call_count",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/telemetry_payload_processing_latencies",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/telemetry_payload_count",
+                "alloydb.googleapis.com/internal/obsagent/telemetry/db_connections",
+                "alloydb.googleapis.com/internal/obsagent/monitoring/querygenerator/latencies",
+                "alloydb.googleapis.com/internal/obsagent/monitoring/database/query_execution_latencies",
+                "alloydb.googleapis.com/internal/obsagent/monitoring/querygenerator/error_count",
+                "alloydb.googleapis.com/internal/obsagent/monitoring/querygenerator/sqlstatement/error_count",
+                "alloydb.googleapis.com/internal/obsagent/monitoring/querygenerator/database/error_count",
+                "alloydb.googleapis.com/internal/obsagent/monitoring/querygenerator/database/unknown_column_datatype_count",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/client_rpcs/count",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/client_rpcs/latency",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/bigquery_append_row/schema_update_count",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/fetch_telemetry_config/updated_count",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/collection/error_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/entry_insert_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/entry_fetch_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/deduplicate_table_id_insert_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/deduplicate_table_id_eviction_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/component_not_available_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/segment_transition_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/db_rows_written_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/downsample_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/partition_creation_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/partition_deletion_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/partition_metadata_fetch_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/instance_metadata_fetch_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/extension_latencies",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/segment_draining_times",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/segment_aggregation_times",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/bg_worker_iteration_latencies",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/bg_worker_per_iteration_rows",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/replica_buffer_wait_times",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/wait_class_util_failure_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/wait_event_util_failure_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/query_plan_sample_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/query_plan_capture_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/background_worker_events",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/background_worker_status",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/coarse_table_lag",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/memory_used_by_tables",
+                "alloydb.googleapis.com/internal/dp_experiment/snapshot_init_latencies",
+                "alloydb.googleapis.com/internal/dp_experiment/snapshot_init_status_count",
+                "alloydb.googleapis.com/internal/dp_experiment/get_flag_latencies",
+                "alloydb.googleapis.com/internal/dp_experiment/get_flag_status_count",
+                "alloydb.googleapis.com/internal/dp_experiment/callback_process_latencies",
+                "alloydb.googleapis.com/internal/dp_experiment/callback_process_status_count",
+                "alloydb.googleapis.com/internal/dp_experiment/enabled_flags",
+                "alloydb.googleapis.com/internal/health/probe/overall",
+                "alloydb.googleapis.com/internal/health/probe/overall_bucket_count",
+                "alloydb.googleapis.com/internal/health/probe/overall_counts",
+                "alloydb.googleapis.com/internal/health/probe/overall_slo_count",
+                "alloydb.googleapis.com/internal/health/probe/version",
+                "alloydb.googleapis.com/internal/health/probe/latencies",
+                "alloydb.googleapis.com/internal/health/probe/count",
+                "alloydb.googleapis.com/internal/health/grpc/server/started_rpc_count",
+                "alloydb.googleapis.com/internal/health/grpc/server/completed_rpc_count",
+                "alloydb.googleapis.com/internal/health/grpc/server/rpc_latencies",
+                "alloydb.googleapis.com/internal/health/neg_experiment/poll_count",
+                "alloydb.googleapis.com/internal/health/netlink/backlog",
+                "alloydb.googleapis.com/internal/health/netlink/backlog_limit",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/current_clone_id",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/num_other_clone_open_fds",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/clone_proposal_count",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/clone_unmount_count",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/new_clone_signal_count",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/last_clone_acceptance_time",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/last_other_clone_state_change_time",
+                "alloydb.googleapis.com/internal/database/postgresql/sharedpd/clone_state_duration",
+                "alloydb.googleapis.com/internal/monitoring/collection_time",
+                "alloydb.googleapis.com/internal/monitoring/export_time",
+                "alloydb.googleapis.com/internal/monitoring/metrics_exported",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/log_record_sharder/affects_all_count",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/read_lsn_tracker/clear_count",
+                "alloydb.googleapis.com/internal/database/logging/disk_bytes_used",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/materialized_expressions",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/materialized_expressions_usage_count",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/alloydb_ai_nl_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/nl_configuration_count",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/nl_configuration_registered_item_count",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/nl_user_defined_concept_count",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/nl_example_count",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/nl_template_count",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/initialize_bulk_embedding_calls",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/initialize_bulk_embedding_calls_success",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/initialize_bulk_embedding_calls_failed",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/embeddings_generated_using_bulk",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_calls_to_prediction_function",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/lag_based_throttling_enabled",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/replay_worker_records",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/max_replay_worker_records",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/replay_workers_used",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/replay_batches",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/disjoint_log_record_groups",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/replay_leader_latency",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/replay_worker_latency",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/collection/count",
+                "alloydb.googleapis.com/internal/obsagent/modern_observability/telemetry/collection/latency",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/trace_mapping",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/queued_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/sent_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/acked_lsn",
+                "alloydb.googleapis.com/internal/storage/speckle/dogfish/quorum_write_stream/quorum_acked_lsn",
+                "alloydb.googleapis.com/internal/database/logging/log_bytes_count",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/distributed/poq_completed_queries",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/distributed/poq_fallback_queries",
+                "alloydb.googleapis.com/internal/database/postgresql/workload/distributed/poq_disqualified_queries",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_index_failed_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_split_index_success_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_worker_skip_lock_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_centroid_update_skip_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_centroid_update_success_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/num_distributed_workers",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/num_distributed_tokenization",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_build_tokenization_time",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_build_wait_for_replica_time",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_build_fetch_tuple_time",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_worker_skip_index_count",
+                "alloydb.googleapis.com/internal/database/postgresql/alloydb_ai_nl/alloydb_ai_nl_version",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_model_calls",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/refresh_bulk_embedding_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/incremental_bulk_embedding_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_calls_on_ptn_tables",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/refresh_embedding_calls_per_ptn_level",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_avg_batch_size",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_tuples_processed",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_retry_count",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_total_time",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_overall_time",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_model_errors",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_ai_schemas",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/prediction_function_unexpected_response_count",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/prediction_function_latency",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/prediction_function_input_size",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/active_recovery_conflict_wait_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/replay_leader_latency",
+                "alloydb.googleapis.com/internal/instance/postgresql/replication/replay_worker_latency",
+                "alloydb.googleapis.com/internal/dataplex/extraction_duration",
+                "alloydb.googleapis.com/internal/dataplex/extraction_count",
+                "alloydb.googleapis.com/internal/dataplex/databases_extraction_duration",
+                "alloydb.googleapis.com/internal/dataplex/schema_extraction_duration",
+                "alloydb.googleapis.com/internal/dataplex/tables_extraction_duration",
+                "alloydb.googleapis.com/internal/dataplex/columns_extraction_duration",
+                "alloydb.googleapis.com/internal/dataplex/schemas_extraction_max_duration",
+                "alloydb.googleapis.com/internal/dataplex/tables_extraction_max_duration",
+                "alloydb.googleapis.com/internal/dataplex/columns_extraction_max_duration",
+                "alloydb.googleapis.com/internal/dataplex/upload_size",
+                "alloydb.googleapis.com/internal/dataplex/cleanup_failure_count",
+                "alloydb.googleapis.com/internal/dataplex/database_count",
+                "alloydb.googleapis.com/internal/dataplex/table_count",
+                "alloydb.googleapis.com/internal/dataplex/schema_count",
+                "alloydb.googleapis.com/internal/dataplex/column_count",
+                "alloydb.googleapis.com/internal/dataplex/bytes_consumed_on_disk",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/ai_perf_advices_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_ai_perf_advices",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_ai_rewrite_advices",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_ai_rewrites_shown_to_user",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_ai_rewrites_syntax_error",
+                "alloydb.googleapis.com/internal/database/postgresql/dbadvisor/num_invalid_ai_rewrites",
+                "alloydb.googleapis.com/internal/instance/node_type",
+                "alloydb.googleapis.com/internal/vm/load_average_15m",
+                "alloydb.googleapis.com/internal/vm/load_average_1m",
+                "alloydb.googleapis.com/internal/vm/load_average_5m",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_already_cached_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_already_replayed_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_created_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_overwritten_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_prefetch_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_prefetched_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_processed_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_read_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_read_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/blocks_repeated_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/last_replay_prefetcher_end_lsn",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/last_replay_prefetcher_start_lsn",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/last_xlog_replayer_end_lsn",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/last_xlog_replayer_start_lsn",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/records_processed_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_prefetch/records_without_blocks_count",
+                "alloydb.googleapis.com/internal/conn_pool/expected_pooler_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/lrt_opt_gap_age_seconds",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/lrt_opt_gap_transactions",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/lrt_opt_tuples_deleted",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/workers",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/buffer_pin_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/buffer_pin_time",
+                "alloydb.googleapis.com/internal/instance/postgresql/replay_process/drop_rels_commit_count",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/ai_fn_apply_batches_total",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/ai_fn_apply_errors_total",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/ai_fn_apply_rows_processed",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/ai_fn_apply_scans_total",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_queries_redirection_to_llm",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_activity_detected",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_branch_partition_split_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_index_properties",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_num_bg_workers",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_num_indexes_auto_mode_opt_out",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/eviction_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vacuum/autovac_launcher_sighup_count",
+                "alloydb.googleapis.com/internal/memagent/terminated_backends_size",
+                "alloydb.googleapis.com/internal/serverless/scaling_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/tiered_cache/btree_index_scan_prefetch_count",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_error",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_latency_timestamp_fetch",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_latency_timestamp_update",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_latency_topic_publish",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_published_bytes",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_published_count",
+                "alloydb.googleapis.com/internal/dataplex/livesync/events_received_count",
+                "alloydb.googleapis.com/internal/dataplex/livesync/feature_lifecycle_changes",
+                "alloydb.googleapis.com/internal/dataplex/livesync/feature_lifecycle_errors",
+                "alloydb.googleapis.com/internal/dataplex/livesync/uptime",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/trace_export_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dataplex/captured_events_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dataplex/consolidated_events_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dataplex/cool_off_status",
+                "alloydb.googleapis.com/internal/database/postgresql/dataplex/dropped_events_count",
+                "alloydb.googleapis.com/internal/database/postgresql/dataplex/extension_state",
+                "alloydb.googleapis.com/internal/database/postgresql/dataplex/sent_events_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_index_branch_partition_split_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scann_idx_maint_index_last_cycle_timestamp",
+                "alloydb.googleapis.com/internal/dataplex/foreign_key_count",
+                "alloydb.googleapis.com/internal/dataplex/foreign_keys_extraction_max_duration",
+                "alloydb.googleapis.com/internal/dataplex/primary_key_count",
+                "alloydb.googleapis.com/internal/dataplex/primary_keys_extraction_max_duration",
+                "alloydb.googleapis.com/internal/instance/certauth/cert_valid_duration",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/manual_index_population_count",
+                "alloydb.googleapis.com/internal/instance/postgresql/insights/active_query_plan_status",
+                "alloydb.googleapis.com/internal/vm/disk/provisioned_iops",
+                "alloydb.googleapis.com/internal/vm/disk/provisioned_throughput",
+                "alloydb.googleapis.com/internal/vm/disk/size",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/preview_features_enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_invalid_page_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_memory_size",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/index_population_duration",
+                "alloydb.googleapis.com/internal/instance/postgresql/block_io_count_by_backend_type",
+                "alloydb.googleapis.com/internal/authproxy/bytes_received_count",
+                "alloydb.googleapis.com/internal/authproxy/bytes_sent_count",
+                "alloydb.googleapis.com/internal/database/postgresql/columnarcache/avoid_invalidation_count"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/InternalDatabase",
+              "metrics": [
+                "alloydb.googleapis.com/internal/database/postgresql/parameterized_views/total_parameterized_views",
+                "alloydb.googleapis.com/database/postgresql/insights/aggregate/latencies",
+                "alloydb.googleapis.com/database/postgresql/insights/aggregate/execution_time",
+                "alloydb.googleapis.com/database/postgresql/insights/aggregate/io_time",
+                "alloydb.googleapis.com/database/postgresql/insights/aggregate/lock_time",
+                "alloydb.googleapis.com/database/postgresql/insights/aggregate/shared_blk_access_count",
+                "alloydb.googleapis.com/database/postgresql/insights/aggregate/row_count",
+                "alloydb.googleapis.com/database/postgresql/insights/perquery/latencies",
+                "alloydb.googleapis.com/database/postgresql/insights/perquery/execution_time",
+                "alloydb.googleapis.com/database/postgresql/insights/perquery/io_time",
+                "alloydb.googleapis.com/database/postgresql/insights/perquery/lock_time",
+                "alloydb.googleapis.com/database/postgresql/insights/perquery/shared_blk_access_count",
+                "alloydb.googleapis.com/database/postgresql/insights/perquery/row_count",
+                "alloydb.googleapis.com/database/postgresql/insights/pertag/latencies",
+                "alloydb.googleapis.com/database/postgresql/insights/pertag/execution_time",
+                "alloydb.googleapis.com/database/postgresql/insights/pertag/io_time",
+                "alloydb.googleapis.com/database/postgresql/insights/pertag/lock_time",
+                "alloydb.googleapis.com/database/postgresql/insights/pertag/shared_blk_access_count",
+                "alloydb.googleapis.com/database/postgresql/insights/pertag/row_count",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/entry_created_count",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/entry_creation_failed_count",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/update_failure_count",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/eviction_count",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/reset_count",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/execution_time_statistics",
+                "alloydb.googleapis.com/database/postgresql/insights/internal/query_lengths",
+                "alloydb.googleapis.com/internal/database/alloydb_superusers",
+                "alloydb.googleapis.com/internal/database/postgresql/size",
+                "alloydb.googleapis.com/internal/database/postgresql/backends",
+                "alloydb.googleapis.com/internal/database/postgresql/backends_initialized_count",
+                "alloydb.googleapis.com/internal/database/postgresql/committed_transactions",
+                "alloydb.googleapis.com/internal/database/postgresql/rolledback_transactions",
+                "alloydb.googleapis.com/internal/database/postgresql/blks_read",
+                "alloydb.googleapis.com/internal/database/postgresql/blks_read_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/blks_hit",
+                "alloydb.googleapis.com/internal/database/postgresql/blks_hit_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/blk_read_time",
+                "alloydb.googleapis.com/internal/database/postgresql/blk_write_time",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_returned",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_fetched",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_inserted",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_updated",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_deleted",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_returned_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_fetched_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_inserted_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_deleted_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/tuples_updated_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/deadlock_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/backends_for_top_databases",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/indexonly_heap_fetches_count",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/total_index_size",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/total_indexes",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/total_table_size",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/total_tables",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/total_unlogged_tables",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/index_size",
+                "alloydb.googleapis.com/internal/database/postgresql/indexing/table_size",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/vector_scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/query/total_execution_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/bitmap_requalifications",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/bitmap_sizes",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/indexes_per_distance",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/total_num_tables",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/max_vectors",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/min_vectors",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/avg_vectors",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/embedding_dimensionality",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/num_partitions",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/tuples_inserted_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/tuples_deleted_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/tuples_updated_count",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/index_config",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/current_num_rows",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/index_build_time_num_rows",
+                "alloydb.googleapis.com/internal/database/postgresql/temp_bytes_written_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/temp_files_written_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/new_connections_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/committed_transactions_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/rolledback_transactions_for_top_databases_count",
+                "alloydb.googleapis.com/internal/database/postgresql/total_columns",
+                "alloydb.googleapis.com/internal/database/postgresql/extension_installed",
+                "alloydb.googleapis.com/internal/database/postgresql/statements_executed_count",
+                "alloydb.googleapis.com/internal/database/security/alloydbadmin_roles",
+                "alloydb.googleapis.com/internal/database/security/file_system_access_enabled",
+                "alloydb.googleapis.com/internal/database/superusers",
+                "alloydb.googleapis.com/internal/database/users",
+                "alloydb.googleapis.com/internal/database/migration_state",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/enabled",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/create_client_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/create_client_call_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/create_session_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/create_session_call_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/read_rows_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/read_rows_call_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_read_api/read_rows_counts",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/bulk_embedding_incremental_mode",
+                "alloydb.googleapis.com/internal/database/postgresql/mlintegration/num_partitions_per_bulk_operation",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/index_scan_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_query_api/create_client_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_query_api/create_client_call_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_query_api/get_query_results_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_query_api/get_query_results_call_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_query_api/query_call_count",
+                "alloydb.googleapis.com/internal/database/postgresql/bq_fdw/bq_query_api/query_call_latencies",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_observability/current_num_rows_in_index",
+                "alloydb.googleapis.com/internal/database/postgresql/vector_assist/invocation_count",
+                "alloydb.googleapis.com/internal/database/postgresql/planner/query_plan_time"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Cluster",
+              "metrics": [
+                "alloydb.googleapis.com/cluster/storage/usage",
+                "alloydb.googleapis.com/cluster/last_backup_timestamp",
+                "alloydb.googleapis.com/internal/cluster/storage/quota",
+                "alloydb.googleapis.com/internal/cluster/storage/total_wal_bucket_size",
+                "alloydb.googleapis.com/internal/cluster/storage/purgeable_wal_bucket_size",
+                "alloydb.googleapis.com/internal/cluster/last_backup_timestamp",
+                "alloydb.googleapis.com/internal/cluster/internal_earliest_restorable_timestamp",
+                "alloydb.googleapis.com/internal/cluster/external_earliest_restorable_timestamp",
+                "alloydb.googleapis.com/internal/cluster/latest_restorable_timestamp",
+                "alloydb.googleapis.com/internal/cluster/wal_complete",
+                "alloydb.googleapis.com/internal/cluster/max_replica_bytes_lag",
+                "alloydb.googleapis.com/internal/cluster/migration_ongoing",
+                "alloydb.googleapis.com/internal/cluster/uuid",
+                "alloydb.googleapis.com/internal/cluster/pitr_enabled",
+                "alloydb.googleapis.com/internal/cluster/pitr_enabled_timestamp",
+                "alloydb.googleapis.com/internal/cluster/pitr_window_days",
+                "alloydb.googleapis.com/internal/cluster/backups",
+                "alloydb.googleapis.com/internal/cluster/customer_tier",
+                "alloydb.googleapis.com/internal/cluster/state",
+                "alloydb.googleapis.com/internal/cluster/zone_isolation/org_policy_enabled",
+                "alloydb.googleapis.com/internal/cluster/zone_isolation/requires_pzi",
+                "alloydb.googleapis.com/internal/cluster/zone_isolation/satisfies_pzi",
+                "alloydb.googleapis.com/internal/cluster/zone_isolation/complies_with_pzi",
+                "alloydb.googleapis.com/internal/cluster/zone_separation/org_policy_enabled",
+                "alloydb.googleapis.com/internal/cluster/zone_separation/requires_pzs",
+                "alloydb.googleapis.com/internal/cluster/zone_separation/satisfies_pzs",
+                "alloydb.googleapis.com/internal/cluster/zone_separation/complies_with_pzs",
+                "alloydb.googleapis.com/internal/cluster/network_type",
+                "alloydb.googleapis.com/internal/cluster/gemini/tier",
+                "alloydb.googleapis.com/internal/cluster/gca/enabled",
+                "alloydb.googleapis.com/internal/cluster/alerting_labels_enabled",
+                "alloydb.googleapis.com/internal/cluster/subscription_type",
+                "alloydb.googleapis.com/internal/cluster/export/api_count",
+                "alloydb.googleapis.com/internal/cluster/export/bytes_exported_count",
+                "alloydb.googleapis.com/internal/cluster/export/throughput",
+                "alloydb.googleapis.com/internal/cluster/export/cancel_count",
+                "alloydb.googleapis.com/internal/cluster/import/api_count",
+                "alloydb.googleapis.com/internal/cluster/import/bytes_imported_count",
+                "alloydb.googleapis.com/internal/cluster/import/cancel_count",
+                "alloydb.googleapis.com/internal/cluster/import/throughputs",
+                "alloydb.googleapis.com/internal/cluster/cmek/encryption_key_active",
+                "alloydb.googleapis.com/internal/cluster/cmek/encryption_type",
+                "alloydb.googleapis.com/internal/cluster/cmek/pd_encryption_key_valid",
+                "alloydb.googleapis.com/internal/cluster/latest_wal_timestamp"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/InstanceClient",
+              "metrics": [
+                "alloydb.googleapis.com/client/connector/internal_dummy_count",
+                "alloydb.googleapis.com/client/connector/bytes_received_count",
+                "alloydb.googleapis.com/client/connector/bytes_sent_count",
+                "alloydb.googleapis.com/client/connector/dial_count",
+                "alloydb.googleapis.com/client/connector/dial_latencies",
+                "alloydb.googleapis.com/client/connector/open_connections",
+                "alloydb.googleapis.com/client/connector/refresh_count"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Instance",
+              "metrics": [
+                "alloydb.googleapis.com/internal/instance/type",
+                "alloydb.googleapis.com/internal/instance/creation_timestamp",
+                "alloydb.googleapis.com/internal/instance/read_pool/size",
+                "alloydb.googleapis.com/internal/instance/uuid",
+                "alloydb.googleapis.com/internal/instance/cluster_uuid",
+                "alloydb.googleapis.com/internal/instance/slm_instance_id",
+                "alloydb.googleapis.com/internal/instance/customer_tier",
+                "alloydb.googleapis.com/internal/instance/state",
+                "alloydb.googleapis.com/internal/instance/alloydb_api_enabled",
+                "alloydb.googleapis.com/internal/instance/availability_type",
+                "alloydb.googleapis.com/internal/instance/postgresql/version",
+                "alloydb.googleapis.com/internal/instance/security/vpcsc_enabled",
+                "alloydb.googleapis.com/internal/instance/zonal_instance_kind",
+                "alloydb.googleapis.com/internal/instance/lb_backend_type",
+                "alloydb.googleapis.com/instance/postgresql/version",
+                "alloydb.googleapis.com/internal/instance/client_connection_config/ssl_mode",
+                "alloydb.googleapis.com/internal/instance/client_connection_config/require_connectors",
+                "alloydb.googleapis.com/internal/instance/zone_isolation/org_policy_enabled",
+                "alloydb.googleapis.com/internal/instance/zone_isolation/requires_pzi",
+                "alloydb.googleapis.com/internal/instance/zone_isolation/satisfies_pzi",
+                "alloydb.googleapis.com/internal/instance/zone_isolation/complies_with_pzi",
+                "alloydb.googleapis.com/internal/instance/zone_separation/org_policy_enabled",
+                "alloydb.googleapis.com/internal/instance/zone_separation/requires_pzs",
+                "alloydb.googleapis.com/internal/instance/zone_separation/satisfies_pzs",
+                "alloydb.googleapis.com/internal/instance/zone_separation/complies_with_pzs",
+                "alloydb.googleapis.com/internal/instance/network_type",
+                "alloydb.googleapis.com/internal/instance/psc_outbound_enabled",
+                "alloydb.googleapis.com/internal/instance/psc_service_automation_enabled",
+                "alloydb.googleapis.com/internal/instance/gemini/tier",
+                "alloydb.googleapis.com/internal/instance/gca/enabled",
+                "alloydb.googleapis.com/internal/instance/alerting_labels_enabled",
+                "alloydb.googleapis.com/internal/instance/subscription_type",
+                "alloydb.googleapis.com/internal/instance/undergoing_wipeout",
+                "alloydb.googleapis.com/internal/instance/billing_enabled",
+                "alloydb.googleapis.com/internal/instance/first_connection_timestamp",
+                "alloydb.googleapis.com/internal/instance/hot_standby_enabled"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Database",
+              "metrics": [
+                "alloydb.googleapis.com/database/postgresql/insights/internal/internal_dummy_metric",
+                "alloydb.googleapis.com/database/conn_pool/num_pools",
+                "alloydb.googleapis.com/database/conn_pool/client_connections",
+                "alloydb.googleapis.com/database/conn_pool/server_connections",
+                "alloydb.googleapis.com/database/conn_pool/client_connections_avg_wait_time"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/InstanceNode",
+              "metrics": [
+                "alloydb.googleapis.com/node/postgres/dummy_metric",
+                "alloydb.googleapis.com/external/vm/cpu_count",
+                "alloydb.googleapis.com/external/vm/database/postgresql/max_connections",
+                "alloydb.googleapis.com/external/vm/disk/read_ops",
+                "alloydb.googleapis.com/external/vm/disk/write_ops",
+                "alloydb.googleapis.com/external/vm/memagent/memory_available",
+                "alloydb.googleapis.com/external/vm/database/postgresql/transactions_count",
+                "alloydb.googleapis.com/external/vm/postgresql/backends_for_top_applications",
+                "alloydb.googleapis.com/external/vm/network/received_bytes_count",
+                "alloydb.googleapis.com/external/vm/network/sent_bytes_count",
+                "alloydb.googleapis.com/external/vm/postgresql/blks_hit_count",
+                "alloydb.googleapis.com/external/vm/postgresql/blks_read_count",
+                "alloydb.googleapis.com/external/vm/postgresql/deadlock_count",
+                "alloydb.googleapis.com/external/vm/postgresql/new_connections_count",
+                "alloydb.googleapis.com/external/vm/postgresql/temp_bytes_written_count",
+                "alloydb.googleapis.com/external/vm/postgresql/temp_files_written_count",
+                "alloydb.googleapis.com/external/vm/postgresql/tuples_deleted_count",
+                "alloydb.googleapis.com/external/vm/postgresql/tuples_fetched_count",
+                "alloydb.googleapis.com/external/vm/postgresql/tuples_inserted_count",
+                "alloydb.googleapis.com/external/vm/postgresql/tuples_returned_count",
+                "alloydb.googleapis.com/external/vm/postgresql/tuples_updated_count",
+                "alloydb.googleapis.com/external/vm/postgresql/tuples_written_count"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Backup",
+              "metrics": [
+                "alloydb.googleapis.com/internal/backup/zone_isolation/org_policy_enabled",
+                "alloydb.googleapis.com/internal/backup/zone_isolation/requires_pzi",
+                "alloydb.googleapis.com/internal/backup/zone_isolation/satisfies_pzi",
+                "alloydb.googleapis.com/internal/backup/zone_isolation/complies_with_pzi",
+                "alloydb.googleapis.com/internal/backup/zone_separation/org_policy_enabled",
+                "alloydb.googleapis.com/internal/backup/zone_separation/requires_pzs",
+                "alloydb.googleapis.com/internal/backup/zone_separation/satisfies_pzs",
+                "alloydb.googleapis.com/internal/backup/zone_separation/complies_with_pzs",
+                "alloydb.googleapis.com/internal/backup/cmek/encryption_type"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/InternalOmniInstanceNode",
+              "metrics": [
+                "alloydb.googleapis.com/internal/omni/node/cpu",
+                "alloydb.googleapis.com/internal/omni/node/cpu_usage",
+                "alloydb.googleapis.com/internal/omni/node/storage/usage_per_disk",
+                "alloydb.googleapis.com/internal/omni/node/storage/limit_per_disk",
+                "alloydb.googleapis.com/internal/omni/node/storage/read_ops_count",
+                "alloydb.googleapis.com/internal/omni/node/storage/write_ops_count",
+                "alloydb.googleapis.com/internal/omni/node/storage/read_bytes_count",
+                "alloydb.googleapis.com/internal/omni/node/storage/write_bytes_count",
+                "alloydb.googleapis.com/internal/omni/node/storage/utilization_by_data_type",
+                "alloydb.googleapis.com/internal/omni/node/network/received_bytes_count",
+                "alloydb.googleapis.com/internal/omni/node/network/sent_bytes_count",
+                "alloydb.googleapis.com/internal/omni/memory_available",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/uptime",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/max_connections",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/backends",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/backends_by_state",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/backends_for_top_applications",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/tuples_returned_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/tuples_fetched_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/tuples_updated_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/tuples_inserted_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/tuples_deleted_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/temp_bytes_written_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/temp_files_written_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/new_connections_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/deadlock_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/committed_transactions_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/rolledback_transactions_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/blks_hit_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/blks_read_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/vacuum/oldest_transaction_age",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/vacuum/transaction_id_utilization_percentage",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/wait_time",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/wait_count",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/replication/write_lag",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/replication/flush_lag",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/replication/replay_lag",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/replication/state",
+                "alloydb.googleapis.com/internal/omni/instance/postgresql/replication/wal_receiver_state"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/InternalOmniDatabase",
+              "metrics": [
+                "alloydb.googleapis.com/internal/omni/database/postgresql/size",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/total_columns",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/tuples",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/backends_for_top_databases",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/tuples_returned_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/tuples_fetched_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/tuples_updated_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/tuples_inserted_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/tuples_deleted_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/temp_bytes_written_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/temp_files_written_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/new_connections_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/deadlock_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/committed_transactions_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/rolledback_transactions_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/blks_hit_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/blks_read_for_top_databases_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/statements_executed_count",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/insights/aggregate/latencies",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/insights/aggregate/execution_time",
+                "alloydb.googleapis.com/internal/omni/database/postgresql/insights/aggregate/io_time"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/InternalInstance",
+              "metrics": [
+                "alloydb.googleapis.com/internal/v2/vm/health/eligibility_status",
+                "alloydb.googleapis.com/internal/v2/vm/health/probe/count",
+                "alloydb.googleapis.com/internal/v2/vm/iam_group_login_latency",
+                "alloydb.googleapis.com/internal/v2/vm/iam_group_login_status_count"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Location",
+              "metrics": [
+                "alloydb.googleapis.com/quota/quota/storage_usage_per_cluster/exceeded",
+                "alloydb.googleapis.com/quota/storage_usage_per_cluster",
+                "alloydb.googleapis.com/quota/storage_usage_per_cluster/exceeded",
+                "alloydb.googleapis.com/quota/storage_usage_per_trial_cluster/exceeded",
+                "alloydb.googleapis.com/storage_usage_per_cluster",
+                "alloydb.googleapis.com/storage_usage_per_trial_cluster"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Location",
+              "metrics": [
+                "alloydb.googleapis.com/quota/quota/storage_usage_per_cluster/limit",
+                "alloydb.googleapis.com/quota/quota/storage_usage_per_cluster/usage",
+                "alloydb.googleapis.com/quota/storage_usage_per_cluster/limit",
+                "alloydb.googleapis.com/quota/storage_usage_per_cluster/usage",
+                "alloydb.googleapis.com/quota/storage_usage_per_trial_cluster/limit",
+                "alloydb.googleapis.com/quota/storage_usage_per_trial_cluster/usage"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/Instance",
+              "metrics": [
+                "alloydb.googleapis.com/external/instance/postgresql/committed_transaction_count",
+                "alloydb.googleapis.com/external/instance/postgresql/new_connection_count",
+                "alloydb.googleapis.com/external/instance/postgresql/rolledback_transaction_count",
+                "alloydb.googleapis.com/external/instance/postgresql/transaction_count"
+              ]
+            },
+            {
+              "monitoredResource": "alloydb.googleapis.com/NodeDatabase",
+              "metrics": [
+                "alloydb.googleapis.com/external/database/postgresql/backends_for_top_databases",
+                "alloydb.googleapis.com/external/database/postgresql/blks_hit_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/blks_read_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/committed_transactions_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/deadlock_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/insights/aggregate/execution_time",
+                "alloydb.googleapis.com/external/database/postgresql/insights/aggregate/io_time",
+                "alloydb.googleapis.com/external/database/postgresql/insights/aggregate/latencies",
+                "alloydb.googleapis.com/external/database/postgresql/new_connections_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/rolledback_transactions_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/temp_bytes_written_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/temp_files_written_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/tuples_fetched_for_top_databases_count",
+                "alloydb.googleapis.com/external/database/postgresql/tuples_returned_for_top_databases_count"
+              ]
+            }
+          ]
+        }
+      },
+      "state": "DISABLED",
+      "parent": "projects/914441959143"
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "content-encoding": "gzip",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Thu, 02 Apr 2026 18:32:36 GMT",
+      "server": "ESF",
+      "transfer-encoding": "chunked",
+      "vary": "Origin, X-Origin, Referer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "0"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

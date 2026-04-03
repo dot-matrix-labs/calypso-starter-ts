@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://compute.googleapis.com/compute/v1/projects/superfield-492115/regions/us-central1/subnetworks/calypso-demo-us-central1"
+  },
+  "response": {
+    "body": {
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/superfield-492115/regions/us-central1/subnetworks/calypso-demo-us-central1"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

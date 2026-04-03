@@ -1,0 +1,81 @@
+{
+  "request": {
+    "body": {
+      "permissions": [
+        "resourcemanager.projects.get",
+        "serviceusage.services.get",
+        "serviceusage.services.enable",
+        "compute.networks.get",
+        "compute.networks.create",
+        "compute.subnetworks.get",
+        "compute.subnetworks.create",
+        "compute.firewalls.get",
+        "compute.firewalls.create",
+        "compute.globalAddresses.get",
+        "compute.globalAddresses.create",
+        "compute.instances.get",
+        "compute.instances.create",
+        "compute.instances.start",
+        "compute.images.useReadOnly",
+        "compute.subnetworks.use",
+        "compute.subnetworks.useExternalIp",
+        "compute.globalOperations.get",
+        "compute.regionOperations.get",
+        "compute.zoneOperations.get",
+        "servicenetworking.services.addPeering",
+        "alloydb.clusters.get",
+        "alloydb.clusters.create",
+        "alloydb.instances.get",
+        "alloydb.instances.create",
+        "alloydb.operations.get"
+      ]
+    },
+    "method": "POST",
+    "url": "https://cloudresourcemanager.googleapis.com/v1/projects/superfield-492115:testIamPermissions"
+  },
+  "response": {
+    "body": {
+      "permissions": [
+        "alloydb.clusters.create",
+        "alloydb.clusters.get",
+        "alloydb.instances.create",
+        "alloydb.instances.get",
+        "alloydb.operations.get",
+        "compute.firewalls.create",
+        "compute.firewalls.get",
+        "compute.globalAddresses.create",
+        "compute.globalAddresses.get",
+        "compute.globalOperations.get",
+        "compute.images.useReadOnly",
+        "compute.instances.create",
+        "compute.instances.get",
+        "compute.instances.start",
+        "compute.networks.create",
+        "compute.networks.get",
+        "compute.regionOperations.get",
+        "compute.subnetworks.create",
+        "compute.subnetworks.get",
+        "compute.subnetworks.use",
+        "compute.subnetworks.useExternalIp",
+        "compute.zoneOperations.get",
+        "resourcemanager.projects.get",
+        "serviceusage.services.get"
+      ]
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "content-encoding": "gzip",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Thu, 02 Apr 2026 18:32:34 GMT",
+      "server": "ESF",
+      "server-timing": "gfet4t7; dur=107",
+      "transfer-encoding": "chunked",
+      "vary": "Origin, X-Origin, Referer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "0"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

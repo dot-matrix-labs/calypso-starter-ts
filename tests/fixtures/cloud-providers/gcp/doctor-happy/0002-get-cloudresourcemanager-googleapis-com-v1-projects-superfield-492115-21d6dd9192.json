@@ -1,0 +1,59 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://cloudresourcemanager.googleapis.com/v1/projects/superfield-492115"
+  },
+  "response": {
+    "body": {
+      "error": {
+        "code": 403,
+        "message": "Cloud Resource Manager API has not been used in project 914441959143 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudresourcemanager.googleapis.com/overview?project=914441959143 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
+        "status": "PERMISSION_DENIED",
+        "details": [
+          {
+            "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+            "reason": "SERVICE_DISABLED",
+            "domain": "googleapis.com",
+            "metadata": {
+              "service": "cloudresourcemanager.googleapis.com",
+              "consumer": "projects/914441959143",
+              "containerInfo": "914441959143",
+              "activationUrl": "https://console.developers.google.com/apis/api/cloudresourcemanager.googleapis.com/overview?project=914441959143",
+              "serviceTitle": "Cloud Resource Manager API"
+            }
+          },
+          {
+            "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+            "locale": "en-US",
+            "message": "Cloud Resource Manager API has not been used in project 914441959143 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudresourcemanager.googleapis.com/overview?project=914441959143 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."
+          },
+          {
+            "@type": "type.googleapis.com/google.rpc.Help",
+            "links": [
+              {
+                "description": "Google developers console API activation",
+                "url": "https://console.developers.google.com/apis/api/cloudresourcemanager.googleapis.com/overview?project=914441959143"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "content-encoding": "gzip",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Thu, 02 Apr 2026 18:25:41 GMT",
+      "server": "ESF",
+      "server-timing": "gfet4t7; dur=94",
+      "transfer-encoding": "chunked",
+      "vary": "Origin, X-Origin, Referer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "0"
+    },
+    "status": 403,
+    "statusText": "Forbidden"
+  }
+}

@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
 
-import { createSign } from 'node:crypto';
+import { createHash, createSign } from 'node:crypto';
 import {
   chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -27,6 +28,8 @@ interface CachedToken {
 interface GoogleApiOptions {
   allow404?: boolean;
 }
+
+type CloudProviderHttpMode = 'live' | 'record' | 'replay';
 
 interface CommandOptions {
   cwd?: string;
@@ -91,7 +94,32 @@ export interface LongRunningOperation {
   error?: { code?: number; message?: string };
 }
 
+interface RecordedHttpFixture {
+  request: RecordedHttpRequest;
+  response: RecordedHttpResponse;
+}
+
+interface RecordedHttpRequest {
+  body?: JsonValue | string;
+  headers: Record<string, string>;
+  method: string;
+  url: string;
+}
+
+interface RecordedHttpResponse {
+  body: JsonValue | string | null;
+  headers: Record<string, string>;
+  status: number;
+  statusText: string;
+}
+
+interface ReplayFixtureState {
+  fixtures: RecordedHttpFixture[];
+  nextIndex: number;
+}
+
 let cachedToken: CachedToken | null = null;
+const replayFixtureStates = new Map<string, ReplayFixtureState>();
 
 export function parseArgs(argv: string[] = process.argv.slice(2)): ParsedArgs {
   const flags = new Map<string, string | boolean>();
@@ -229,6 +257,20 @@ export function runCommand(
   return { stdout, stderr, exitCode };
 }
 
+async function performGoogleHttpRequest(url: string, init: RequestInit = {}): Promise<Response> {
+  const normalizedRequest = normalizeRecordedRequest(url, init);
+  const mode = resolveCloudProviderHttpMode();
+  if (mode === 'replay') {
+    return replayGoogleHttpFixture(normalizedRequest);
+  }
+
+  const response = await fetch(url, init);
+  if (mode === 'record') {
+    await recordGoogleHttpFixture(normalizedRequest, response.clone());
+  }
+  return response;
+}
+
 export async function googleJsonRequest<T>(
   url: string,
   init: RequestInit = {},
@@ -247,7 +289,7 @@ export async function googleJsonRequest<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(url, {
+  const response = await performGoogleHttpRequest(url, {
     ...init,
     headers,
   });
@@ -298,7 +340,7 @@ export async function getGoogleAccessToken(): Promise<string> {
     }
 
     const tokenUri = oauth.token_uri ?? 'https://oauth2.googleapis.com/token';
-    const response = await fetch(tokenUri, {
+    const response = await performGoogleHttpRequest(tokenUri, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -356,7 +398,7 @@ export async function getGoogleAccessToken(): Promise<string> {
   const tokenUri = key.token_uri ?? 'https://oauth2.googleapis.com/token';
   const assertion = createSignedJwt(key, tokenUri);
 
-  const response = await fetch(tokenUri, {
+  const response = await performGoogleHttpRequest(tokenUri, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -673,6 +715,10 @@ export function clearGoogleAccessTokenCache(): void {
   cachedToken = null;
 }
 
+export function clearGoogleHttpFixtureState(): void {
+  replayFixtureStates.clear();
+}
+
 function createSignedJwt(key: ServiceAccountKey, tokenUri: string): string {
   const issuedAt = Math.floor(Date.now() / 1_000);
   const header = { alg: 'RS256', typ: 'JWT' };
@@ -697,6 +743,326 @@ function createSignedJwt(key: ServiceAccountKey, tokenUri: string): string {
 function base64Url(value: string | Uint8Array): string {
   const buffer = typeof value === 'string' ? Buffer.from(value, 'utf8') : Buffer.from(value);
   return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function resolveCloudProviderHttpMode(): CloudProviderHttpMode {
+  const rawMode = process.env.CALYPSO_CLOUD_PROVIDER_HTTP_MODE?.trim().toLowerCase();
+  if (!rawMode) {
+    return 'live';
+  }
+  if (rawMode === 'live' || rawMode === 'record' || rawMode === 'replay') {
+    return rawMode;
+  }
+  throw new Error(
+    `CALYPSO_CLOUD_PROVIDER_HTTP_MODE must be one of live, record, or replay; received "${rawMode}"`,
+  );
+}
+
+function resolveCloudProviderFixtureDir(): string {
+  const fixtureDir = process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR;
+  if (!fixtureDir) {
+    throw new Error(
+      'CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR is required when cloud-provider HTTP mode is record or replay',
+    );
+  }
+  return fixtureDir;
+}
+
+function normalizeRecordedRequest(url: string, init: RequestInit): RecordedHttpRequest {
+  const headers = new Headers(init.headers ?? {});
+  const method = (init.method ?? 'GET').toUpperCase();
+  return {
+    body: normalizeRecordedBody(readRequestBody(init.body), headers.get('Content-Type')),
+    headers: normalizeRecordedHeaders(headers),
+    method,
+    url: normalizeRecordedUrl(url),
+  };
+}
+
+async function recordGoogleHttpFixture(
+  request: RecordedHttpRequest,
+  response: Response,
+): Promise<void> {
+  const fixtureDir = resolveCloudProviderFixtureDir();
+  mkdirSync(fixtureDir, { recursive: true });
+
+  const responseBodyText = await response.text();
+  const fixture: RecordedHttpFixture = {
+    request,
+    response: {
+      body: normalizeRecordedBody(responseBodyText, response.headers.get('Content-Type')) ?? null,
+      headers: normalizeRecordedHeaders(response.headers),
+      status: response.status,
+      statusText: response.statusText,
+    },
+  };
+
+  const nextIndex =
+    readdirSync(fixtureDir, { withFileTypes: true }).filter((entry) => entry.isFile()).length + 1;
+  const filePath = join(fixtureDir, buildFixtureFilename(nextIndex, request));
+  writeFileSync(filePath, `${JSON.stringify(fixture, null, 2)}\n`);
+}
+
+function replayGoogleHttpFixture(request: RecordedHttpRequest): Response {
+  const fixtureDir = resolveCloudProviderFixtureDir();
+  const state = loadReplayFixtureState(fixtureDir);
+  if (state.nextIndex >= state.fixtures.length) {
+    throw new Error(
+      `No replay fixture remains for ${request.method} ${request.url} in ${fixtureDir}`,
+    );
+  }
+
+  const expected = state.fixtures[state.nextIndex];
+  if (!recordedRequestsEqual(expected.request, request)) {
+    throw new Error(
+      [
+        `Unexpected provider request at replay index ${state.nextIndex + 1} in ${fixtureDir}`,
+        `Expected: ${expected.request.method} ${expected.request.url}`,
+        `Received: ${request.method} ${request.url}`,
+      ].join('\n'),
+    );
+  }
+
+  state.nextIndex += 1;
+  return new Response(serializeRecordedBody(expected.response.body), {
+    headers: expected.response.headers,
+    status: expected.response.status,
+    statusText: expected.response.statusText,
+  });
+}
+
+function loadReplayFixtureState(fixtureDir: string): ReplayFixtureState {
+  const existing = replayFixtureStates.get(fixtureDir);
+  if (existing) {
+    return existing;
+  }
+
+  const fixtureFiles = listFixtureFiles(fixtureDir);
+  if (fixtureFiles.length === 0) {
+    throw new Error(`No replay fixtures were found in ${fixtureDir}`);
+  }
+
+  const state: ReplayFixtureState = {
+    fixtures: fixtureFiles.map(
+      (filePath) => JSON.parse(readFileSync(filePath, 'utf8')) as RecordedHttpFixture,
+    ),
+    nextIndex: 0,
+  };
+  replayFixtureStates.set(fixtureDir, state);
+  return state;
+}
+
+function listFixtureFiles(fixtureDir: string): string[] {
+  if (!existsSync(fixtureDir)) {
+    throw new Error(`Replay fixture directory does not exist: ${fixtureDir}`);
+  }
+
+  const filePaths: string[] = [];
+  const walk = (currentDir: string): void => {
+    for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
+      const entryPath = join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        walk(entryPath);
+        continue;
+      }
+      if (entry.isFile() && entry.name.endsWith('.json')) {
+        filePaths.push(entryPath);
+      }
+    }
+  };
+  walk(fixtureDir);
+  filePaths.sort();
+  return filePaths;
+}
+
+function buildFixtureFilename(index: number, request: RecordedHttpRequest): string {
+  const url = new URL(request.url);
+  const hostSlug = slugifyForFixture(url.hostname);
+  const pathSlug = slugifyForFixture(url.pathname === '/' ? 'root' : url.pathname);
+  const hash = createHash('sha256').update(JSON.stringify(request)).digest('hex').slice(0, 10);
+  return `${String(index).padStart(4, '0')}-${request.method.toLowerCase()}-${hostSlug}-${pathSlug}-${hash}.json`;
+}
+
+function slugifyForFixture(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+function normalizeRecordedUrl(rawUrl: string): string {
+  const url = new URL(rawUrl);
+  const entries = Array.from(url.searchParams.entries()).sort(([aKey, aValue], [bKey, bValue]) => {
+    if (aKey === bKey) {
+      return aValue.localeCompare(bValue);
+    }
+    return aKey.localeCompare(bKey);
+  });
+  url.search = '';
+  for (const [key, value] of entries) {
+    url.searchParams.append(key, value);
+  }
+  url.hash = '';
+  return url.toString();
+}
+
+function normalizeRecordedHeaders(headersInit: Headers | HeadersInit): Record<string, string> {
+  const headers = headersInit instanceof Headers ? headersInit : new Headers(headersInit);
+  const normalizedEntries = Array.from(headers.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, value]) => [name.toLowerCase(), sanitizeScalarValue(value, name)] as const);
+
+  return Object.fromEntries(normalizedEntries);
+}
+
+function readRequestBody(body: RequestInit['body']): string | undefined {
+  if (body === undefined || body === null) {
+    return undefined;
+  }
+  if (typeof body === 'string') {
+    return body;
+  }
+  if (body instanceof URLSearchParams) {
+    return body.toString();
+  }
+  if (body instanceof ArrayBuffer) {
+    return Buffer.from(body).toString('utf8');
+  }
+  if (ArrayBuffer.isView(body)) {
+    return Buffer.from(body.buffer, body.byteOffset, body.byteLength).toString('utf8');
+  }
+  return String(body);
+}
+
+function normalizeRecordedBody(
+  bodyText: string | undefined,
+  contentType: string | null,
+): JsonValue | string | undefined {
+  if (!bodyText) {
+    return undefined;
+  }
+
+  const normalizedContentType = contentType?.toLowerCase() ?? '';
+  if (normalizedContentType.includes('application/json')) {
+    try {
+      return sanitizeJsonValue(sortJsonValue(JSON.parse(bodyText) as JsonValue));
+    } catch {
+      return sanitizeScalarValue(bodyText);
+    }
+  }
+
+  if (normalizedContentType.includes('application/x-www-form-urlencoded')) {
+    const params = new URLSearchParams(bodyText);
+    const entries = Array.from(params.entries()).sort(([aKey, aValue], [bKey, bValue]) => {
+      if (aKey === bKey) {
+        return aValue.localeCompare(bValue);
+      }
+      return aKey.localeCompare(bKey);
+    });
+    const normalized: Record<string, JsonValue> = {};
+    for (const [key, value] of entries) {
+      const sanitizedValue = sanitizeScalarValue(value, key);
+      const current = normalized[key];
+      if (current === undefined) {
+        normalized[key] = sanitizedValue;
+        continue;
+      }
+      if (Array.isArray(current)) {
+        current.push(sanitizedValue);
+        continue;
+      }
+      normalized[key] = [current, sanitizedValue];
+    }
+    return normalized;
+  }
+
+  return sanitizeScalarValue(bodyText);
+}
+
+function sortJsonValue(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) {
+    return value.map((entry) => sortJsonValue(entry));
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, entry]) => [key, sortJsonValue(entry)]),
+    ) as JsonValue;
+  }
+  return value;
+}
+
+function sanitizeJsonValue(value: JsonValue, key?: string): JsonValue {
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeJsonValue(entry, key));
+  }
+  if (value && typeof value === 'object') {
+    const sanitized: Record<string, JsonValue> = {};
+    for (const [entryKey, entryValue] of Object.entries(value)) {
+      sanitized[entryKey] = sanitizeJsonValue(entryValue, entryKey);
+    }
+    return sanitized;
+  }
+  if (typeof value === 'string') {
+    return sanitizeScalarValue(value, key);
+  }
+  return value;
+}
+
+function sanitizeScalarValue(value: string, key?: string): string {
+  const normalizedKey = key?.trim().toLowerCase();
+  if (normalizedKey === 'authorization') {
+    return '<redacted-authorization>';
+  }
+  if (normalizedKey === 'assertion') {
+    return '<redacted-jwt>';
+  }
+  if (normalizedKey === 'access_token') {
+    return '<redacted-access-token>';
+  }
+  if (normalizedKey === 'refresh_token') {
+    return '<redacted-refresh-token>';
+  }
+  if (normalizedKey === 'client_secret') {
+    return '<redacted-client-secret>';
+  }
+  if (normalizedKey === 'private_key') {
+    return '<redacted-private-key>';
+  }
+  if (normalizedKey === 'password') {
+    return '<redacted-password>';
+  }
+  if (normalizedKey === 'ipaddress' || normalizedKey === 'natip') {
+    return '<redacted-ip>';
+  }
+  if (normalizedKey === 'client_email') {
+    return '<redacted-email>';
+  }
+  return value;
+}
+
+function recordedRequestsEqual(left: RecordedHttpRequest, right: RecordedHttpRequest): boolean {
+  const normalize = (value: RecordedHttpRequest) => ({
+    body:
+      value.body && typeof value.body === 'object'
+        ? sortJsonValue(value.body as JsonValue)
+        : (value.body ?? null),
+    method: value.method,
+    url: value.url,
+  });
+  return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right));
+}
+
+function serializeRecordedBody(body: RecordedHttpResponse['body']): string | undefined {
+  if (body === null) {
+    return undefined;
+  }
+  if (typeof body === 'string') {
+    return body;
+  }
+  return JSON.stringify(body);
 }
 
 function operationIsDone(operation: ComputeOperation | LongRunningOperation): boolean {

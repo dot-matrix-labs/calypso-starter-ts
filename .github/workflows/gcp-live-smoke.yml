@@ -1,0 +1,96 @@
+name: GCP Live Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment with deployed infrastructure'
+        required: true
+        type: choice
+        options:
+          - demo
+          - prod
+      record-fixtures:
+        description: 'Record Google HTTP fixtures and upload them as an artifact'
+        required: false
+        default: false
+        type: boolean
+      fixture-scenario:
+        description: 'Scenario name under tests/fixtures/cloud-providers/gcp/'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_SUBMODULE_PAT }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+          token_format: access_token
+
+      - name: Validate fixture recording inputs
+        if: ${{ inputs.record-fixtures }}
+        run: |
+          if [ -z "${{ inputs.fixture-scenario }}" ]; then
+            echo "::error::fixture-scenario is required when record-fixtures=true"
+            exit 1
+          fi
+
+      - name: Doctor
+        run: |
+          bun run scripts/gcp/doctor.ts \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --mode provision
+        env:
+          GCP_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          CALYPSO_CLOUD_PROVIDER_HTTP_MODE: ${{ inputs.record-fixtures && 'record' || 'live' }}
+          CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR: ${{ inputs.record-fixtures && format('{0}/tests/fixtures/cloud-providers/gcp/{1}/doctor', github.workspace, inputs.fixture-scenario) || '' }}
+
+      - name: Deploy check-only
+        run: |
+          bun run scripts/gcp/deploy.ts \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "${{ secrets.GCP_REGION }}" \
+            --zone "${{ secrets.GCP_ZONE }}" \
+            --environment "${{ inputs.environment }}" \
+            --vm-name "${{ secrets.GCP_VM_NAME }}" \
+            --alloydb-cluster "${{ secrets.GCP_ALLOYDB_CLUSTER }}" \
+            --alloydb-instance "${{ secrets.GCP_ALLOYDB_INSTANCE }}" \
+            --tag "sha-${GITHUB_SHA}" \
+            --check-only
+        env:
+          GCP_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          CALYPSO_CLOUD_PROVIDER_HTTP_MODE: ${{ inputs.record-fixtures && 'record' || 'live' }}
+          CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR: ${{ inputs.record-fixtures && format('{0}/tests/fixtures/cloud-providers/gcp/{1}/deploy', github.workspace, inputs.fixture-scenario) || '' }}
+          CALYPSO_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_NAMESPACE: ${{ secrets.DEPLOY_NAMESPACE }}
+          DEPLOY_SA_NAME: ${{ secrets.DEPLOY_SA_NAME }}
+
+      - name: Upload recorded fixtures
+        if: ${{ always() && inputs.record-fixtures }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcp-live-smoke-fixtures-${{ inputs.fixture-scenario }}
+          path: tests/fixtures/cloud-providers/gcp/${{ inputs.fixture-scenario }}/

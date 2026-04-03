@@ -59,6 +59,15 @@ Keep a small number of live cloud tests for end-to-end confidence:
 
 Live tests are for confidence, not for the bulk of coverage.
 
+Current live smoke entrypoint:
+
+- `.github/workflows/gcp-live-smoke.yml` runs `doctor` plus `deploy --check-only`
+  against an existing Google environment
+- the workflow authenticates with WIF and can optionally upload recorded Google
+  fixtures as an artifact
+- provisioning remains a local-only operation even though smoke validation runs
+  in GitHub
+
 ## Recording Real Traces
 
 The preferred implementation is a transport wrapper around all provider HTTP.
@@ -71,6 +80,17 @@ Requirements:
 - request keys are normalized by method, URL path, sorted query params, and
   normalized JSON body
 - fixtures live under `tests/fixtures/cloud-providers/<provider>/<scenario>/`
+
+Current Google implementation:
+
+- `scripts/gcp/common.ts` owns the Google transport wrapper
+- `CALYPSO_CLOUD_PROVIDER_HTTP_MODE=live|record|replay` selects the mode
+- `CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR` points at the scenario directory to
+  write or replay
+- the wrapper records both Google Cloud REST calls and Google OAuth token
+  exchanges used by the scripts
+- replay preserves production URLs; no alternate host or base-URL switching is
+  used
 
 Example fixture shape:
 
@@ -115,6 +135,12 @@ Usually sanitize:
 - operation IDs if they are noisy and not asserted directly
 
 Do not remove fields that our code branches on.
+
+Legacy note:
+
+- older recorded fixtures may only include `method`, `url`, and `body` on the
+  request side; replay code should remain compatible with that shape during the
+  migration to richer fixtures
 
 ## Replay Rules
 

@@ -6,11 +6,14 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import {
   clearGoogleAccessTokenCache,
+  clearGoogleHttpFixtureState,
   getGoogleAccessToken,
   getGoogleCredentialInfo,
 } from '../../../../scripts/gcp/common';
 
 const ENV_KEYS = [
+  'CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR',
+  'CALYPSO_CLOUD_PROVIDER_HTTP_MODE',
   'GCP_ACCESS_TOKEN',
   'GCP_OAUTH_TOKEN_FILE',
   'GCP_SERVICE_ACCOUNT_JSON',
@@ -25,12 +28,15 @@ describe('Google credential resolution', () => {
 
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'calypso-gcp-tests-'));
+    process.env.GCP_OAUTH_TOKEN_FILE = join(tempDir, 'missing-oauth.json');
     clearGoogleAccessTokenCache();
+    clearGoogleHttpFixtureState();
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
     clearGoogleAccessTokenCache();
+    clearGoogleHttpFixtureState();
     for (const key of ENV_KEYS) {
       delete process.env[key];
     }

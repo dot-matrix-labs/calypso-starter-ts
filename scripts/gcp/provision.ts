@@ -86,7 +86,7 @@ Example:
     --image-tag v1.2.3
 `.trim();
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const args = parseArgs();
   if (args.flags.has('help')) {
     printHelp('scripts/gcp/provision.ts', helpText);
@@ -792,7 +792,9 @@ function readKeyFile(path: string): string {
   return runCommand(['cat', path]).stdout;
 }
 
-main().catch((error) => {
-  console.error(`\n❌ ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((error) => {
+    console.error(`\n❌ ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  });
+}

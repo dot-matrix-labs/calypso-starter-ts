@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://alloydb.googleapis.com/v1/projects/superfield-492115/locations/us-central1/clusters/calypso-demo-db/instances/calypso-demo-primary"
+  },
+  "response": {
+    "body": {
+      "state": "READY",
+      "ipAddress": "10.0.0.2"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

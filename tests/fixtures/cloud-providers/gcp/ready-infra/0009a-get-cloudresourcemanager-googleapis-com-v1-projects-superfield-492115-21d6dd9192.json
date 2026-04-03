@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://cloudresourcemanager.googleapis.com/v1/projects/superfield-492115"
+  },
+  "response": {
+    "body": {
+      "projectId": "superfield-492115",
+      "projectNumber": "914441959143",
+      "lifecycleState": "ACTIVE",
+      "name": "SUPERFIELD",
+      "createTime": "2026-04-02T15:27:03.055Z"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

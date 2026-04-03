@@ -1,0 +1,31 @@
+{
+  "request": {
+    "body": {
+      "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      "assertion": "<redacted-jwt>"
+    },
+    "method": "POST",
+    "url": "https://oauth2.googleapis.com/token"
+  },
+  "response": {
+    "body": {
+      "access_token": "<redacted-token>",
+      "expires_in": 3599,
+      "token_type": "<redacted-token>"
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "content-encoding": "gzip",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Thu, 02 Apr 2026 18:32:33 GMT",
+      "server": "scaffolding on HTTPServer2",
+      "transfer-encoding": "chunked",
+      "vary": "Origin, X-Origin, Referer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "0"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

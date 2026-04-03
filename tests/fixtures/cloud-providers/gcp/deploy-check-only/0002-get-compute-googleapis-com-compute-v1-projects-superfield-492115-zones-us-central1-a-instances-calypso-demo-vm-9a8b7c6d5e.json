@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://compute.googleapis.com/compute/v1/projects/superfield-492115/zones/us-central1-a/instances/calypso-demo-vm"
+  },
+  "response": {
+    "body": {
+      "status": "RUNNING",
+      "networkInterfaces": [
+        {
+          "accessConfigs": [
+            {
+              "natIP": "203.0.113.10"
+            }
+          ]
+        }
+      ]
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

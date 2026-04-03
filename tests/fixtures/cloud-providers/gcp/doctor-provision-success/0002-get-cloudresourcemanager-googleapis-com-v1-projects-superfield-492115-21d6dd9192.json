@@ -1,0 +1,31 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://cloudresourcemanager.googleapis.com/v1/projects/superfield-492115"
+  },
+  "response": {
+    "body": {
+      "projectNumber": "914441959143",
+      "projectId": "superfield-492115",
+      "lifecycleState": "ACTIVE",
+      "name": "SUPERFIELD",
+      "createTime": "2026-04-02T15:27:03.055Z"
+    },
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "content-encoding": "gzip",
+      "content-type": "application/json; charset=UTF-8",
+      "date": "Thu, 02 Apr 2026 18:32:34 GMT",
+      "server": "ESF",
+      "server-timing": "gfet4t7; dur=124",
+      "transfer-encoding": "chunked",
+      "vary": "Origin, X-Origin, Referer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "0"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}
