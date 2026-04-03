@@ -19,6 +19,7 @@ import {
   resolveRequiredOption,
   resolveAdminPublicKey,
   runCommand,
+  sleep,
   waitForGoogleOperation,
   waitForTcpPort,
 } from './common';
@@ -418,7 +419,7 @@ export async function main(): Promise<void> {
   }
 }
 
-async function ensureRequiredServices(projectNumber: string): Promise<void> {
+export async function ensureRequiredServices(projectNumber: string): Promise<void> {
   const services = [
     'compute.googleapis.com',
     'alloydb.googleapis.com',
@@ -449,7 +450,10 @@ async function ensureRequiredServices(projectNumber: string): Promise<void> {
   }
 }
 
-async function ensureNetwork(projectId: string, networkName: string): Promise<ComputeNetwork> {
+export async function ensureNetwork(
+  projectId: string,
+  networkName: string,
+): Promise<ComputeNetwork> {
   const existing = await googleJsonRequest<ComputeNetwork>(
     `https://compute.googleapis.com/compute/v1/projects/${projectId}/global/networks/${networkName}`,
     {},
@@ -482,7 +486,7 @@ async function ensureNetwork(projectId: string, networkName: string): Promise<Co
   return created;
 }
 
-async function ensureSubnetwork(
+export async function ensureSubnetwork(
   projectId: string,
   region: string,
   subnetworkName: string,
@@ -521,7 +525,7 @@ async function ensureSubnetwork(
   return created;
 }
 
-async function ensureFirewallRule(
+export async function ensureFirewallRule(
   projectId: string,
   name: string,
   networkSelfLink: string,
@@ -562,7 +566,7 @@ async function ensureFirewallRule(
   );
 }
 
-async function ensurePrivateServiceAccess(
+export async function ensurePrivateServiceAccess(
   projectId: string,
   projectNumber: string,
   networkName: string,
@@ -634,7 +638,7 @@ async function ensurePrivateServiceAccess(
   }
 }
 
-async function ensureAlloyDb(config: {
+export async function ensureAlloyDb(config: {
   projectId: string;
   projectNumber: string;
   region: string;
@@ -733,7 +737,7 @@ async function waitUntilClusterReady(clusterUrl: string, clusterName: string): P
     if (cluster?.state === 'FAILED') {
       throw new Error(`AlloyDB cluster ${clusterName} entered FAILED state`);
     }
-    await Bun.sleep(5_000);
+    await sleep(5_000);
   }
   throw new Error(`Timed out waiting for AlloyDB cluster ${clusterName}`);
 }
@@ -750,12 +754,12 @@ async function waitUntilInstanceReady(
     if (instance?.state === 'FAILED') {
       throw new Error(`AlloyDB instance ${instanceName} entered FAILED state`);
     }
-    await Bun.sleep(5_000);
+    await sleep(5_000);
   }
   throw new Error(`Timed out waiting for AlloyDB instance ${instanceName}`);
 }
 
-async function ensureVm(config: {
+export async function ensureVm(config: {
   projectId: string;
   zone: string;
   vmName: string;
@@ -843,7 +847,7 @@ async function ensureVm(config: {
   return natIp;
 }
 
-async function ensureVmTalos(config: {
+export async function ensureVmTalos(config: {
   projectId: string;
   zone: string;
   vmName: string;

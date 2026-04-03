@@ -1,0 +1,17 @@
+{
+  "request": {
+    "body": null,
+    "method": "POST",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/zones/us-central1-a/instances/test-vm/start"
+  },
+  "response": {
+    "body": {
+      "name": "op-start-vm"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

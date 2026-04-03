@@ -1,0 +1,29 @@
+{
+  "request": {
+    "body": {
+      "databaseVersion": "POSTGRES_15",
+      "initialUser": {
+        "password": "<redacted-password>",
+        "user": "postgres"
+      },
+      "labels": {
+        "app": "calypso",
+        "env": "test-cluster"
+      },
+      "networkConfig": {
+        "allocatedIpRange": "test-psa",
+        "network": "projects/123456/global/networks/test-network"
+      }
+    },
+    "method": "POST",
+    "url": "https://alloydb.googleapis.com/v1/projects/test-project/locations/us-central1/clusters?clusterId=test-cluster"
+  },
+  "response": {
+    "body": {},
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

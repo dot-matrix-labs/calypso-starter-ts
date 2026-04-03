@@ -1,0 +1,17 @@
+{
+  "request": {
+    "body": null,
+    "method": "GET",
+    "url": "https://compute.googleapis.com/compute/v1/projects/test-project/regions/us-central1/subnetworks/test-subnet"
+  },
+  "response": {
+    "body": {
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/test-project/regions/us-central1/subnetworks/test-subnet"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "status": 200,
+    "statusText": "OK"
+  }
+}

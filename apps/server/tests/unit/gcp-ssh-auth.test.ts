@@ -1,3 +1,4 @@
+import { spawnSync as nodeSpawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -27,12 +28,9 @@ describe('Google SSH auth resolution', () => {
 
   afterEach(() => {
     if (process.env.SSH_AGENT_PID) {
-      Bun.spawnSync(['ssh-agent', '-k'], {
-        env: {
-          ...process.env,
-        },
-        stderr: 'ignore',
-        stdout: 'ignore',
+      nodeSpawnSync('ssh-agent', ['-k'], {
+        env: { ...process.env },
+        stdio: ['ignore', 'ignore', 'ignore'],
       });
     }
 
@@ -67,22 +65,16 @@ describe('Google SSH auth resolution', () => {
     process.env.SSH_AUTH_SOCK = agentEnv.SSH_AUTH_SOCK;
     process.env.SSH_AGENT_PID = agentEnv.SSH_AGENT_PID;
 
-    const addResult = Bun.spawnSync(['ssh-add', keyPath], {
-      env: {
-        ...process.env,
-      },
-      stderr: 'pipe',
-      stdout: 'pipe',
+    const addResult = nodeSpawnSync('ssh-add', [keyPath], {
+      env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    expect(addResult.exitCode).toBe(0);
+    expect(addResult.status).toBe(0);
 
     const sshAuth = ensureSshAuthMaterial();
-    const listed = Bun.spawnSync(['ssh-add', '-L'], {
-      env: {
-        ...process.env,
-      },
-      stderr: 'pipe',
-      stdout: 'pipe',
+    const listed = nodeSpawnSync('ssh-add', ['-L'], {
+      env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     expect(sshAuth.mode).toBe('agent');
@@ -94,20 +86,18 @@ describe('Google SSH auth resolution', () => {
 
 function generateKeyPair(directory: string, name: string): string {
   const keyPath = join(directory, name);
-  const result = Bun.spawnSync(['ssh-keygen', '-q', '-N', '', '-t', 'ed25519', '-f', keyPath], {
-    stderr: 'pipe',
-    stdout: 'pipe',
+  const result = nodeSpawnSync('ssh-keygen', ['-q', '-N', '', '-t', 'ed25519', '-f', keyPath], {
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
-  expect(result.exitCode).toBe(0);
+  expect(result.status).toBe(0);
   return keyPath;
 }
 
 function startAgent(): { SSH_AGENT_PID: string; SSH_AUTH_SOCK: string } {
-  const result = Bun.spawnSync(['ssh-agent', '-s'], {
-    stderr: 'pipe',
-    stdout: 'pipe',
+  const result = nodeSpawnSync('ssh-agent', ['-s'], {
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
-  expect(result.exitCode).toBe(0);
+  expect(result.status).toBe(0);
   const output = decode(result.stdout);
   const authSock = output.match(/SSH_AUTH_SOCK=([^;]+)/)?.[1];
   const agentPid = output.match(/SSH_AGENT_PID=([^;]+)/)?.[1];
@@ -119,8 +109,7 @@ function startAgent(): { SSH_AGENT_PID: string; SSH_AUTH_SOCK: string } {
   };
 }
 
-function decode(value: ArrayBufferLike | Uint8Array | null | undefined): string {
+function decode(value: Buffer | null | undefined): string {
   if (!value) return '';
-  const array = value instanceof Uint8Array ? value : new Uint8Array(value);
-  return new TextDecoder().decode(array);
+  return value.toString('utf8');
 }

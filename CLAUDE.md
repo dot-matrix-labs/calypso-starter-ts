@@ -75,6 +75,14 @@ If confidence is not high enough:
 
 The bias is toward forward progress.
 
+## Testing Standards
+
+- No mocks. Zero `vi.fn`, `vi.mock`, `vi.spyOn`, `vi.stubGlobal` in test files.
+- Prefer real dependencies, then recorded fixtures, then narrowly-scoped fakes.
+- Use MSW v2 for HTTP interception of external APIs. Use real `node:http`
+  servers for local endpoints.
+- External API fixtures live under `tests/fixtures/` as committed JSON files.
+
 ## Commit Standards
 
 - Use conventional commits: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`,
