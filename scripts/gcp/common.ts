@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { spawn as nodeSpawn, spawnSync as nodeSpawnSync } from 'node:child_process';
+import { spawnSync as nodeSpawnSync } from 'node:child_process';
 import { createHash, createSign } from 'node:crypto';
 import {
   chmodSync,

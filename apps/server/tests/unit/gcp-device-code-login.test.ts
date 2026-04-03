@@ -11,7 +11,7 @@ import {
   getGoogleAccessToken,
   writeLocalOAuthCredentialFile,
 } from '../../../../scripts/gcp/common';
-import { pollDeviceCodeToken, runDeviceCodeFlow } from '../../../../scripts/gcp/login';
+import { pollDeviceCodeToken } from '../../../../scripts/gcp/login';
 
 const ENV_KEYS = [
   'CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR',
