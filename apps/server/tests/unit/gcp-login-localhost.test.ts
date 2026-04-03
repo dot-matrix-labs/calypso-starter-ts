@@ -165,10 +165,9 @@ describe('OAuth localhost callback server', () => {
       );
       expect(response.status).toBe(400);
       expect(errorPayload).not.toBeNull();
-      expect((errorPayload as { error?: string }).error).toBe('access_denied');
-      expect((errorPayload as { errorDescription?: string }).errorDescription).toBe(
-        'User denied access',
-      );
+      const payload = errorPayload!;
+      expect(payload.error).toBe('access_denied');
+      expect(payload.errorDescription).toBe('User denied access');
     } finally {
       server.close();
     }

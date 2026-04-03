@@ -399,12 +399,12 @@ export function startTunnel(
   const child = nodeSpawn(args[0], args.slice(1), {
     stdio: ['ignore', 'ignore', 'pipe'],
   });
-  return {
-    kill: () => child.kill(),
-    exited: new Promise<number>((resolve) => {
-      child.on('close', (code: number | null) => resolve(code ?? 1));
-    }),
-  };
+  const exited = new Promise<number>((resolve) => {
+    (child as unknown as import('node:events').EventEmitter).on('close', (code: number | null) =>
+      resolve(code ?? 1),
+    );
+  });
+  return { kill: () => child.kill(), exited };
 }
 
 export function maybeAnnotateDeployment(
