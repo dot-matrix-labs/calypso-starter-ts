@@ -164,8 +164,11 @@ describe('OAuth localhost callback server', () => {
         `http://127.0.0.1:${address.port}/oauth2/callback?error=access_denied&error_description=User+denied+access&state=${state}`,
       );
       expect(response.status).toBe(400);
-      expect(errorPayload?.error).toBe('access_denied');
-      expect(errorPayload?.errorDescription).toBe('User denied access');
+      expect(errorPayload).not.toBeNull();
+      expect((errorPayload as { error?: string }).error).toBe('access_denied');
+      expect((errorPayload as { errorDescription?: string }).errorDescription).toBe(
+        'User denied access',
+      );
     } finally {
       server.close();
     }

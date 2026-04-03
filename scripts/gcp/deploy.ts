@@ -402,7 +402,7 @@ export function startTunnel(
   return {
     kill: () => child.kill(),
     exited: new Promise<number>((resolve) => {
-      child.on('exit', (code) => resolve(code ?? 1));
+      child.on('close', (code: number | null) => resolve(code ?? 1));
     }),
   };
 }
