@@ -113,9 +113,16 @@ infrastructure provisioning from GitHub Actions.
 
 Required env:
 
-- `CALYPSO_SSH_PRIVATE_KEY` or `CALYPSO_SSH_PRIVATE_KEY_FILE`
+- `SSH_AUTH_SOCK` or `CALYPSO_SSH_PRIVATE_KEY_FILE`
 - `GCP_ALLOYDB_POSTGRES_PASSWORD`
 - `MNEMONIC` or interactive input for the superuser bootstrap
+
+SSH contract:
+
+- local and CI SSH access prefer ambient `ssh-agent`
+- local manual fallback is `CALYPSO_SSH_PRIVATE_KEY_FILE`
+- provisioning resolves the admin public key from the agent identity when
+  possible, or from the fallback key file
 
 ## Deploy
 
@@ -151,4 +158,5 @@ GitHub Actions deploy flow:
 - Uses OIDC + Workload Identity Federation (`google-github-actions/auth`) to mint
   a short-lived Google access token.
 - Exports that token as `GCP_ACCESS_TOKEN` for `scripts/gcp/deploy.ts`.
+- Loads `DEPLOY_SSH_KEY` into `ssh-agent` and relies on `SSH_AUTH_SOCK` for SSH.
 - Does not require storing a long-lived service-account JSON key in GitHub secrets.

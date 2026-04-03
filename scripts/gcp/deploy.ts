@@ -1,11 +1,10 @@
 #!/usr/bin/env bun
 
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import {
+  buildSshOptions,
   createTempFile,
-  ensurePrivateKeyFile,
+  ensureSshAuthMaterial,
   extractNatIp,
   getProjectNumber,
   googleJsonRequest,
@@ -19,6 +18,7 @@ import {
   resolveRequiredOption,
   runCommand,
   shellQuote,
+  sshTarget,
   waitForTcpPort,
 } from './common';
 import { runDoctor } from './doctor';
@@ -50,7 +50,7 @@ Required configuration:
   --alloydb-cluster / GCP_ALLOYDB_CLUSTER
   --alloydb-instance / GCP_ALLOYDB_INSTANCE
   --tag / CALYPSO_IMAGE_TAG
-  CALYPSO_SSH_PRIVATE_KEY or CALYPSO_SSH_PRIVATE_KEY_FILE
+  SSH_AUTH_SOCK or CALYPSO_SSH_PRIVATE_KEY_FILE
 
 Flags:
   --check-only   Validate liveness and stop before deploy.sh
@@ -105,8 +105,8 @@ export async function main(): Promise<void> {
     false,
   );
 
-  const privateKeyFile = ensurePrivateKeyFile();
-  const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
+  const sshAuth = ensureSshAuthMaterial();
+  const repoRoot = join(import.meta.dir, '..', '..');
 
   try {
     const doctor = await runDoctor({
@@ -148,16 +148,16 @@ export async function main(): Promise<void> {
       throw new Error(`AlloyDB instance ${alloyInstance} is not READY`);
     }
 
-    await runSsh(privateKeyFile.path, sshUser, hostIp, 'true');
-    await verifyDatabasePath(privateKeyFile.path, sshUser, hostIp, instance.ipAddress);
+    await runSsh(sshAuth, sshUser, hostIp, 'true');
+    await verifyDatabasePath(sshAuth, sshUser, hostIp, instance.ipAddress);
 
-    const tunnelProcess = startTunnel(privateKeyFile.path, sshUser, hostIp);
+    const tunnelProcess = startTunnel(sshAuth, sshUser, hostIp);
     try {
       await waitForTcpPort('127.0.0.1', 6443, 15_000);
 
       const deployToken = (
         await runSsh(
-          privateKeyFile.path,
+          sshAuth,
           sshUser,
           hostIp,
           `kubectl create token ${shellQuote(serviceAccountName)} --namespace ${shellQuote(namespace)} --duration=1h`,
@@ -165,7 +165,7 @@ export async function main(): Promise<void> {
       ).trim();
       const caData = (
         await runSsh(
-          privateKeyFile.path,
+          sshAuth,
           sshUser,
           hostIp,
           `kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
@@ -239,23 +239,19 @@ export async function main(): Promise<void> {
       await tunnelProcess.exited;
     }
   } finally {
-    privateKeyFile.cleanup();
+    sshAuth.cleanup();
   }
 }
 
 async function runSsh(
-  keyPath: string,
+  sshAuth: ReturnType<typeof ensureSshAuthMaterial>,
   sshUser: string,
   hostIp: string,
   command: string,
 ): Promise<string> {
   const result = runCommand([
-    'ssh',
-    '-i',
-    keyPath,
-    '-o',
-    'StrictHostKeyChecking=accept-new',
-    `${sshUser}@${hostIp}`,
+    ...buildSshOptions(sshAuth),
+    sshTarget(sshUser, hostIp),
     'bash',
     '-lc',
     command,
@@ -264,23 +260,23 @@ async function runSsh(
 }
 
 async function verifyDatabasePath(
-  keyPath: string,
+  sshAuth: ReturnType<typeof ensureSshAuthMaterial>,
   sshUser: string,
   hostIp: string,
   alloyIp: string,
 ): Promise<void> {
   log(`Checking TCP reachability from ${sshUser}@${hostIp} to AlloyDB ${alloyIp}:5432`);
-  await runSsh(keyPath, sshUser, hostIp, `timeout 5 bash -lc 'echo >/dev/tcp/${alloyIp}/5432'`);
+  await runSsh(sshAuth, sshUser, hostIp, `timeout 5 bash -lc 'echo >/dev/tcp/${alloyIp}/5432'`);
 }
 
-function startTunnel(keyPath: string, sshUser: string, hostIp: string) {
+function startTunnel(
+  sshAuth: ReturnType<typeof ensureSshAuthMaterial>,
+  sshUser: string,
+  hostIp: string,
+) {
   return Bun.spawn(
     [
-      'ssh',
-      '-i',
-      keyPath,
-      '-o',
-      'StrictHostKeyChecking=accept-new',
+      ...buildSshOptions(sshAuth),
       '-o',
       'ServerAliveInterval=30',
       '-o',
@@ -290,7 +286,7 @@ function startTunnel(keyPath: string, sshUser: string, hostIp: string) {
       '-N',
       '-L',
       '6443:localhost:6443',
-      `${sshUser}@${hostIp}`,
+      sshTarget(sshUser, hostIp),
     ],
     {
       stdout: 'ignore',

@@ -77,6 +77,14 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform
 
+      - name: Start ssh-agent
+        shell: bash
+        run: |
+          eval "$(ssh-agent -s)"
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
       # ── 8. Create GitHub deployment event (pending) ─────────────────────────
       - name: Create deployment event
         id: deployment
@@ -106,7 +114,6 @@ jobs:
             --tag "${{ inputs.image-tag }}"
         env:
           GCP_ACCESS_TOKEN: ${{ steps.gcp-auth.outputs.access_token }}
-          CALYPSO_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_NAMESPACE: ${{ secrets.DEPLOY_NAMESPACE }}
           DEPLOY_SA_NAME: ${{ secrets.DEPLOY_SA_NAME }}
 
@@ -133,4 +140,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          if [[ -n "${SSH_AGENT_PID:-}" ]]; then
+            ssh-agent -k >/dev/null
+          fi
           echo "Cleanup complete."
