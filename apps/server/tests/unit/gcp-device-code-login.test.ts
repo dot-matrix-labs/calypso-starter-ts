@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,7 +8,6 @@ import {
   clearGoogleAccessTokenCache,
   clearGoogleHttpFixtureState,
   getGoogleAccessToken,
-  resolveOAuthTokenFilePath,
   writeLocalOAuthCredentialFile,
 } from '../../../../scripts/gcp/common';
 import { pollDeviceCodeToken, runDeviceCodeFlow } from '../../../../scripts/gcp/login';
@@ -195,7 +194,7 @@ describe('Google device code login flow', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       // Use a real very short timeout to trigger expiry quickly
-      vi.spyOn(Bun, 'sleep').mockImplementation(async (ms) => {
+      vi.spyOn(Bun, 'sleep').mockImplementation(async () => {
         // Advance mocked time by sleeping longer than the deadline
         await new Promise((r) => setTimeout(r, 0));
       });
@@ -407,7 +406,6 @@ describe('Google device code login flow', () => {
         tokenFile,
       );
 
-      const { statSync } = require('node:fs') as typeof import('node:fs');
       const stats = statSync(tokenFile);
       // Check that only owner can read/write (0o600)
       const mode = stats.mode & 0o777;
