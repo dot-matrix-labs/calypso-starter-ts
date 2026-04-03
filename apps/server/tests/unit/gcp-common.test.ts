@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { createFixtureServer } from '../helpers/msw-fixture-server';
+
 import {
   clearGoogleAccessTokenCache,
   clearGoogleHttpFixtureState,
@@ -301,68 +303,76 @@ describe('runCommand', () => {
   });
 });
 
-describe('waitForGoogleOperation (fixture replay)', () => {
+describe('waitForGoogleOperation (MSW fixture replay)', () => {
   beforeEach(() => {
     clearGoogleAccessTokenCache();
     clearGoogleHttpFixtureState();
     process.env.GCP_ACCESS_TOKEN = 'test-token';
-    process.env.CALYPSO_CLOUD_PROVIDER_HTTP_MODE = 'replay';
   });
 
   afterEach(() => {
     delete process.env.GCP_ACCESS_TOKEN;
-    delete process.env.CALYPSO_CLOUD_PROVIDER_HTTP_MODE;
-    delete process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR;
     clearGoogleAccessTokenCache();
     clearGoogleHttpFixtureState();
   });
 
+  async function withFixtures<T>(scenario: string, fn: () => Promise<T>): Promise<T> {
+    const { server } = createFixtureServer(join(FIXTURE_BASE, scenario));
+    server.listen({ onUnhandledRequest: 'error' });
+    try {
+      return await fn();
+    } finally {
+      server.close();
+    }
+  }
+
   test('resolves when operation is immediately done (compute style)', async () => {
-    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(FIXTURE_BASE, 'wait-op-done');
-    await expect(
+    await withFixtures('wait-op-done', () =>
       waitForGoogleOperation(
         'test op',
         'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-done',
       ),
-    ).resolves.toBeUndefined();
+    );
   });
 
   test('polls until operation completes', async () => {
-    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(FIXTURE_BASE, 'wait-op-poll');
-    await expect(
+    await withFixtures('wait-op-poll', () =>
       waitForGoogleOperation(
         'test op',
         'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-poll',
       ),
-    ).resolves.toBeUndefined();
+    );
   });
 
   test('throws when operation returns a compute-style error', async () => {
-    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(FIXTURE_BASE, 'operation-error');
     await expect(
-      waitForGoogleOperation(
-        'create vm',
-        'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-error',
+      withFixtures('operation-error', () =>
+        waitForGoogleOperation(
+          'create vm',
+          'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-error',
+        ),
       ),
     ).rejects.toThrow('create vm failed: QUOTA_EXCEEDED: Insufficient quota');
   });
 
   test('throws when operation returns an LRO-style error', async () => {
-    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(FIXTURE_BASE, 'wait-op-error');
     await expect(
-      waitForGoogleOperation(
-        'enable api',
-        'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-lro-error',
+      withFixtures('wait-op-error', () =>
+        waitForGoogleOperation(
+          'enable api',
+          'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-lro-error',
+        ),
       ),
     ).rejects.toThrow('enable api failed: Permission denied');
   });
 
   test('throws when poll returns empty payload', async () => {
-    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(FIXTURE_BASE, 'wait-op-null');
     await expect(
-      waitForGoogleOperation(
-        'test op',
-        'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-null',
+      withFixtures('wait-op-null', () =>
+        waitForGoogleOperation(
+          'test op',
+          'https://compute.googleapis.com/compute/v1/projects/test-project/global/operations/op-null',
+        ),
       ),
     ).rejects.toThrow('Operation poll returned no payload');
   });

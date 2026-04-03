@@ -1,5 +1,5 @@
 import { generateKeyPairSync } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -10,13 +10,15 @@ import {
   clearGoogleHttpFixtureState,
 } from '../../../../scripts/gcp/common';
 import { runDoctor } from '../../../../scripts/gcp/doctor';
+import { createFixtureServer } from '../helpers/msw-fixture-server';
+
+const FIXTURE_BASE = join(process.cwd(), 'tests', 'fixtures', 'cloud-providers', 'gcp');
 
 describe('Google Cloud provider flow replay coverage', () => {
   let tempDir: string;
 
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'calypso-gcp-provider-flows-'));
-    process.env.CALYPSO_CLOUD_PROVIDER_HTTP_MODE = 'replay';
     process.env.GCP_OAUTH_TOKEN_FILE = join(tempDir, 'missing-oauth.json');
     process.env.GCP_SERVICE_ACCOUNT_JSON = makeServiceAccountJson();
     clearGoogleAccessTokenCache();
@@ -27,8 +29,6 @@ describe('Google Cloud provider flow replay coverage', () => {
     clearGoogleAccessTokenCache();
     clearGoogleHttpFixtureState();
     for (const key of [
-      'CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR',
-      'CALYPSO_CLOUD_PROVIDER_HTTP_MODE',
       'GCP_OAUTH_TOKEN_FILE',
       'GCP_SERVICE_ACCOUNT_JSON',
       'GCP_ACCESS_TOKEN',
@@ -39,22 +39,20 @@ describe('Google Cloud provider flow replay coverage', () => {
   });
 
   test('replays the doctor permission-failure scenario', async () => {
-    process.env.CALYPSO_CLOUD_PROVIDER_FIXTURE_DIR = join(
-      process.cwd(),
-      'tests',
-      'fixtures',
-      'cloud-providers',
-      'gcp',
-      'doctor-provision-success',
-    );
+    const { server } = createFixtureServer(join(FIXTURE_BASE, 'doctor-provision-success'));
+    server.listen({ onUnhandledRequest: 'error' });
 
-    const result = await runDoctor({
-      mode: 'provision',
-      projectId: 'superfield-492115',
-    });
+    try {
+      const result = await runDoctor({
+        mode: 'provision',
+        projectId: 'superfield-492115',
+      });
 
-    expect(result.ok).toBe(false);
-    expect(result.missingPermissions).toContain('serviceusage.services.enable');
+      expect(result.ok).toBe(false);
+      expect(result.missingPermissions).toContain('serviceusage.services.enable');
+    } finally {
+      server.close();
+    }
   });
 });
 
