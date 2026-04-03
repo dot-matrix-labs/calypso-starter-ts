@@ -73,5 +73,6 @@ export default defineConfig({
       },
     },
     include: ['tests/component/**/*.test.tsx'],
+    fileParallelism: false,
   },
 });
